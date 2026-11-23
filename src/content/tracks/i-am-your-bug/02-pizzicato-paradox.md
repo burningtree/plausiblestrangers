@@ -1,0 +1,16 @@
+---
+title: "Pizzicato Paradox"
+release: "i-am-your-bug"
+number: 2
+audio: "/audio/i-am-your-bug/02-pizzicato-paradox.m4a"
+duration: 128
+bpm: 130
+key: "11m"
+instrumental: true
+created: "2026-11-19"
+machine: "suno v6"
+tags: "electroclash, experimental"
+suno: "https://suno.com/song/82508b4e-cc02-42f4-b120-3eee1b8b3ddc"
+style: |-
+  Experimental electroclash, 130 BPM, pizzicato strings, prepared piano, dissonant chamber melodies, funky analog bass, dry electro beats, unexpected pauses, playful theatrical tension.
+---

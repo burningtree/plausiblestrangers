@@ -1,0 +1,28 @@
+---
+// A waveform typed out in block characters. The player script draws and animates it.
+interface Props {
+  id: string;
+  peaks: number[];
+  duration: number;
+  queue: string;
+  index: number;
+  class?: string;
+}
+const { id, peaks, duration, queue, index, class: className } = Astro.props;
+---
+
+<div
+  class:list={['wave', className]}
+  data-wave={id}
+  data-peaks={JSON.stringify(peaks)}
+  data-duration={duration}
+  data-queue={queue}
+  data-index={index}
+  role="slider"
+  tabindex="0"
+  aria-label="seek within track"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  aria-valuenow="0"
+>
+</div>

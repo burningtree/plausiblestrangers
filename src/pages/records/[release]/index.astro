@@ -1,0 +1,109 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import Queue from '../../../components/Queue.astro';
+import Stamp from '../../../components/Stamp.astro';
+import PlayButton from '../../../components/PlayButton.astro';
+import {
+  getCatalog,
+  releaseUrl,
+  trackUrl,
+  fmtTime,
+  fmtTotal,
+  fmtDate,
+  playable,
+  hasAudio,
+  isUnfinished,
+  type Release,
+} from '../../../lib/catalog';
+
+export const getStaticPaths = (async () => {
+  const { releases } = await getCatalog();
+  return releases.map((release, i) => ({
+    params: { release: release.id },
+    props: { release, newer: releases[i - 1], older: releases[i + 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+const { release, newer, older } = Astro.props as { release: Release; newer?: Release; older?: Release };
+const { tracksOf } = await getCatalog();
+const tracks = tracksOf(release.id);
+const ready = tracks.filter(hasAudio);
+const unfinished = isUnfinished(release);
+const total = tracks.reduce((s, t) => s + t.data.duration, 0);
+const { Content } = await render(release);
+const hasNotes = Boolean(release.body?.trim());
+const d = release.data;
+---
+
+<Base title={d.title} image={d.cover?.replace(/\.webp$/, '.jpg')} description={`${d.title} — ${d.kind} by Plausible Strangers. ${tracks.length} tracks.`}>
+  <Queue release={release} tracks={tracks} />
+
+  <article class="release">
+    <p class="crumbs"><a href="/#records">records</a> / {d.catalog}{unfinished && <Stamp />}</p>
+
+    {
+      d.cover && (
+        <figure class="release-cover">
+          <img src={d.cover} alt={`Cover of ${d.title}`} width="1400" height="1400" transition:name={`cover-${release.id}`} />
+        </figure>
+      )
+    }
+
+    <div class="release-body">
+    <header class="release-head">
+      <h1 class="title">{d.title}</h1>
+      <p class="meta">
+        {d.kind} · {tracks.length} tracks · {fmtTotal(total)} · {unfinished ? `in progress, ${ready.length} of ${tracks.length} audible so far` : fmtDate(d.date)}
+      </p>
+      {ready.length > 0 && (
+        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} label={unfinished ? 'play what exists' : 'play the record'} class="play--big" /></p>
+      )}
+    </header>
+
+    <ol class="tracklist">
+      {
+        tracks.map((t) => {
+          const id = `${release.id}/${t.id.split('/').pop()!.replace(/^\d+-/, '')}`;
+          const qi = ready.indexOf(t);
+          return (
+            <li class:list={['tl-row', { 'tl-row--silent': qi < 0 }]} data-row={id}>
+              {qi >= 0 ? (
+                <PlayButton queue={release.id} index={qi} id={id} label={`play ${t.data.title}`} iconOnly class="play--icon" />
+              ) : (
+                <span class="tl-silent" title="not audible yet">·</span>
+              )}
+              <span class="tl-n">{String(t.data.number).padStart(2, '0')}</span>
+              <a class="tl-title" href={trackUrl(t)}>
+                {t.data.title}
+              </a>
+              <span class="tl-info">
+                {t.data.instrumental ? 'instr.' : 'lyrics'}
+                {t.data.bpm && ` · ${t.data.bpm} bpm`}
+              </span>
+              <span class="tl-dur">{fmtTime(t.data.duration)}</span>
+            </li>
+          );
+        })
+      }
+    </ol>
+
+    {
+      hasNotes && (
+        <section class="notes prose">
+          <h2 class="label">notes</h2>
+          <Content />
+        </section>
+      )
+    }
+
+    {d.suno && <p class="elsewhere"><a href={d.suno}>also on suno ↗</a></p>}
+
+    <nav class="pager" aria-label="other records">
+      {newer ? <a href={releaseUrl(newer.id)} rel="prev">← {newer.data.title}</a> : <span />}
+      {older ? <a href={releaseUrl(older.id)} rel="next">{older.data.title} →</a> : <span />}
+    </nav>
+    </div>
+  </article>
+</Base>

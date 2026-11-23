@@ -1,0 +1,184 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../../layouts/Base.astro';
+import Queue from '../../../components/Queue.astro';
+import PlayButton from '../../../components/PlayButton.astro';
+import Wave from '../../../components/Wave.astro';
+import Stamp from '../../../components/Stamp.astro';
+import {
+  getCatalog,
+  releaseUrl,
+  trackUrl,
+  trackSlug,
+  fmtTime,
+  fmtDate,
+  keyName,
+  parseLyrics,
+  playable,
+  hasAudio,
+  isUnfinished,
+  type Release,
+  type Track,
+} from '../../../lib/catalog';
+
+export const getStaticPaths = (async () => {
+  const { releases, tracksOf } = await getCatalog();
+  return releases.flatMap((release) => {
+    const tracks = tracksOf(release.id);
+    return tracks.map((track, i) => ({
+      params: { release: release.id, track: trackSlug(track) },
+      props: { release, tracks, index: i },
+    }));
+  });
+}) satisfies GetStaticPaths;
+
+const { release, tracks, index } = Astro.props as { release: Release; tracks: Track[]; index: number };
+const track = tracks[index];
+const t = track.data;
+const r = release.data;
+const audible = hasAudio(track);
+const qi = tracks.filter(hasAudio).indexOf(track);
+const p = playable(track, release);
+const unfinished = isUnfinished(release);
+const prev = tracks[index - 1];
+const next = tracks[index + 1];
+const stanzas = parseLyrics(track.body);
+// a lone [Instrumental] isn't worth showing
+const hasWords = stanzas.length > 1 || (stanzas.length === 1 && !stanzas[0][0].direction);
+
+const details: [string, string | undefined][] = [
+  ['record', `${r.title} (${r.catalog})`],
+  ['track', `${t.number} of ${tracks.length}`],
+  ['length', fmtTime(t.duration)],
+  ['tempo', t.bpm ? `${t.bpm} bpm` : undefined],
+  ['key', t.key ? `${keyName(t.key)} (${t.key}, as detected)` : undefined],
+  ['tags', t.tags],
+  ['generated', t.created ? fmtDate(t.created) : undefined],
+  ['machine', t.machine],
+  ['human', 'direction, words, selection, arrangement'],
+];
+---
+
+<Base title={`${t.title} — ${r.title}`} image={r.cover?.replace(/\.webp$/, '.jpg')} description={`${t.title}, track ${t.number} of ${r.title} by Plausible Strangers.`}>
+  <Queue release={release} tracks={tracks} />
+
+  <article class="track">
+    <p class="crumbs">
+      <a href="/#records">records</a> / <a href={releaseUrl(release.id)}>{r.title}</a> / {String(t.number).padStart(2, '0')}
+    {unfinished && <Stamp />}</p>
+
+    <div class="track-main">
+    <header class="track-head">
+      {
+        r.cover && (
+          <a href={releaseUrl(release.id)} class="track-cover">
+            <img
+              src={r.cover.replace(/\.webp$/, '-480.webp')}
+              alt={`Cover of ${r.title}`}
+              width="480"
+              height="480"
+              transition:name={`cover-${release.id}`}
+            />
+          </a>
+        )
+      }
+      <div>
+        <h1 class="title">{t.title}</h1>
+        <p class="meta">
+          {fmtTime(t.duration)}{t.bpm && ` · ${t.bpm} bpm`}{t.key && ` · ${keyName(t.key)}`}{t.instrumental && ' · instrumental'}
+        </p>
+        <p>{audible ? <PlayButton queue={release.id} index={qi} id={p.id} class="play--big" /> : <span class="meta">not audible yet. it exists, mostly.</span>}</p>
+      </div>
+    </header>
+
+    {audible && <Wave id={p.id} peaks={p.peaks} duration={t.duration} queue={release.id} index={qi} class="wave--big" />}
+    {audible && <noscript><audio controls preload="none" src={t.audio}></audio></noscript>}
+
+    <section class="lyrics" aria-labelledby="lyrics-h">
+      <h2 id="lyrics-h" class="label">{t.instrumental ? 'the score' : 'lyrics'}</h2>
+      {
+        hasWords ? (
+          stanzas.map((s) =>
+            s[0].direction ? (
+              <p class="direction">[{s[0].text}]</p>
+            ) : (
+              <p class="stanza">
+                {s.map((l, i) => (
+                  <>
+                    {l.text}
+                    {i < s.length - 1 && <br />}
+                  </>
+                ))}
+              </p>
+            ),
+          )
+        ) : (
+          <p class="muted">None. The machine was asked to keep quiet this time.</p>
+        )
+      }
+      {hasWords && (
+        <p class="aside">
+          {t.instrumental
+            ? 'No words, just instructions: how it should unfold. Sometimes it listened.'
+            : 'Lines in [brackets] are instructions to the machine. Sometimes it listened.'}
+        </p>
+      )}
+    </section>
+
+    </div>
+
+    <div class="track-side">
+    {
+      t.style && (
+        <section class="brief" aria-labelledby="brief-h">
+          <h2 id="brief-h" class="label">what we asked the machine for</h2>
+          <blockquote>
+            <p>{t.style}</p>
+          </blockquote>
+        </section>
+      )
+    }
+
+    {
+      t.notes && (
+        <section aria-labelledby="notes-h">
+          <h2 id="notes-h" class="label">notes</h2>
+          <p>{t.notes}</p>
+        </section>
+      )
+    }
+
+    <section aria-labelledby="details-h">
+      <h2 id="details-h" class="label">details</h2>
+      <dl class="details">
+        {
+          details
+            .filter(([, v]) => v)
+            .map(([k, v]) => (
+              <>
+                <dt>{k}</dt>
+                <dd>{v}</dd>
+              </>
+            ))
+        }
+        {(t.audio || t.suno) && (
+          <>
+            <dt>{t.audio ? 'file' : 'elsewhere'}</dt>
+            <dd>
+              {t.audio && <a href={t.audio} download>{t.audio.split(".").pop()}</a>}
+              {t.audio && t.suno && ' · '}
+              {t.suno && <a href={t.suno}>suno ↗</a>}
+            </dd>
+          </>
+        )}
+      </dl>
+    </section>
+
+    </div>
+
+    <nav class="pager" aria-label="other tracks">
+      {prev ? <a href={trackUrl(prev)} rel="prev">← {prev.data.title}</a> : <a href={releaseUrl(release.id)}>← {r.title}</a>}
+      {next ? <a href={trackUrl(next)} rel="next">{next.data.title} →</a> : <a href={releaseUrl(release.id)}>back to {r.title} ↑</a>}
+    </nav>
+  </article>
+</Base>

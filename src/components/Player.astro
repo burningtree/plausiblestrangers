@@ -1,0 +1,361 @@
+---
+// The one player. It survives page changes (transition:persist), so music keeps
+// playing while you wander around. Anything with [data-play] starts a track;
+// anything with .wave[data-wave] shows progress and can be clicked to seek.
+---
+
+<aside id="player" class="player" transition:persist="player" aria-label="player" hidden>
+  <audio id="ps-audio" preload="metadata"></audio>
+  <div class="player-row">
+    <button class="player-toggle" data-player="toggle" aria-label="play">
+      <span class="when-paused" aria-hidden="true">▶&#xFE0E;</span>
+      <span class="when-playing" aria-hidden="true">❚❚</span>
+    </button>
+    <p class="player-now">
+      <a class="player-title" href="/"></a>
+      <span class="player-release"></span>
+    </p>
+    <span class="player-time" aria-live="off"><span data-t="cur">0:00</span> / <span data-t="dur">0:00</span></span>
+    <span class="player-skip">
+      <button data-player="prev" aria-label="previous track">prev</button>
+      <button data-player="next" aria-label="next track">next</button>
+    </span>
+  </div>
+  <div class="wave wave--player" data-wave="" role="slider" tabindex="0" aria-label="seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+</aside>
+
+<script>
+  type Item = {
+    id: string;
+    title: string;
+    release: string;
+    src: string;
+    url: string;
+    cover?: string;
+    duration: number;
+    peaks: number[];
+  };
+
+  const STORE = 'ps:player';
+  const BLOCKS = ['▁', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+  const player = document.getElementById('player') as HTMLElement;
+  const audio = document.getElementById('ps-audio') as HTMLAudioElement;
+  const $ = <T extends Element>(sel: string) => player.querySelector(sel) as T;
+
+  let queue: Item[] = [];
+  let index = -1;
+  let pendingSeek = 0;
+  let raf = 0;
+  let lastSave = 0;
+  let restored = false; // true while the track came from a previous visit
+
+  const current = (): Item | undefined => queue[index];
+  const fmt = (s: number) =>
+    !isFinite(s) ? '0:00' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  // ---- queues are embedded in pages as <script type="application/json" data-queue>
+  function readQueue(name?: string): Item[] | null {
+    if (!name) return null;
+    const el = document.querySelector(`script[data-queue="${CSS.escape(name)}"]`);
+    try {
+      return el ? JSON.parse(el.textContent || '[]') : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function load(q: Item[], i: number, opts: { autoplay?: boolean; time?: number } = {}) {
+    const { autoplay = true, time = 0 } = opts;
+    if (!q[i]) return;
+    restored = !autoplay;
+    queue = q;
+    index = i;
+    const t = q[i];
+    pendingSeek = time;
+    audio.src = t.src;
+    player.hidden = false;
+    document.documentElement.classList.add('has-player');
+    player.classList.remove('is-error');
+    $<HTMLAnchorElement>('.player-title').textContent = t.title;
+    $<HTMLAnchorElement>('.player-title').href = t.url;
+    $<HTMLElement>('.player-release').textContent = t.release.toLowerCase();
+    $<HTMLElement>('[data-t="dur"]').textContent = fmt(t.duration);
+    const pw = $<HTMLElement>('.wave--player');
+    pw.dataset.wave = t.id;
+    pw.dataset.peaks = JSON.stringify(t.peaks);
+    pw.dataset.duration = String(t.duration);
+    drawWave(pw, true);
+    if (autoplay) audio.play().catch(() => {});
+    mediaSession(t);
+    sync();
+    save(true);
+  }
+
+  const toggle = () => (audio.paused ? audio.play().catch(() => {}) : audio.pause());
+  const step = (d: number) => {
+    if (d < 0 && audio.currentTime > 4) return void (audio.currentTime = 0);
+    if (queue[index + d]) load(queue, index + d);
+  };
+
+  // ---- waveform made of type
+  function drawWave(el: HTMLElement, force = false) {
+    let peaks: number[] = [];
+    try {
+      peaks = JSON.parse(el.dataset.peaks || '[]');
+    } catch {}
+    if (!peaks.length) return;
+    const probe = document.createElement('span');
+    probe.className = 'wave-probe';
+    probe.textContent = '██████████';
+    el.appendChild(probe);
+    const charW = probe.getBoundingClientRect().width / 10 || 8;
+    probe.remove();
+    const n = Math.max(8, Math.floor(el.clientWidth / charW));
+    if (!force && el.dataset.n === String(n)) return;
+    el.dataset.n = String(n);
+    const vals: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const a = Math.floor((i * peaks.length) / n);
+      const b = Math.max(a + 1, Math.floor(((i + 1) * peaks.length) / n));
+      vals.push(Math.max(...peaks.slice(a, b)));
+    }
+    // loud, compressed tracks look flat — stretch the quietest part down
+    const lo = Math.min(...vals) * 0.85;
+    const hi = Math.max(...vals);
+    const text = vals
+      .map((v) => BLOCKS[Math.round(((v - lo) / (hi - lo || 1)) ** 1.4 * (BLOCKS.length - 1))])
+      .join('');
+    el.innerHTML = '';
+    const base = document.createElement('span');
+    base.className = 'wave-base';
+    base.textContent = text;
+    const fill = document.createElement('span');
+    fill.className = 'wave-fill';
+    fill.textContent = text;
+    base.setAttribute('aria-hidden', 'true');
+    fill.setAttribute('aria-hidden', 'true');
+    el.append(base, fill);
+  }
+
+  const resizer = new ResizeObserver((entries) => {
+    for (const e of entries) drawWave(e.target as HTMLElement);
+  });
+
+  function setupWaves() {
+    document.querySelectorAll<HTMLElement>('.wave[data-wave]').forEach((el) => {
+      if (el.dataset.ready) return;
+      el.dataset.ready = '1';
+      drawWave(el, true);
+      resizer.observe(el);
+    });
+  }
+
+  function progress() {
+    const t = current();
+    if (!t) return;
+    const dur = audio.duration || t.duration;
+    const p = dur ? Math.min(1, audio.currentTime / dur) : 0;
+    document.querySelectorAll<HTMLElement>('.wave[data-wave]').forEach((el) => {
+      const mine = el.dataset.wave === t.id;
+      el.style.setProperty('--p', mine ? `${p * 100}%` : '0%');
+      if (mine) el.setAttribute('aria-valuenow', String(Math.round(p * 100)));
+    });
+    $<HTMLElement>('[data-t="cur"]').textContent = fmt(audio.currentTime);
+  }
+
+  function loop() {
+    progress();
+    raf = audio.paused ? 0 : requestAnimationFrame(loop);
+  }
+
+  // ---- reflect state on whatever page we are on
+  function sync() {
+    const t = current();
+    const playing = !!t && !audio.paused;
+    document.documentElement.classList.toggle('is-playing', playing);
+    document.documentElement.classList.toggle('has-player', !!t);
+    document.querySelectorAll<HTMLElement>('[data-play]').forEach((b) => {
+      const mine = !!t && b.dataset.id === t.id;
+      b.classList.toggle('is-playing', mine && playing);
+      b.setAttribute('aria-pressed', String(mine && playing));
+    });
+    document.querySelectorAll<HTMLElement>('[data-row]').forEach((r) => {
+      r.classList.toggle('is-current', !!t && r.dataset.row === t.id);
+    });
+    $<HTMLButtonElement>('.player-toggle').setAttribute('aria-label', playing ? 'pause' : 'play');
+    $<HTMLButtonElement>('[data-player="prev"]').disabled = index <= 0 && audio.currentTime < 4;
+    $<HTMLButtonElement>('[data-player="next"]').disabled = index >= queue.length - 1;
+    progress();
+  }
+
+  // ---- remember where we were (per browser only)
+  function save(force = false) {
+    const now = Date.now();
+    if (!force && now - lastSave < 4000) return;
+    lastSave = now;
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ queue, index, time: audio.currentTime || pendingSeek }));
+    } catch {}
+  }
+
+  function restore() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (s?.queue?.[s.index]) load(s.queue, s.index, { autoplay: false, time: s.time || 0 });
+    } catch {}
+  }
+
+  function mediaSession(t: Item) {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: t.title,
+      artist: 'Plausible Strangers',
+      album: t.release,
+      artwork: t.cover ? [{ src: t.cover, sizes: '480x480', type: 'image/webp' }] : [],
+    });
+  }
+  if ('mediaSession' in navigator) {
+    const ms = navigator.mediaSession;
+    ms.setActionHandler('play', () => audio.play());
+    ms.setActionHandler('pause', () => audio.pause());
+    ms.setActionHandler('previoustrack', () => step(-1));
+    ms.setActionHandler('nexttrack', () => step(1));
+    try {
+      ms.setActionHandler('seekto', (d) => {
+        if (d.seekTime != null) audio.currentTime = d.seekTime;
+      });
+    } catch {}
+  }
+
+  // ---- seeking on any waveform
+  function seekFrom(el: HTMLElement, clientX: number) {
+    const r = el.getBoundingClientRect();
+    const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    const t = current();
+    if (t && el.dataset.wave === t.id) {
+      audio.currentTime = f * (audio.duration || t.duration);
+      progress();
+      return;
+    }
+    const q = readQueue(el.dataset.queue);
+    const i = Number(el.dataset.index);
+    if (q?.[i]) load(q, i, { time: f * q[i].duration });
+  }
+
+  let dragging: HTMLElement | null = null;
+  document.addEventListener('pointerdown', (e) => {
+    const el = (e.target as Element).closest<HTMLElement>('.wave[data-wave]');
+    if (!el || e.button !== 0) return;
+    dragging = el;
+    seekFrom(el, e.clientX);
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (dragging && current()?.id === dragging.dataset.wave) seekFrom(dragging, e.clientX);
+  });
+  document.addEventListener('pointerup', () => (dragging = null));
+  document.addEventListener('keydown', (e) => {
+    const el = (e.target as Element).closest?.<HTMLElement>('.wave[data-wave]');
+    if (!el || current()?.id !== el.dataset.wave) return;
+    const d = { ArrowRight: 5, ArrowUp: 5, ArrowLeft: -5, ArrowDown: -5 }[e.key];
+    if (d) {
+      e.preventDefault();
+      audio.currentTime = Math.max(0, audio.currentTime + d);
+    }
+  });
+
+  // ---- keyboard: space / k = play-pause, ← → = 10s, n / p = next / previous
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || !current()) return;
+    const el = e.target as HTMLElement;
+    if (el.closest('input, textarea, select, [contenteditable], .wave')) return;
+    const onControl = !!el.closest('button, a');
+    if ((e.key === ' ' && !onControl) || e.key === 'k') {
+      e.preventDefault();
+      toggle();
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const d = e.key === 'ArrowRight' ? 10 : -10;
+      audio.currentTime = Math.max(0, Math.min((audio.duration || 0) - 0.5, audio.currentTime + d));
+      progress();
+    } else if (e.key === 'n') step(1);
+    else if (e.key === 'p') step(-1);
+  });
+
+  // ---- buttons
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const play = target.closest<HTMLElement>('[data-play]');
+    if (play) {
+      e.preventDefault();
+      if (current()?.id === play.dataset.id) return toggle();
+      const q = readQueue(play.dataset.queue);
+      const i = Number(play.dataset.index || 0);
+      if (q) load(q, i);
+      return;
+    }
+    // a tracklist row plays its track, unless you clicked the title link
+    const row = target.closest<HTMLElement>('.tl-row');
+    if (row && !target.closest('a')) {
+      row.querySelector<HTMLElement>('[data-play]')?.click();
+      return;
+    }
+    const ctl = target.closest<HTMLElement>('[data-player]');
+    if (!ctl) return;
+    const action = ctl.dataset.player;
+    if (action === 'toggle') toggle();
+    if (action === 'prev') step(-1);
+    if (action === 'next') step(1);
+  });
+
+  // ---- audio events
+  audio.addEventListener('loadedmetadata', () => {
+    if (pendingSeek) audio.currentTime = Math.min(pendingSeek, audio.duration - 1);
+    pendingSeek = 0;
+    $<HTMLElement>('[data-t="dur"]').textContent = fmt(audio.duration);
+    progress();
+  });
+  audio.addEventListener('play', () => {
+    restored = false;
+    sync();
+    if (!raf) raf = requestAnimationFrame(loop);
+  });
+  audio.addEventListener('pause', () => {
+    sync();
+    save(true);
+  });
+  audio.addEventListener('timeupdate', () => save());
+  audio.addEventListener('ended', () => {
+    if (queue[index + 1]) load(queue, index + 1);
+    else {
+      audio.currentTime = 0;
+      sync();
+    }
+  });
+  audio.addEventListener('error', () => {
+    if (!audio.src) return;
+    if (restored) {
+      // a remembered track that no longer exists: forget it quietly
+      try {
+        localStorage.removeItem(STORE);
+      } catch {}
+      queue = [];
+      index = -1;
+      audio.removeAttribute('src');
+      player.hidden = true;
+      sync();
+      return;
+    }
+    player.classList.add('is-error');
+    $<HTMLElement>('.player-release').textContent = 'this file refuses to play.';
+  });
+
+  document.addEventListener('astro:page-load', () => {
+    setupWaves();
+    sync();
+  });
+
+  setupWaves();
+  restore();
+  sync();
+</script>

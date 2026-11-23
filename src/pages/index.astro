@@ -1,0 +1,137 @@
+---
+import Base from '../layouts/Base.astro';
+import Queue from '../components/Queue.astro';
+import PlayButton from '../components/PlayButton.astro';
+import Stamp from '../components/Stamp.astro';
+import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
+import { site } from '../site';
+
+const { releases, tracksOf } = await getCatalog();
+const records = releases.map((r) => {
+  const tracks = tracksOf(r.id);
+  const ready = tracks.filter(hasAudio);
+  return { r, tracks, ready, total: tracks.reduce((s, t) => s + t.data.duration, 0) };
+});
+const trackCount = records.reduce((s, x) => s + x.tracks.length, 0);
+const groups = [
+  { label: 'albums', items: records.filter((x) => isAlbum(x.r)), album: true },
+  { label: 'eps & singles', items: records.filter((x) => !isAlbum(x.r)), album: false },
+].filter((g) => g.items.length);
+---
+
+<Base home>
+  <div class="home">
+  <section class="home-what" aria-labelledby="what">
+    <h2 id="what" class="label">what we are</h2>
+    <p class="lede">An electronic music experiment. Human imagination, machine-generated sound.</p>
+    <p>
+      We are not a band in the traditional sense. Plausible Strangers is a human-directed, AI-generated
+      music project. The machines make the sounds. We decide which accidents deserve to exist.
+    </p>
+  </section>
+
+  <section class="home-doing" aria-labelledby="doing">
+    <h2 id="doing" class="label">what we're doing</h2>
+    <p>
+      Hypnotic electronic music somewhere between house, techno and electroclash. Strange rhythms,
+      synthetic voices, misplaced instruments, playful melodies. Occasionally a little classical
+      elegance. Occasionally just noise.
+    </p>
+    <p>
+      We experiment, discard, repeat and keep what feels unfamiliar. There is no fixed genre, no
+      imaginary band mythology, and no particular destination.
+    </p>
+  </section>
+
+  <section class="home-records" aria-labelledby="records">
+    <h2 id="records" class="label">records <span class="count">{records.length} records, {trackCount} tracks</span></h2>
+    {
+      groups.map((g) => (
+        <div class="record-group">
+          <h3 class="sublabel">{g.label}</h3>
+    <ol class:list={['records', { 'records--albums': g.album }]}>
+      {
+        g.items.map(({ r, tracks, ready, total }) => (
+          <li class:list={['record', { 'record--unfinished': isUnfinished(r) }]} data-row={ready[0] && playable(ready[0], r).id}>
+            <div class="record-art">
+              <a href={releaseUrl(r.id)} class="record-cover" tabindex="-1" aria-hidden="true">
+                {r.data.cover && (
+                  <img
+                    src={g.album ? r.data.cover : r.data.cover.replace(/\.webp$/, '-480.webp')}
+                    alt=""
+                    width="480"
+                    height="480"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+              </a>
+              {ready.length > 0 && (
+                <PlayButton
+                  queue={r.id}
+                  index={0}
+                  id={playable(ready[0], r).id}
+                  label={`play ${r.data.title}`}
+                  iconOnly
+                  class="cover-play"
+                />
+              )}
+            </div>
+            <div class="record-text">
+              <p class="record-cat">{r.data.catalog}{isUnfinished(r) && <Stamp />}</p>
+              <h4 class="record-title">
+                <a href={releaseUrl(r.id)}>{r.data.title}</a>
+              </h4>
+              <p class="record-meta">
+                {r.data.kind} · {tracks.length} {tracks.length === 1 ? 'track' : 'tracks'} · {fmtTotal(total)} ·{' '}
+                {isUnfinished(r) ? 'in progress' : fmtDate(r.data.date)}
+              </p>
+              {ready.length > 0 && (
+                <p class="record-actions">
+                  <PlayButton queue={r.id} index={0} id={playable(ready[0], r).id} label={isUnfinished(r) ? 'play what exists' : 'play'} />
+                </p>
+              )}
+            </div>
+            <Queue release={r} tracks={tracks} />
+          </li>
+        ))
+      }
+    </ol>
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="home-live" aria-labelledby="live">
+    <h2 id="live" class="label">live / dates</h2>
+    <p>Nothing booked. Nothing cancelled either.</p>
+    <p>
+      We're working on an audiovisual set: the recordings taken apart, remixed in the room, with visuals
+      that react to whatever is left. If you have a room, a projector and a tolerant audience, we
+      should talk.
+    </p>
+  </section>
+
+  <section class="home-elsewhere" aria-labelledby="elsewhere">
+    <h2 id="elsewhere" class="label">elsewhere / contact</h2>
+    <ul class="plain">
+      {
+        site.links.map((l) => (
+          <li>
+            <a href={l.href} rel="me">
+              {l.label} ↗
+            </a>
+          </li>
+        ))
+      }
+      {
+        site.email && (
+          <li>
+            <a href={`mailto:${site.email}`}>{site.email}</a>
+          </li>
+        )
+      }
+    </ul>
+  </section>
+  </div>
+</Base>

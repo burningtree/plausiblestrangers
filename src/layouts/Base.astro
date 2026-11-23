@@ -1,0 +1,62 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Player from '../components/Player.astro';
+import ThemeSwitch from '../components/ThemeSwitch.astro';
+import { site } from '../site';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  home?: boolean;
+}
+const { title, description = site.description, image, home = false } = Astro.props;
+const fullTitle = title ? `${title} — plausible strangers` : 'plausible strangers.';
+const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      // set the theme before first paint, so there is no flash
+      try {
+        var t = localStorage.getItem('ps:theme');
+        document.documentElement.dataset.theme =
+          t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      } catch (e) {}
+    </script>
+    <ClientRouter fallback="swap" />
+  </head>
+  <body>
+    <a class="skip" href="#main">skip to content</a>
+    <ThemeSwitch />
+    <header class:list={['masthead', { 'masthead--home': home }]}>
+      {home ? <h1 class="wordmark">{site.name}</h1> : <a class="wordmark" href="/">{site.name}</a>}
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="colophon">
+      <p>
+        No cookies, no analytics, no algorithm. Just files on a server.<br />
+        Sounds by machines, decisions by humans, mistakes by both.
+      </p>
+      <p class="keys">
+        <kbd>space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> 10 seconds · <kbd>n</kbd> <kbd>p</kbd> next / previous
+      </p>
+    </footer>
+    <Player />
+  </body>
+</html>

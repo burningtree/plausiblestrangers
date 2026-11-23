@@ -1,0 +1,1043 @@
+/* plausible strangers. — a document, not a website. */
+
+:root {
+  --paper: #f7f6f1;
+  --ink: #171716;
+  --mute: #75716a;
+  --faint: #cfcbc0;
+  --hot: #d4351c;
+  --serif: 'Times New Roman', Times, 'Nimbus Roman', Georgia, serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, 'Cascadia Mono', 'Courier New', monospace;
+  --measure: 44rem;
+  --gutter: clamp(1rem, 9vw, 8rem);
+  --player-h: 0px;
+  color-scheme: light dark;
+}
+
+/* dark: follows the system until someone presses the switch (data-theme) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #121211;
+    --ink: #e8e5dc;
+    --mute: #8f8b81;
+    --faint: #3a3935;
+    --hot: #ff5b3a;
+  }
+}
+:root[data-theme='dark'] {
+  --paper: #121211;
+  --ink: #e8e5dc;
+  --mute: #8f8b81;
+  --faint: #3a3935;
+  --hot: #ff5b3a;
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+html.has-player {
+  --player-h: 5.75rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(1.0625rem, 0.95rem + 0.4vw, 1.1875rem);
+  line-height: 1.5;
+  padding: 0 var(--gutter) calc(var(--player-h) + 3rem);
+  text-rendering: optimizeLegibility;
+}
+
+main,
+.masthead,
+.colophon {
+  max-width: var(--measure);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+a:hover {
+  color: var(--hot);
+}
+
+:focus-visible {
+  outline: 2px solid var(--hot);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+.skip {
+  position: absolute;
+  left: -999px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.skip:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+/* ---- masthead ---- */
+
+.masthead {
+  padding: clamp(2.5rem, 8vw, 6rem) 0 clamp(2rem, 5vw, 3.5rem);
+}
+.wordmark {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 2.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+  text-decoration: none;
+  display: inline-block;
+}
+.masthead:not(.masthead--home) {
+  padding-bottom: 1.5rem;
+}
+.masthead:not(.masthead--home) .wordmark {
+  font-size: 1.05rem;
+}
+
+/* ---- sections, labels ---- */
+
+section {
+  margin: 0 0 clamp(3rem, 8vw, 4.75rem);
+}
+
+.label {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  margin: 0 0 1.4rem;
+}
+.label .count {
+  color: var(--mute);
+  margin-left: 0.6em;
+}
+
+.lede {
+  font-size: clamp(1.6rem, 1.1rem + 1.9vw, 2.15rem);
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  margin-bottom: 1.4rem;
+}
+
+.muted,
+.meta,
+.aside {
+  color: var(--mute);
+}
+.aside {
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.plain {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.crumbs {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--mute);
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-weight: 400;
+  font-size: clamp(2rem, 1.3rem + 3vw, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.5rem;
+  text-wrap: balance;
+}
+
+/* ---- play buttons: text, not widgets ---- */
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.play {
+  font-family: var(--mono);
+  text-align: left;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+.play:hover,
+.play.is-playing {
+  color: var(--hot);
+}
+.when-playing {
+  display: none;
+}
+.is-playing > .when-playing,
+html.is-playing .player-toggle > .when-playing {
+  display: inline;
+}
+.is-playing > .when-paused,
+html.is-playing .player-toggle > .when-paused {
+  display: none;
+}
+.play--big {
+  font-size: 1rem;
+}
+.play--icon {
+  text-decoration: none;
+  width: 1.6em;
+  text-align: left;
+}
+
+/* ---- records on the home page ---- */
+
+.records {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.record {
+  display: grid;
+  grid-template-columns: clamp(6.5rem, 22vw, 9.5rem) 1fr;
+  gap: clamp(1rem, 3vw, 1.75rem);
+  align-items: start;
+  padding: 0 0 2.25rem;
+}
+.record-cover img {
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--faint);
+  transition: transform 0.3s ease;
+}
+/* covers sit slightly crooked, as if pasted in by hand */
+.record:nth-child(3n + 1) .record-cover img {
+  transform: rotate(-0.8deg);
+}
+.record:nth-child(3n + 2) .record-cover img {
+  transform: rotate(0.6deg) translateY(2px);
+}
+.record:nth-child(3n) .record-cover img {
+  transform: rotate(-0.3deg) translateX(-2px);
+}
+.record:hover .record-cover img {
+  transform: none;
+}
+.record-cat {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--mute);
+  margin: 0 0 0.15rem;
+}
+.record-title {
+  font-weight: 400;
+  font-size: clamp(1.35rem, 1.1rem + 1vw, 1.65rem);
+  line-height: 1.15;
+  margin: 0 0 0.3rem;
+  letter-spacing: -0.01em;
+}
+.record-title a {
+  text-decoration: none;
+}
+.record-title a:hover {
+  text-decoration: underline;
+}
+.record-meta {
+  color: var(--mute);
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
+}
+.record.is-current .record-cat::after {
+  content: '← playing';
+  color: var(--hot);
+  margin-left: 0.9em;
+  white-space: nowrap;
+}
+
+/* albums matter more: bigger, first */
+.sublabel {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--mute);
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--faint);
+}
+.record-group + .record-group {
+  margin-top: 1.5rem;
+}
+.records--albums .record {
+  display: block;
+  padding-bottom: 2.75rem;
+}
+.records--albums .record-cover {
+  display: block;
+  max-width: 30rem;
+  margin-bottom: 1.25rem;
+}
+.records--albums .record-title {
+  font-size: clamp(1.45rem, 0.9rem + 3.5cqi, 2.4rem);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* the records column decides its own layout from its own width */
+.home-records {
+  container-type: inline-size;
+}
+@container (min-width: 30rem) {
+  .records {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+    gap: 3rem clamp(1.5rem, 4cqi, 2.75rem);
+  }
+  .record {
+    display: block;
+    padding: 0;
+  }
+  .record-cover {
+    display: block;
+    margin-bottom: 1.1rem;
+  }
+}
+@container (min-width: 24rem) {
+  /* albums: two to a row, bigger than the EPs */
+  .records--albums {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem clamp(2rem, 5cqi, 3.5rem);
+  }
+  .records--albums .record-cover {
+    max-width: none;
+  }
+}
+
+/* unfinished things */
+.stamp {
+  display: inline-block;
+  white-space: nowrap;
+  margin-left: 0.7em;
+  padding: 0.05em 0.45em 0.1em;
+  border: 1px solid var(--hot);
+  color: var(--hot);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: rotate(-2.5deg);
+  vertical-align: 0.1em;
+}
+.record--unfinished .record-cover img {
+  filter: grayscale(0.35) contrast(0.95);
+}
+.record--unfinished:hover .record-cover img {
+  filter: none;
+}
+.tl-silent {
+  color: var(--faint);
+  font-family: var(--mono);
+  text-align: left;
+}
+.tl-row--silent .tl-title {
+  color: var(--mute);
+}
+
+/* ---- release page ---- */
+
+.release-cover {
+  margin: 0 0 2rem;
+  max-width: 34rem;
+}
+.release-cover img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--faint);
+}
+.release-head {
+  margin-bottom: 2.5rem;
+}
+
+.tracklist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 3.5rem;
+  border-top: 1px solid var(--faint);
+}
+.tl-row {
+  display: grid;
+  grid-template-columns: 1.6em 2em 1fr auto auto;
+  gap: 0 0.75rem;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--faint);
+}
+.tl-n,
+.tl-info,
+.tl-dur {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--mute);
+}
+.tl-title {
+  text-decoration: none;
+}
+.tl-title:hover {
+  text-decoration: underline;
+}
+.tl-row.is-current .tl-title,
+.tl-row.is-current .tl-n {
+  color: var(--hot);
+}
+@media (max-width: 34rem) {
+  .tl-row {
+    grid-template-columns: 1.6em 1.6em 1fr auto;
+  }
+  .tl-info {
+    display: none;
+  }
+}
+
+.elsewhere {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--faint);
+}
+.pager a:last-child {
+  text-align: right;
+}
+
+/* ---- track page ---- */
+
+.track-head {
+  display: grid;
+  grid-template-columns: clamp(5.5rem, 20vw, 8.5rem) 1fr;
+  gap: clamp(1rem, 3vw, 1.75rem);
+  align-items: end;
+  margin-bottom: 2rem;
+}
+.track-head p:last-child {
+  margin: 0;
+}
+.track-cover img {
+  aspect-ratio: 1;
+  object-fit: cover;
+  transform: rotate(-0.6deg);
+}
+
+.lyrics {
+  margin-top: 3rem;
+}
+.stanza {
+  font-size: 1.15em;
+  line-height: 1.45;
+  margin: 0 0 0.9em;
+}
+.direction {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+  margin: 1.4em 0 0.6em;
+  max-width: 36rem;
+}
+.direction + .direction {
+  margin-top: -0.3em;
+}
+
+.brief blockquote {
+  margin: 0;
+  padding: 0 0 0 1.25rem;
+  border-left: 1px solid var(--faint);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--mute);
+  white-space: pre-line;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font-size: 0.95rem;
+}
+.details dt {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--mute);
+  padding-top: 0.2em;
+}
+.details dd {
+  margin: 0;
+}
+
+/* ---- waveform made of type ---- */
+
+.wave {
+  --p: 0%;
+  position: relative;
+  font-family: var(--mono);
+  line-height: 1;
+  white-space: pre;
+  overflow: hidden;
+  color: var(--faint);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  min-height: 1em;
+  letter-spacing: 0;
+}
+.wave-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--p);
+  overflow: hidden;
+  color: var(--ink);
+}
+.wave-probe {
+  position: absolute;
+  visibility: hidden;
+}
+.wave--big {
+  font-size: clamp(1.4rem, 1rem + 2vw, 2.2rem);
+  margin: 0 0 1rem;
+}
+html.is-playing .wave--big .wave-fill {
+  color: var(--hot);
+}
+
+/* ---- the player ---- */
+
+.player {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--paper);
+  border-top: 1px solid var(--ink);
+  padding: 0.65rem var(--gutter) calc(0.7rem + env(safe-area-inset-bottom));
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.player[hidden] {
+  display: none;
+}
+.player-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  max-width: var(--measure);
+}
+.player-toggle {
+  font-size: 1rem;
+  width: 1.4em;
+  text-align: left;
+}
+.player-toggle:hover {
+  color: var(--hot);
+}
+.player-now {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-title {
+  text-decoration: none;
+}
+.player-title:hover {
+  text-decoration: underline;
+}
+.player-release {
+  color: var(--mute);
+  margin-left: 0.6em;
+}
+.player.is-error .player-release {
+  color: var(--hot);
+}
+.player-time {
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+.player-skip {
+  display: flex;
+  gap: 0.7rem;
+}
+.player-skip button:not(:disabled):hover {
+  color: var(--hot);
+}
+.wave--player {
+  font-size: 0.95rem;
+  margin-top: 0.45rem;
+  max-width: var(--measure);
+}
+html.is-playing .wave--player .wave-fill {
+  color: var(--hot);
+}
+@media (max-width: 34rem) {
+  .player-release,
+  .player-time {
+    display: none;
+  }
+}
+
+/* ---- colophon ---- */
+
+.colophon {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--mute);
+  border-top: 1px solid var(--faint);
+  padding-top: 1.25rem;
+  line-height: 1.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* ---- big screens: spread out like a two-page spread ---- */
+
+@media (min-width: 68rem) {
+  :root {
+    --wide: 96rem;
+    --gap: clamp(3rem, 6vw, 7rem);
+  }
+  /* use the whole width: left column hugs the left gutter, right column the right one */
+  main,
+  .masthead,
+  .colophon,
+  .player-row,
+  .wave--player {
+    max-width: none;
+  }
+  .colophon p {
+    max-width: var(--measure);
+  }
+
+  /* home: words on the left, records on the right */
+  .home {
+    display: grid;
+    /* text column grows a little on huge screens; records take everything else */
+    grid-template-columns: minmax(0, clamp(26rem, 24vw, 34rem)) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: var(--gap);
+  }
+  .home > section {
+    grid-column: 1;
+  }
+  .home > .home-records {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
+  .home .lede {
+    font-size: clamp(1.6rem, 1rem + 1.2vw, 2.05rem);
+  }
+
+  /* record: cover pinned on the left, everything else beside it */
+  .release {
+    display: grid;
+    /* the cover never gets taller than the screen */
+    grid-template-columns: minmax(0, min(56rem, calc(100vh - 9rem))) minmax(0, 44rem);
+    justify-content: space-between;
+    column-gap: var(--gap);
+    align-items: start;
+  }
+  .release > .crumbs {
+    grid-column: 1 / -1;
+  }
+  .release-cover {
+    position: sticky;
+    top: 2rem;
+    max-width: none;
+    margin: 0;
+  }
+  .release-body {
+    max-width: var(--measure);
+  }
+
+  /* track: lyrics on the left, the machine's brief and the facts on the right */
+  .track {
+    display: grid;
+    grid-template-columns: minmax(0, 52rem) minmax(0, 36rem);
+    justify-content: space-between;
+    column-gap: var(--gap);
+    align-items: start;
+  }
+  .track > .crumbs,
+  .track > .pager {
+    grid-column: 1 / -1;
+  }
+  .track-side {
+    position: sticky;
+    top: 2rem;
+    padding-top: 1rem;
+  }
+  .track-side > section {
+    margin-bottom: 3rem;
+  }
+  .lyrics {
+    margin-bottom: 4rem;
+  }
+}
+
+/* ---- light / dark switch ---- */
+
+.theme-switch {
+  position: absolute;
+  top: clamp(1rem, 3vw, 2rem);
+  right: clamp(1rem, 3vw, 2rem);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+  padding: 0.4rem;
+}
+.theme-switch:hover {
+  color: var(--ink);
+}
+.theme-switch svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.theme-switch .moon-half {
+  fill: currentColor;
+}
+.theme-switch:hover svg {
+  transform: rotate(-25deg);
+}
+:root[data-theme='dark'] .theme-switch svg {
+  transform: rotate(180deg);
+}
+:root[data-theme='dark'] .theme-switch:hover svg {
+  transform: rotate(155deg);
+}
+.theme-switch .label-dark,
+:root[data-theme='dark'] .theme-switch .label-light {
+  display: none;
+}
+:root[data-theme='dark'] .theme-switch .label-dark {
+  display: inline;
+}
+
+/* the new theme spreads out from the switch like ink in water */
+html.theme-switching::view-transition-group(*),
+html.theme-switching::view-transition-old(*),
+html.theme-switching::view-transition-new(*) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.theme-switching::view-transition-old(root) {
+  z-index: 1;
+}
+html.theme-switching::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* ---- touch & click comfort ---------------------------------------------
+   Things still look like small typed words, but the area you can hit
+   around them is at least ~44px, and they answer when you hover/press. */
+
+:root {
+  --hover: color-mix(in srgb, var(--ink) 7%, transparent);
+  --press: color-mix(in srgb, var(--ink) 13%, transparent);
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* text play buttons: invisible padding, pulled back with negative margin */
+.play {
+  position: relative;
+  padding: 0.7rem 0.8rem;
+  margin: -0.7rem -0.8rem;
+  border-radius: 3px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.play:hover {
+  background: var(--hover);
+}
+.play:active {
+  background: var(--press);
+}
+
+/* the main "play the record / play" button reads as a button */
+.play--big {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 0.25rem 0 0;
+  padding: 0.8rem 1.15rem 0.8rem 1rem;
+  min-height: 2.9rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  text-decoration: none;
+}
+.play--big:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.play--big.is-playing {
+  border-color: var(--hot);
+}
+.play--big.is-playing:hover {
+  background: var(--hot);
+  color: var(--paper);
+}
+
+/* home: play straight from the cover */
+.record-art {
+  position: relative;
+}
+.cover-play {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  margin: 0;
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  color: var(--ink);
+  font-size: 1.05rem;
+  text-decoration: none;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 25%, transparent);
+  opacity: 0;
+  transform: translateY(4px) scale(0.92);
+  transition: opacity 0.18s ease, transform 0.18s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.records--albums .cover-play {
+  width: 4rem;
+  height: 4rem;
+  font-size: 1.3rem;
+  left: 1rem;
+  bottom: 1rem;
+}
+.cover-play > span {
+  line-height: 1;
+}
+.record-art:hover .cover-play,
+.cover-play:focus-visible,
+.cover-play.is-playing {
+  opacity: 1;
+  transform: none;
+}
+.cover-play:hover,
+.cover-play.is-playing {
+  background: var(--hot);
+  color: #fff;
+}
+@media (hover: none) {
+  .cover-play {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* tracklist: the whole row plays, the title still opens the track page */
+.tl-row {
+  grid-template-columns: 2.75rem 2em 1fr auto auto;
+  align-items: center;
+  padding: 0;
+  min-height: 3rem;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.tl-row:hover {
+  background: var(--hover);
+}
+.tl-row--silent {
+  cursor: default;
+}
+.tl-row--silent:hover {
+  background: none;
+}
+.tl-row .play--icon {
+  align-self: stretch;
+  width: 2.75rem;
+  margin: 0;
+  padding: 0 0 0 0.35rem;
+  border-radius: 0;
+  font-size: 0.95rem;
+}
+.tl-row .play--icon:hover {
+  background: none;
+}
+.tl-silent {
+  padding-left: 0.6rem;
+}
+.tl-title {
+  padding: 0.7rem 0;
+}
+.tl-dur {
+  padding-right: 0.5rem;
+}
+@media (max-width: 34rem) {
+  .tl-row {
+    grid-template-columns: 2.5rem 1.6em 1fr auto;
+  }
+}
+
+/* other small targets */
+.pager a,
+.crumbs a,
+.elsewhere a,
+.plain a,
+.details a {
+  display: inline-block;
+  padding: 0.45rem 0;
+  margin: -0.45rem 0;
+}
+.theme-switch {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 3px;
+}
+.theme-switch:hover {
+  background: var(--hover);
+}
+
+/* the player: proper targets, easy seeking */
+.player {
+  padding-top: 0.35rem;
+}
+.player-row {
+  align-items: center;
+  gap: 0.6rem;
+}
+.player-toggle {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: -0.7rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.player-toggle:hover {
+  background: var(--hover);
+}
+.player-toggle:active {
+  background: var(--press);
+}
+.player-skip {
+  gap: 0;
+}
+.player-skip button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.6rem;
+  border-radius: 3px;
+}
+.player-skip button:not(:disabled):hover {
+  background: var(--hover);
+}
+.player-title {
+  padding: 0.6rem 0;
+}
+.wave--player {
+  margin-top: 0;
+  padding: 0.35rem 0 0.15rem;
+  background-clip: content-box;
+}
+.wave--player .wave-fill,
+.wave--player .wave-base {
+  top: 0.35rem;
+}
+.wave--big {
+  padding: 0.5rem 0;
+}
+.wave--big .wave-fill {
+  top: 0.5rem;
+}
+.wave:hover .wave-base {
+  color: color-mix(in srgb, var(--faint) 60%, var(--mute));
+}
+html.has-player {
+  --player-h: 6.25rem;
+}
+
+.keys kbd {
+  font: inherit;
+  padding: 0 0.3em;
+  border: 1px solid var(--faint);
+  border-radius: 2px;
+}
+@media (hover: none) {
+  .keys {
+    display: none;
+  }
+}

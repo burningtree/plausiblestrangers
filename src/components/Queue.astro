@@ -1,0 +1,13 @@
+---
+// Embeds a record's playable tracks (in order) so play buttons on the page can hand it to the player.
+import { hasAudio, playable, type Release, type Track } from '../lib/catalog';
+
+interface Props {
+  release: Release;
+  tracks: Track[];
+}
+const { release, tracks } = Astro.props;
+const json = JSON.stringify(tracks.filter(hasAudio).map((t) => playable(t, release)));
+---
+
+<script type="application/json" data-queue={release.id} set:html={json} />

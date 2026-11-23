@@ -1,0 +1,73 @@
+---
+// Light / dark switch. The choice is remembered in this browser only;
+// with no choice made, the site follows the system setting.
+---
+
+<button class="theme-switch" type="button" data-theme-switch aria-label="switch to dark mode">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+    <path class="moon-half" d="M12 3a9 9 0 0 1 0 18z"></path>
+  </svg>
+  <span class="label-light">light</span><span class="label-dark">dark</span>
+</button>
+
+<script>
+  const KEY = 'ps:theme';
+  const root = document.documentElement;
+  const system = matchMedia('(prefers-color-scheme: dark)');
+
+  const stored = () => {
+    try {
+      return localStorage.getItem(KEY);
+    } catch {
+      return null;
+    }
+  };
+  const resolved = () => stored() ?? (system.matches ? 'dark' : 'light');
+
+  function apply(theme = resolved()) {
+    root.dataset.theme = theme;
+    document.querySelectorAll('[data-theme-switch]').forEach((b) => {
+      b.setAttribute('aria-label', `switch to ${theme === 'dark' ? 'light' : 'dark'} mode`);
+    });
+  }
+
+  function toggle(btn: HTMLElement) {
+    const next = resolved() === 'dark' ? 'light' : 'dark';
+    try {
+      localStorage.setItem(KEY, next);
+    } catch {}
+
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!document.startViewTransition || calm) return apply(next);
+
+    const r = btn.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+
+    root.classList.add('theme-switching');
+    const vt = document.startViewTransition(() => apply(next));
+    vt.ready
+      .then(() =>
+        root.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+          { duration: 650, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' },
+        ),
+      )
+      .catch(() => {});
+    vt.finished.finally(() => root.classList.remove('theme-switching'));
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as Element).closest<HTMLElement>('[data-theme-switch]');
+    if (btn) toggle(btn);
+  });
+  system.addEventListener('change', () => {
+    if (!stored()) apply();
+  });
+  // page navigation replaces <html> attributes — put the theme back
+  document.addEventListener('astro:after-swap', () => apply());
+  document.addEventListener('astro:page-load', () => apply());
+  apply();
+</script>

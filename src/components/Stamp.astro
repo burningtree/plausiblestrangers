@@ -1,0 +1,9 @@
+---
+// A little rubber stamp for records that aren't done yet.
+interface Props {
+  label?: string;
+}
+const { label = 'unfinished' } = Astro.props;
+---
+
+<span class="stamp">{label}</span>
