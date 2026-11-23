@@ -17,7 +17,10 @@ export const site = {
     {
       name: 'Tree',
       role: 'ideas, direction, words, the final say',
-      bio: 'Has loved electronic music for as long as they can remember and always wanted to make some, without the training, the instruments or the studio to do it. Now spends evenings listening to a machine try, and deciding which tries are worth keeping.',
+      location: 'Czech Republic',
+      // a photo in public/art/people/, e.g. '/art/people/tree.webp'
+      photo: '/art/people/tree.webp' as string | undefined,
+      bio: "I've loved electronic music for as long as I can remember: French electro and electroclash, Czech oddballs like MIDI Lidi, anything that makes a dancefloor feel slightly wrong in a good way. I always wanted to make my own, but never had the training, the instruments or the studio. Now I spend my evenings with a machine that plays everything I can't. I bring the ideas and the words, listen to a lot of tries, and keep the few that feel like they should exist.",
       links: [] as { label: string; href: string }[],
     },
   ],

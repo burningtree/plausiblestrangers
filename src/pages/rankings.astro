@@ -1,0 +1,312 @@
+---
+// Every analysed song, ranked by one measurement at a time (loudness,
+// dynamics, brightness…). Pick a measure, flip the order; shareable as
+// /rankings/?by=width&order=low.
+import Base from '../layouts/Base.astro';
+import Queue from '../components/Queue.astro';
+import PlayButton from '../components/PlayButton.astro';
+import {
+  getCatalog,
+  trackAnalysis,
+  trackUrl,
+  hasAudio,
+  playable,
+  fmtTime,
+  type Analysis,
+  type Release,
+  type Track,
+} from '../lib/catalog';
+import { graph, breadcrumbs, abs } from '../lib/seo';
+
+type Metric = {
+  key: string;
+  label: string;
+  high: string; // name of the top end: "loudest"
+  low: string; // and the bottom end: "quietest"
+  value: (a: Analysis, t: Track) => number | null | undefined;
+  show: (v: number) => string;
+  about: string;
+};
+const METRICS: Metric[] = [
+  {
+    key: 'loudness',
+    label: 'loudness',
+    high: 'loudest',
+    low: 'quietest',
+    value: (a) => a.lufs,
+    show: (v) => `${v.toFixed(1)} LUFS`,
+    about: 'Integrated loudness: how loud the whole song feels, on average.',
+  },
+  {
+    key: 'dynamics',
+    label: 'dynamics',
+    high: 'most dynamic',
+    low: 'flattest',
+    value: (a) => a.lra,
+    show: (v) => `${v.toFixed(1)} LU`,
+    about: 'Loudness range: how far the song travels between its quiet and loud parts.',
+  },
+  {
+    key: 'brightness',
+    label: 'brightness',
+    high: 'brightest',
+    low: 'darkest',
+    value: (a) => a.brightness,
+    show: (v) => `${Math.round(v)} Hz`,
+    about: 'Spectral centre: where the middle of the sound sits, from dark to bright.',
+  },
+  {
+    key: 'width',
+    label: 'stereo width',
+    high: 'widest',
+    low: 'narrowest',
+    value: (a) => a.width,
+    show: (v) => `${Math.round(v * 100)}%`,
+    about: 'How much differs between left and right: 0% is mono.',
+  },
+  {
+    key: 'bass',
+    label: 'bass weight',
+    high: 'heaviest',
+    low: 'lightest',
+    value: (a) => (a.balance.sub ?? 0) + (a.balance.bass ?? 0),
+    show: (v) => `${Math.round(v * 100)}%`,
+    about: 'The share of energy in the sub and bass, below about 250 Hz.',
+  },
+  {
+    key: 'tempo',
+    label: 'tempo',
+    high: 'fastest',
+    low: 'slowest',
+    value: (_, t) => t.data.bpm,
+    show: (v) => `${Math.round(v)} bpm`,
+    about: 'Beats per minute, where we know it.',
+  },
+  {
+    key: 'length',
+    label: 'length',
+    high: 'longest',
+    low: 'shortest',
+    value: (_, t) => t.data.duration,
+    show: (v) => fmtTime(v),
+    about: 'How long the song lasts.',
+  },
+];
+
+const { releases, tracksOf } = await getCatalog();
+
+// each recording once, even when it's on two records (same analysis):
+// the first record it appeared on wins
+type Entry = { t: Track; r: Release; a: Analysis; queueIndex: number; id: string };
+const seen = new Set<string>();
+const entries: Entry[] = [];
+const usedReleases: { r: Release; tracks: Track[] }[] = [];
+for (const r of releases) {
+  const tracks = tracksOf(r.id);
+  const ready = tracks.filter(hasAudio);
+  let used = false;
+  for (const t of ready) {
+    const a = trackAnalysis(t);
+    if (!a || seen.has(a.spec)) continue;
+    seen.add(a.spec);
+    entries.push({ t, r, a, queueIndex: ready.indexOf(t), id: playable(t, r).id });
+    used = true;
+  }
+  if (used) usedReleases.push({ r, tracks });
+}
+
+// every value, and each measure's range for the bars
+const values = entries.map((e) => Object.fromEntries(METRICS.map((m) => [m.key, m.value(e.a, e.t) ?? null])));
+const ranges = Object.fromEntries(
+  METRICS.map((m) => {
+    const vs = values.map((v) => v[m.key]).filter((v): v is number => v != null);
+    return [m.key, { min: Math.min(...vs), max: Math.max(...vs) }];
+  }),
+);
+const labels = Object.fromEntries(METRICS.map((m) => [m.key, { high: m.high, low: m.low, about: m.about }]));
+const shown = Object.fromEntries(
+  METRICS.map((m) => [m.key, values.map((v) => (v[m.key] == null ? '—' : m.show(v[m.key] as number)))]),
+);
+
+// first view without JavaScript: loudest first
+const first = METRICS[0];
+const order = entries
+  .map((_, i) => i)
+  .sort((x, y) => (values[y][first.key] ?? -Infinity) - (values[x][first.key] ?? -Infinity));
+const CELLS = 20;
+const fill = (key: string, v: number | null) => {
+  if (v == null) return 0;
+  const { min, max } = ranges[key];
+  return Math.max(1, Math.round(((v - min) / (max - min || 1)) * (CELLS - 1)) + 1);
+};
+// shared places for equal values, as shown: 1, 1, 1, 4
+const places = order.map((i, n) => n);
+order.forEach((i, n) => {
+  if (n > 0 && shown[first.key][i] === shown[first.key][order[n - 1]]) places[n] = places[n - 1];
+});
+const data = JSON.stringify({ ranges, labels, shown, values, cells: CELLS }).replace(/</g, '\\u003c');
+---
+
+<Base
+  title="rankings"
+  description={`All ${entries.length} of our analysed songs, ranked by loudness, dynamics, brightness, stereo width, bass, tempo and length.`}
+  jsonLd={graph(
+    {
+      '@type': 'ItemList',
+      name: 'Plausible Strangers songs ranked by loudness',
+      url: abs('/rankings/'),
+      numberOfItems: entries.length,
+      itemListElement: order.map((i, n) => ({
+        '@type': 'ListItem',
+        position: n + 1,
+        url: abs(trackUrl(entries[i].t)),
+        name: entries[i].t.data.title,
+      })),
+    },
+    breadcrumbs([['plausible strangers.', '/'], ['library', '/library/'], ['rankings', '/rankings/']]),
+  )}
+>
+  {usedReleases.map(({ r, tracks }) => <Queue release={r} tracks={tracks} />)}
+  <section class="rankings" aria-labelledby="rankings-h">
+    <p class="crumbs"><a href="/">home</a> / <a href="/library/">library</a> / rankings</p>
+    <h1 id="rankings-h" class="title">rankings</h1>
+    <p class="lede rankings-lede">
+      All {entries.length} songs, measured and lined up. Pick what to rank them by.
+    </p>
+
+    <div class="lib-controls rank-controls">
+      <fieldset class="seg" data-by>
+        <legend>rank by</legend>
+        {
+          METRICS.map((m, i) => (
+            <button type="button" data-value={m.key} aria-pressed={String(i === 0)}>
+              {m.label}
+            </button>
+          ))
+        }
+      </fieldset>
+      <fieldset class="seg" data-order>
+        <legend>first</legend>
+        <button type="button" data-value="high" aria-pressed="true">{first.high}</button>
+        <button type="button" data-value="low" aria-pressed="false">{first.low}</button>
+      </fieldset>
+    </div>
+    <p class="rank-about" data-about>{first.about}</p>
+
+    <ol class="rank-list" data-rank-list>
+      {
+        order.map((i, n) => {
+          const e = entries[i];
+          const v = values[i][first.key];
+          const on = fill(first.key, v);
+          return (
+            <li class="rank-row" data-row={e.id} data-i={i}>
+              <span class:list={['rank-n', { 'is-top': places[n] === 0 }]}>{places[n] + 1}</span>
+              <PlayButton queue={e.r.id} index={e.queueIndex} id={e.id} iconOnly label={`play ${e.t.data.title}`} />
+              <span class="rank-song">
+                <a href={trackUrl(e.t)}>{e.t.data.title}</a>
+                <span class="rank-record">{e.r.data.title}</span>
+              </span>
+              <span class="balance-bar rank-bar" aria-hidden="true">
+                {Array.from({ length: CELLS }, (_, c) => (
+                  <i class:list={{ on: c < on, hot: c < on && places[n] === 0 }} />
+                ))}
+              </span>
+              <span class="rank-v">{shown[first.key][i]}</span>
+            </li>
+          );
+        })
+      }
+    </ol>
+    <p class="muted rank-note">
+      Measured from the released audio files. Each song's page shows the whole picture, under “the sound, measured”.
+    </p>
+  </section>
+  <script type="application/json" id="rank-data" set:html={data} />
+</Base>
+
+<script>
+  type Data = {
+    ranges: Record<string, { min: number; max: number }>;
+    labels: Record<string, { high: string; low: string; about: string }>;
+    shown: Record<string, string[]>;
+    values: Record<string, number | null>[];
+    cells: number;
+  };
+
+  function setup() {
+    const list = document.querySelector<HTMLOListElement>('[data-rank-list]');
+    const dataEl = document.getElementById('rank-data');
+    if (!list || !dataEl || list.dataset.ready) return;
+    list.dataset.ready = '1';
+    const data: Data = JSON.parse(dataEl.textContent || '{}');
+    const byButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-by] button')];
+    const orderButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-order] button')];
+    const about = document.querySelector<HTMLElement>('[data-about]')!;
+    const rows = [...list.querySelectorAll<HTMLLIElement>('.rank-row')];
+
+    const params = new URLSearchParams(location.search);
+    let by = data.labels[params.get('by') ?? ''] ? params.get('by')! : 'loudness';
+    let order = params.get('order') === 'low' ? 'low' : 'high';
+
+    function render() {
+      byButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === by)));
+      orderButtons.forEach((b) => {
+        b.setAttribute('aria-pressed', String(b.dataset.value === order));
+        b.textContent = data.labels[by][b.dataset.value as 'high' | 'low'];
+      });
+      about.textContent = data.labels[by].about;
+      const { min, max } = data.ranges[by];
+      const v = (row: HTMLElement) => data.values[Number(row.dataset.i)][by];
+      // songs without this measure always go last
+      const sorted = [...rows].sort((a, b) => {
+        const x = v(a);
+        const y = v(b);
+        if (x == null || y == null) return (x == null ? 1 : 0) - (y == null ? 1 : 0);
+        return order === 'high' ? y - x : x - y;
+      });
+      let rank = 0;
+      let prev = '';
+      sorted.forEach((row, n) => {
+        const value = v(row);
+        // equal values (as shown) share a place: 1, 1, 1, 4
+        const text = data.shown[by][Number(row.dataset.i)];
+        if (text !== prev) rank = n + 1;
+        prev = text;
+        const num = row.querySelector('.rank-n')!;
+        num.textContent = value == null ? '–' : String(rank);
+        num.classList.toggle('is-top', value != null && rank === 1);
+        row.querySelector('.rank-v')!.textContent = data.shown[by][Number(row.dataset.i)];
+        const on = value == null ? 0 : Math.max(1, Math.round(((value - min) / (max - min || 1)) * (data.cells - 1)) + 1);
+        row.querySelectorAll('.rank-bar i').forEach((cell, c) => {
+          cell.classList.toggle('on', c < on);
+          cell.classList.toggle('hot', c < on && rank === 1);
+        });
+      });
+      list.append(...sorted);
+      const url = new URL(location.href);
+      if (by === 'loudness' && order === 'high') url.search = '';
+      else {
+        url.searchParams.set('by', by);
+        if (order === 'low') url.searchParams.set('order', 'low');
+        else url.searchParams.delete('order');
+      }
+      history.replaceState(history.state, '', url);
+    }
+
+    byButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        by = b.dataset.value!;
+        render();
+      }),
+    );
+    orderButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        order = b.dataset.value!;
+        render();
+      }),
+    );
+    if (by !== 'loudness' || order !== 'high') render();
+  }
+  document.addEventListener('astro:page-load', setup);
+</script>

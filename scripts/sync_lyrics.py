@@ -274,9 +274,9 @@ def audit_track(rows, lines, adjustments, stem_available, transcript):
         if row is None:
             continue
         text, cues = row
+        offsets = {(left, right) for left, right, _, _ in cues}
         untimed = [text[start:end] for _, start, end in tokens(text)
-                   if not any(left <= utf16_offset(text, start) and utf16_offset(text, end) <= right
-                              for left, right, _, _ in cues)]
+                   if (utf16_offset(text, start), utf16_offset(text, end)) not in offsets]
         if untimed:
             partial.append({"line": i + 1, "text": text, "untimed_words": untimed})
     long_words = [
@@ -306,6 +306,7 @@ def main():
     scope.add_argument("--release", help="limit changes to lyric tracks in this release")
     args = parser.parse_args()
     items = list(tracks())
+    source_by_audio = {audio: key for key, audio, _, duplicate in items if not duplicate}
     if args.track:
         audio = next((audio for key, audio, _, _ in items if key == args.track), None)
         if audio is None:
@@ -316,17 +317,17 @@ def main():
         if not items:
             parser.error(f"no playable lyric tracks in release: {args.release}")
     if args.mode != "align":
-        transcribe([(k, a) for k, a, _, dup in items if not dup], args.force)
+        audio_files = dict.fromkeys(audio for _, audio, _, _ in items)
+        transcribe([(source_by_audio[audio], audio) for audio in audio_files], args.force)
 
     onsets = json.loads(ONSETS.read_text())
     reviewed = json.loads(REVIEWED.read_text())
     scoped = args.track or args.release
     out = json.loads(OUT.read_text()) if scoped and OUT.exists() else {}
     audit = {}
-    by_audio = {}
     levels_by_audio = {}
     for key, audio, lines, _ in items:
-        src = by_audio.setdefault(audio, key)
+        src = source_by_audio[audio]
         tx = CACHE / "tx" / f"{stem(src)}.json"
         vocals = CACHE / "vocals" / f"{stem(src)}.wav"
         transcript = json.loads(tx.read_text()) if tx.exists() else {}

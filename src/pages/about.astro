@@ -70,7 +70,13 @@ const songs = released + archive.length;
     },
     band({
       foundingDate: '2026',
-      member: site.people.map((p) => ({ '@type': 'Person', name: p.name, roleName: p.role })),
+      member: site.people.map((p) => ({
+        '@type': 'Person',
+        name: p.name,
+        roleName: p.role,
+        ...(p.location && { homeLocation: { '@type': 'Country', name: p.location } }),
+        ...(p.photo && { image: abs(p.photo) }),
+      })),
     }),
     breadcrumbs([['plausible strangers.', '/'], ['about', '/about/']]),
   )}
@@ -80,6 +86,7 @@ const songs = released + archive.length;
     <h1 class="title">about</h1>
 
     <div class="about-layout">
+    <aside class="about-side">
     <figure class="about-portrait">
       <img
         src={PORTRAIT}
@@ -92,6 +99,36 @@ const songs = released + archive.length;
         alt="Two figures seen from behind, holding hands in a grey fog, under the words PLAUSIBLE STRANGERS in heavy worn type."
       />
     </figure>
+
+    <section class="about-people-section" aria-labelledby="a-people">
+      <h2 id="a-people" class="label">the people behind it</h2>
+      <ul class="about-people">
+        {
+          site.people.map((p) => (
+            <li class:list={{ 'has-photo': p.photo }}>
+              {p.photo && <img class="about-person-photo" src={p.photo} alt={`${p.name}`} width="460" height="460" loading="lazy" />}
+              <div>
+              <p class="about-person">
+                <strong>{p.name}</strong> <span class="muted">{p.role}</span>
+                {p.location && <span class="about-person-where">{p.location}</span>}
+              </p>
+              <p>{p.bio}</p>
+              {p.links.length > 0 && (
+                <p class="about-person-links">
+                  {p.links.map((l) => (
+                    <a href={l.href} rel="me">
+                      {l.label} <Icon name="arrow-up-right" />
+                    </a>
+                  ))}
+                </p>
+              )}
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+    </aside>
     <div class="about-text">
 
     <section aria-labelledby="a-what">
@@ -160,31 +197,6 @@ const songs = released + archive.length;
         So everything is open. The lyrics, the instructions, the unfinished album, the songs we decided not to
         release. You can see exactly where the human ends and the machine begins, or at least where we think it does.
       </p>
-    </section>
-
-    <section aria-labelledby="a-people">
-      <h2 id="a-people" class="label">the people behind it</h2>
-      <ul class="about-people">
-        {
-          site.people.map((p) => (
-            <li>
-              <p class="about-person">
-                <strong>{p.name}</strong> <span class="muted">{p.role}</span>
-              </p>
-              <p>{p.bio}</p>
-              {p.links.length > 0 && (
-                <p class="about-person-links">
-                  {p.links.map((l) => (
-                    <a href={l.href} rel="me">
-                      {l.label} <Icon name="arrow-up-right" />
-                    </a>
-                  ))}
-                </p>
-              )}
-            </li>
-          ))
-        }
-      </ul>
     </section>
 
     <section aria-labelledby="a-here">
@@ -260,6 +272,25 @@ const songs = released + archive.length;
     </ul>
     </div>
     <script is:inline>
+      // the sticky side column: if it's taller than the window, let it stop
+      // with its bottom in view (negative top) instead of hiding the people
+      (() => {
+        const side = document.querySelector('.about-side');
+        if (!side) return;
+        const place = () =>
+          side.style.setProperty('--side-top', `${Math.min(32, innerHeight - side.offsetHeight - 32)}px`);
+        const ro = new ResizeObserver(place);
+        ro.observe(side);
+        addEventListener('resize', place);
+        document.addEventListener(
+          'astro:before-swap',
+          () => {
+            ro.disconnect();
+            removeEventListener('resize', place);
+          },
+          { once: true },
+        );
+      })();
       // a new order on every visit, so the big tiles land somewhere different each time
       (() => {
         const grid = document.querySelector('.influence-grid');

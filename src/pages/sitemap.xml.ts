@@ -16,6 +16,7 @@ export const GET: APIRoute = async () => {
     { path: '/', priority: 1, lastmod: latest([...releases.map((r) => r.data.date), ...news.map((n) => n.data.date)]) },
     { path: '/about/', priority: 0.8 },
     { path: '/library/', priority: 0.8 },
+    { path: '/rankings/', priority: 0.5 },
     { path: '/news/', priority: 0.6, lastmod: news[0]?.data.date },
     ...releases.flatMap((r) => {
       const tracks = tracksOf(r.id);

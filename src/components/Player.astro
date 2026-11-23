@@ -240,14 +240,13 @@ import Icon from './Icon.astro';
     if (line) highlightLyricWord(barText, activeLyric(line.words, now));
   }
 
-  // ---- the track page follows the active word or the gap between timed lines
+  // ---- show the active word or the gap between timed lines on the track page
   let lyricEl: HTMLElement | null = null;
   let lyricCopy: HTMLElement | null = null;
   let gapEl: HTMLElement | null = null;
   let lyricLines = new Map<number, HTMLElement>();
   let lyricNow: HTMLElement | undefined;
   let gapAfter: number | undefined;
-  let userScrolled = 0;
 
   function bindLyrics() {
     lyricEl = document.querySelector<HTMLElement>('.lyrics[data-track]');
@@ -259,15 +258,6 @@ import Icon from './Icon.astro';
       Array.from(lyricEl?.querySelectorAll<HTMLElement>('[data-li]') ?? [],
         (el) => [Number(el.dataset.li), el]),
     );
-  }
-
-  function followLyric(el: HTMLElement) {
-    if (audio.paused || lyricCopy?.hidden || Date.now() - userScrolled <= 4000) return;
-    const bounds = el.getBoundingClientRect();
-    if (bounds.top < 80 || bounds.bottom > innerHeight - player.offsetHeight - 60) {
-      const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-      el.scrollIntoView({ block: 'center', behavior });
-    }
   }
 
   function syncLyrics(item?: Item) {
@@ -300,7 +290,6 @@ import Icon from './Icon.astro';
         gapEl.textContent = '';
       }
       gapAfter = undefined;
-      if (active && changed) followLyric(active);
       return;
     }
 
@@ -311,15 +300,12 @@ import Icon from './Icon.astro';
       (anchor ?? lyricCopy).prepend(gapEl);
       lyricLines.forEach((line, i) => line.classList.toggle('is-past', i <= after));
       gapEl.hidden = false;
-      followLyric(anchor ?? gapEl);
     }
     gapEl.classList.toggle('is-counting', !audio.paused);
     const seconds = (Math.ceil((gap.end - now) * 10) / 10).toFixed(1);
     const text = gap.next ? `−${seconds}s` : `${seconds}s left`;
     if (gapEl.textContent !== text) gapEl.textContent = text;
   }
-  addEventListener('wheel', () => (userScrolled = Date.now()), { passive: true });
-  addEventListener('touchmove', () => (userScrolled = Date.now()), { passive: true });
 
   // the visualiser (and anything else) can ask what's playing
   (window as any).__ps = {
@@ -911,7 +897,6 @@ import Icon from './Icon.astro';
         const i = Number(btn?.dataset.index);
         if (q?.[i]) load(q, i, { time: t0 });
       }
-      userScrolled = 0;
       return;
     }
     // a tracklist row plays its track, unless you clicked the title link

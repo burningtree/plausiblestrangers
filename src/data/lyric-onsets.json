@@ -4,5 +4,10 @@
     { "line": 1, "text": "You borrowed my shape.", "offset": 0, "start": 40.93 },
     { "line": 2, "text": "Neither of us", "offset": 0, "start": 44.88 },
     { "line": 3, "text": "kept the receipt.", "offset": 0, "start": 51.64 }
+  ],
+  "/audio/archive/small-blue-ladder.m4a": [
+    {"line": 9, "text": "The kettle’s wearing glue", "offset": 0, "start": 60.18},
+    {"line": 17, "text": "Count to three", "offset": 0, "start": 97.76},
+    {"line": 19, "text": "Let it be", "offset": 0, "start": 107.12}
   ]
 }

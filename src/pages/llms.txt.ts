@@ -49,6 +49,7 @@ ${records.join('\n')}
 
 - [About](${abs('/about/')}): what the project is, how a song happens, and the artists who inspire it
 - [Library](${abs('/library/')}): every song, released and unreleased, searchable, with BPM, key and loudness
+- [Rankings](${abs('/rankings/')}): every song ranked by loudness, dynamics, brightness, stereo width, bass, tempo and length
 - [News](${abs('/news/')}): announcements ([RSS](${abs('/rss.xml')}))
 
 ## News

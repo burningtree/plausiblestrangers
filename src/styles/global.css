@@ -1834,10 +1834,9 @@ a .icon {
 
 @media (max-width: 48rem) {
   .lyric-gap {
-    position: static;
-    transform: none;
-    vertical-align: middle;
-    margin-inline-end: 0.5rem;
+    inset-inline: 0 auto;
+    top: 0;
+    transform: translateY(-100%);
   }
 }
 
@@ -3076,8 +3075,23 @@ html {
 .about-after {
   max-width: var(--measure);
 }
+/* phones: picture, then the text, then the people (the side column dissolves) */
+.about-layout {
+  display: flex;
+  flex-direction: column;
+}
+.about-side {
+  display: contents;
+}
 .about-portrait {
   margin: 0 0 2.5rem;
+  order: 0;
+}
+.about-layout > .about-text {
+  order: 1;
+}
+.about-people-section {
+  order: 2;
 }
 .about-portrait img {
   display: block;
@@ -3097,14 +3111,23 @@ html {
     grid-column: 1;
     grid-row: 1;
   }
-  .about-portrait {
+  /* the picture with the people under it, beside the text; it stays in view
+     while you read (--side-top is set in about.astro, so a column taller than
+     the window stops with its bottom in view rather than its top) */
+  .about-side {
+    display: block;
     grid-column: 2;
     grid-row: 1;
     position: sticky;
-    top: 2rem;
-    margin: 0;
+    top: var(--side-top, 2rem);
     width: min(100%, calc(100vh - 7rem));
     justify-self: end;
+  }
+  .about-portrait {
+    margin: 0 0 2.5rem;
+  }
+  .about-people-section {
+    margin-bottom: 0;
   }
 }
 .about section {
@@ -3162,6 +3185,26 @@ html {
 .about-person .muted {
   font-family: var(--mono);
   font-size: 0.75rem;
+}
+.about-person-where {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--mute);
+  margin-top: 0.15rem;
+}
+.about-people li.has-photo {
+  display: grid;
+  grid-template-columns: clamp(5rem, 18vw, 8rem) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.about-person-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
 }
 .about-person-links {
   display: flex;
@@ -3579,4 +3622,102 @@ a.influence-name:hover {
   aspect-ratio: auto;
   width: 100%;
   height: 100%;
+}
+
+/* ---- rankings: every song lined up by one measurement ---- */
+.rankings-lede {
+  max-width: var(--measure);
+}
+.rank-controls {
+  margin: 2rem 0 0.75rem;
+}
+.rank-about {
+  margin: 0 0 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--mute);
+}
+.rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--faint);
+}
+.rank-row {
+  display: grid;
+  grid-template-columns: 2rem 2.25rem minmax(0, 1.2fr) minmax(6rem, 1fr) 5.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--faint) 60%, transparent);
+}
+.rank-row.is-current .rank-song a {
+  color: var(--hot);
+}
+.rank-n {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--mute);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rank-n.is-top {
+  color: var(--hot);
+}
+.rank-song {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rank-song a {
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-song a:hover {
+  color: var(--hot);
+}
+.rank-record {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-bar {
+  grid-template-columns: repeat(20, 1fr);
+}
+.rank-v {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rank-note {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+}
+@media (max-width: 40rem) {
+  /* phones: the bar goes under the name */
+  .rank-row {
+    grid-template-columns: 1.5rem 2.25rem minmax(0, 1fr) auto;
+    row-gap: 0.35rem;
+  }
+  .rank-bar {
+    grid-column: 3 / -1;
+    grid-row: 2;
+  }
+}
+a.stat-note {
+  color: var(--mute);
+  text-decoration: underline;
+  text-decoration-color: var(--faint);
+  text-underline-offset: 0.2em;
+}
+a.stat-note:hover {
+  color: var(--hot);
 }

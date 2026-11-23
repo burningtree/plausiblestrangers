@@ -31,26 +31,32 @@ const pct = {
 const compare = (p: number | undefined, more: string, most: string, least: string) =>
   p == null ? '' : p >= 98 ? `the ${most} we have` : p <= 2 ? `the ${least} we have` : `${more} than ${p}% of our songs`;
 
-const stats: { k: string; v: string; note: string }[] = [
+// each comparison links to that ranking, from the end this song is nearer to
+const rank = (by: string, p: number | undefined) => `/rankings/?by=${by}${p != null && p < 50 ? '&order=low' : ''}`;
+const stats: { k: string; v: string; note: string; href?: string }[] = [
   {
     k: 'loudness',
     v: a.lufs != null ? `${a.lufs.toFixed(1)} LUFS` : '—',
     note: compare(pct.lufs, 'louder', 'loudest', 'quietest'),
+    href: rank('loudness', pct.lufs),
   },
   {
     k: 'dynamics',
     v: a.lra != null ? `${a.lra.toFixed(1)} LU range` : '—',
     note: compare(pct.lra, 'more dynamic', 'most dynamic', 'flattest'),
+    href: rank('dynamics', pct.lra),
   },
   {
     k: 'brightness',
     v: `${a.brightness} Hz centre`,
     note: compare(pct.brightness, 'brighter', 'brightest', 'darkest'),
+    href: rank('brightness', pct.brightness),
   },
   {
     k: 'stereo width',
     v: `${Math.round(a.width * 100)}%`,
     note: compare(pct.width, 'wider', 'widest', 'narrowest'),
+    href: rank('width', pct.width),
   },
   { k: 'peak', v: `${a.peak.toFixed(1)} dBFS`, note: a.peak > -0.5 ? 'right up against the ceiling' : '' },
 ];
@@ -58,7 +64,7 @@ const stats: { k: string; v: string; note: string }[] = [
 ---
 
 <section class="sound-stats" aria-labelledby="sound-h">
-  <h2 id="sound-h" class="label">the sound, measured</h2>
+  <h2 id="sound-h" class="label">the sound, measured <a class="label-link" href="/rankings/">all songs ranked →</a></h2>
   <div class="analysis-grid">
     <div>
       <h3 class="sublabel">where the energy sits</h3>
@@ -91,7 +97,7 @@ const stats: { k: string; v: string; note: string }[] = [
               <dt>{s.k}</dt>
               <dd>
                 {s.v}
-                {s.note && <span class="stat-note">{s.note}</span>}
+                {s.note && (s.href ? <a class="stat-note" href={s.href}>{s.note}</a> : <span class="stat-note">{s.note}</span>)}
               </dd>
             </>
           ))

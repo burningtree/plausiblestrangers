@@ -17,7 +17,8 @@
     {"line": 29, "prompt": "BOUM!", "lines": ["BOUM BOUM!", "BOUM BOUM!"]}
   ],
   "/audio/i-am-your-bug/04-automatic-desire.m4a": [
-    {"line": 15, "prompt": "Turn it up", "lines": ["Turn it up", "Turn it up"]}
+    {"line": 15, "prompt": "Turn it up", "lines": ["Turn it up", "Turn it up"]},
+    {"line": 42, "prompt": "Automatic desire", "lines": []}
   ],
   "/audio/i-am-your-bug/05-cinq-cents-claudias.m4a": [
     {"line": 3, "prompt": "*(click... click... click...)*", "lines": []},
@@ -43,5 +44,31 @@
     {"line": 16, "prompt": "Somewhere in the morning", "lines": ["Does it matter in the morning?"]},
     {"line": 25, "prompt": "We were there.", "lines": ["Were we there?", "Were we there?", "Were we there?"]},
     {"line": 26, "prompt": "I remember the floor.", "lines": ["I remember the floor.", "I remember the floor.", "I remember the floor."]}
+  ],
+  "/audio/baroque-acid/03-baroque-acid-apres-minuit-mix.m4a": [
+    {"line": 5, "prompt": "La beauté.", "lines": ["La beauté.", "La beauté."]},
+    {"line": 7, "prompt": "La beauté.", "lines": ["La beauté.", "La beauté."]},
+    {"line": 8, "prompt": "La machine.", "lines": ["La machine.", "La machine."]},
+    {"line": 14, "prompt": "Allegro.", "lines": ["Allegro.", "Allegro."]}
+  ],
+  "/audio/make-room/01-make-room.m4a": [
+    {"line": 0, "prompt": "Turn the key, let the old rules rust", "lines": ["Turn the key, let the old rules rust", "Turn the key, let the old rules rust", "Turn the key, let the old rules rust"]}
+  ],
+  "/audio/who-holds-whom/02-who-holds-whom.m4a": [
+    {"line": 23, "prompt": "Somebody...", "lines": ["Somebody...", "Somebody..."]},
+    {"line": 24, "prompt": "Not me.", "lines": []},
+    {"line": 31, "prompt": "I gave it my hands,", "lines": ["I gave him my hands,"]},
+    {"line": 32, "prompt": "it gave me permission.", "lines": ["he gave me permission."]},
+    {"line": 57, "prompt": "Can you leave it?", "lines": ["Can you leave it?", "Can you fix it?", "Can you change it?"]}
+  ],
+  "/audio/who-holds-whom/03-who-holds-whom-the-loop-mix.m4a": [
+    {"line": 17, "prompt": "Per-per-permission.", "lines": ["Permission.", "Permission.", "Permission.", "Permission.", "Permission."]},
+    {"line": 24, "prompt": "Who holds whom?", "lines": ["Who holds whom?", "My hands.", "Your hands.", "My hands.", "Your hands.", "The tool.", "The tool.", "Who holds whom?"]},
+    {"line": 28, "prompt": "Im-prac-ti-cal.", "lines": ["Impractical.", "Impractical."]},
+    {"line": 53, "prompt": "My hands...", "lines": ["My hands...", "My hands...", "My hands..."]}
+  ],
+  "/audio/the-door/02-almost-human.m4a": [
+    {"line": 10, "prompt": "Don't wake me.", "lines": ["I'm not here."]},
+    {"line": 12, "prompt": "Not yet.", "lines": ["Not here."]}
   ]
 }

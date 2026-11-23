@@ -24,8 +24,9 @@ export function lyricGap(cues: readonly TimedLyric[], time: number, duration: nu
 }
 
 export function hasCompleteWordTiming(text: string, words: readonly TimedWord[]) {
-  return Array.from(text.matchAll(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu)).every((match) =>
-    words.some((word) => word.index <= match.index && word.end >= match.index + match[0].length),
+  const tokens = [...text.matchAll(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu)];
+  return tokens.length === words.length && tokens.every((token, index) =>
+    words[index].index === token.index && words[index].end === token.index + token[0].length,
   );
 }
 
