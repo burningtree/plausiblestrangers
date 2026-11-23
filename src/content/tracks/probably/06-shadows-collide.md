@@ -3,6 +3,8 @@ title: "Shadows Collide"
 release: "probably"
 number: 6
 duration: 260.1
+bpm: 120
+audio: "/audio/probably/06-shadows-collide.m4a"
 instrumental: true
 created: "2025-11-24"
 machine: "suno v4.5-all"

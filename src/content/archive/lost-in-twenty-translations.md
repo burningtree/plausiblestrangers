@@ -2,6 +2,7 @@
 title: "Lost in Twenty Translations"
 created: "2026-11-20"
 duration: 280
+audio: "/audio/archive/lost-in-twenty-translations.m4a"
 bpm: 132
 instrumental: false
 tags: "broken disco, electroclash, experimental"

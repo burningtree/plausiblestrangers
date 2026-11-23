@@ -82,10 +82,28 @@ const unreleased = clips.filter((c) => !released.has(c.id) && c.status === 'comp
 console.log(`${clips.length} public songs on Suno, ${released.size} on records, ${unreleased.length} for the archive`);
 
 await mkdir(OUT, { recursive: true });
+// songs already in the archive, by Suno id: a song renamed on Suno keeps its
+// file (and its audio); only the title is brought up to date
+const existing = new Map();
+for (const f of (await readdir(OUT)).filter((f) => f.endsWith('.md'))) {
+  const id = (await readFile(path.join(OUT, f), 'utf8')).match(/suno\.com\/song\/([0-9a-f-]+)/)?.[1];
+  if (id) existing.set(id, path.join(OUT, f));
+}
 const used = new Set();
 let written = 0;
 for (const c of unreleased.sort((a, b) => a.created_at.localeCompare(b.created_at))) {
   const m = c.metadata ?? {};
+  const known = existing.get(c.id);
+  if (known && !REWRITE) {
+    const md = await readFile(known, 'utf8');
+    const title = md.match(/^title:\s*(.*)$/m)?.[1];
+    if (title !== JSON.stringify(c.title)) {
+      await writeFile(known, md.replace(/^title:.*$/m, `title: ${JSON.stringify(c.title)}`));
+      console.log(`  renamed: ${path.basename(known)} → ${c.title}`);
+    }
+    used.add(path.basename(known, '.md'));
+    continue;
+  }
   let slug = slugify(c.title);
   while (used.has(slug)) slug += '-b';
   used.add(slug);

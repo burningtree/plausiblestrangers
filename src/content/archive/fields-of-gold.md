@@ -2,6 +2,7 @@
 title: "Fields of Gold"
 created: "2026-11-22"
 duration: 359
+audio: "/audio/archive/fields-of-gold.m4a"
 bpm: 126
 instrumental: false
 tags: "electroclash, industrial, ambient"

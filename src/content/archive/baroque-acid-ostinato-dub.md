@@ -2,6 +2,7 @@
 title: "Baroque Acid - Ostinato Dub"
 created: "2026-11-19"
 duration: 202.4
+audio: "/audio/archive/baroque-acid-ostinato-dub.m4a"
 bpm: 136
 instrumental: true
 tags: "electroclash, acid, baroque"

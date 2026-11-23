@@ -2,6 +2,7 @@
 title: "Brass & Bitcrush"
 created: "2026-11-19"
 duration: 192.3
+audio: "/audio/archive/brass-bitcrush.m4a"
 bpm: 145
 instrumental: true
 tags: "Electroclash, Balkan folk"

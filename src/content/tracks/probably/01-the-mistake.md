@@ -3,6 +3,7 @@ title: "The Mistake"
 release: "probably"
 number: 1
 duration: 212.8
+audio: "/audio/probably/01-the-mistake.m4a"
 bpm: 132
 instrumental: true
 created: "2026-11-22"

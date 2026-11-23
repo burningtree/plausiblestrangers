@@ -7,6 +7,11 @@ import Queue from '../components/Queue.astro';
 import PlayButton from '../components/PlayButton.astro';
 import {
   getCatalog,
+  getArchive,
+  archiveAnalysis,
+  archiveUrl,
+  playableArchive,
+  type ArchiveSong,
   trackAnalysis,
   trackUrl,
   hasAudio,
@@ -23,7 +28,7 @@ type Metric = {
   label: string;
   high: string; // name of the top end: "loudest"
   low: string; // and the bottom end: "quietest"
-  value: (a: Analysis, t: Track) => number | null | undefined;
+  value: (a: Analysis, e: Entry) => number | null | undefined;
   show: (v: number) => string;
   about: string;
 };
@@ -78,7 +83,7 @@ const METRICS: Metric[] = [
     label: 'tempo',
     high: 'fastest',
     low: 'slowest',
-    value: (_, t) => t.data.bpm,
+    value: (_, e) => e.bpm,
     show: (v) => `${Math.round(v)} bpm`,
     about: 'Beats per minute, where we know it.',
   },
@@ -87,7 +92,7 @@ const METRICS: Metric[] = [
     label: 'length',
     high: 'longest',
     low: 'shortest',
-    value: (_, t) => t.data.duration,
+    value: (_, e) => e.duration,
     show: (v) => fmtTime(v),
     about: 'How long the song lasts.',
   },
@@ -96,8 +101,18 @@ const METRICS: Metric[] = [
 const { releases, tracksOf } = await getCatalog();
 
 // each recording once, even when it's on two records (same analysis):
-// the first record it appeared on wins
-type Entry = { t: Track; r: Release; a: Analysis; queueIndex: number; id: string };
+// the first record it appeared on wins; then the archive songs with audio
+type Entry = {
+  title: string;
+  url: string;
+  where: string; // the record, or "archive"
+  a: Analysis;
+  bpm?: number;
+  duration?: number;
+  queue: string;
+  queueIndex: number;
+  id: string;
+};
 const seen = new Set<string>();
 const entries: Entry[] = [];
 const usedReleases: { r: Release; tracks: Track[] }[] = [];
@@ -109,14 +124,43 @@ for (const r of releases) {
     const a = trackAnalysis(t);
     if (!a || seen.has(a.spec)) continue;
     seen.add(a.spec);
-    entries.push({ t, r, a, queueIndex: ready.indexOf(t), id: playable(t, r).id });
+    entries.push({
+      title: t.data.title,
+      url: trackUrl(t),
+      where: r.data.title,
+      a,
+      bpm: t.data.bpm,
+      duration: t.data.duration,
+      queue: r.id,
+      queueIndex: ready.indexOf(t),
+      id: playable(t, r).id,
+    });
     used = true;
   }
   if (used) usedReleases.push({ r, tracks });
 }
+const usedArchive: ArchiveSong[] = [];
+for (const song of await getArchive()) {
+  const a = archiveAnalysis(song);
+  const rec = playableArchive(song);
+  if (!a || !rec || seen.has(a.spec)) continue;
+  seen.add(a.spec);
+  entries.push({
+    title: song.data.title,
+    url: archiveUrl(song),
+    where: 'archive',
+    a,
+    bpm: song.data.bpm,
+    duration: song.data.duration,
+    queue: rec.id,
+    queueIndex: 0,
+    id: rec.id,
+  });
+  usedArchive.push(song);
+}
 
 // every value, and each measure's range for the bars
-const values = entries.map((e) => Object.fromEntries(METRICS.map((m) => [m.key, m.value(e.a, e.t) ?? null])));
+const values = entries.map((e) => Object.fromEntries(METRICS.map((m) => [m.key, m.value(e.a, e) ?? null])));
 const ranges = Object.fromEntries(
   METRICS.map((m) => {
     const vs = values.map((v) => v[m.key]).filter((v): v is number => v != null);
@@ -159,14 +203,15 @@ const data = JSON.stringify({ ranges, labels, shown, values, cells: CELLS }).rep
       itemListElement: order.map((i, n) => ({
         '@type': 'ListItem',
         position: n + 1,
-        url: abs(trackUrl(entries[i].t)),
-        name: entries[i].t.data.title,
+        url: abs(entries[i].url),
+        name: entries[i].title,
       })),
     },
     breadcrumbs([['plausible strangers.', '/'], ['library', '/library/'], ['rankings', '/rankings/']]),
   )}
 >
   {usedReleases.map(({ r, tracks }) => <Queue release={r} tracks={tracks} />)}
+  {usedArchive.map((song) => <Queue archiveSong={song} />)}
   <section class="rankings" aria-labelledby="rankings-h">
     <p class="crumbs"><a href="/">home</a> / <a href="/library/">library</a> / rankings</p>
     <h1 id="rankings-h" class="title">rankings</h1>
@@ -202,10 +247,10 @@ const data = JSON.stringify({ ranges, labels, shown, values, cells: CELLS }).rep
           return (
             <li class="rank-row" data-row={e.id} data-i={i}>
               <span class:list={['rank-n', { 'is-top': places[n] === 0 }]}>{places[n] + 1}</span>
-              <PlayButton queue={e.r.id} index={e.queueIndex} id={e.id} iconOnly label={`play ${e.t.data.title}`} />
+              <PlayButton queue={e.queue} index={e.queueIndex} id={e.id} iconOnly label={`play ${e.title}`} />
               <span class="rank-song">
-                <a href={trackUrl(e.t)}>{e.t.data.title}</a>
-                <span class="rank-record">{e.r.data.title}</span>
+                <a href={e.url}>{e.title}</a>
+                <span class="rank-record">{e.where}</span>
               </span>
               <span class="balance-bar rank-bar" aria-hidden="true">
                 {Array.from({ length: CELLS }, (_, c) => (

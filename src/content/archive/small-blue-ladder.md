@@ -2,6 +2,7 @@
 title: "Small Blue Ladder"
 created: "2026-11-18"
 duration: 143.6
+bpm: 136
 instrumental: false
 audio: "/audio/archive/small-blue-ladder.m4a"
 tags: "acid techno, psychedelic disco, punk"

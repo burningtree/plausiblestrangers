@@ -2,6 +2,7 @@
 title: "The Frayed Rope - Plausible Strangers Remix"
 created: "2026-11-20"
 duration: 179.5
+audio: "/audio/archive/the-frayed-rope-plausible-strangers-remix.m4a"
 bpm: 144
 instrumental: false
 lyricsHidden: true

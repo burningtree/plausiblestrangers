@@ -3,11 +3,13 @@ title: "Residual Heat"
 release: "probably"
 number: 9
 duration: 308.8
+audio: "/audio/probably/09-residual-heat.m4a"
 bpm: 126
 instrumental: true
 created: "2026-11-22"
 machine: "suno v6-wild"
 tags: "experimental electro, industrial techno, dark atmospheric"
+suno: "https://suno.com/song/744f3c6e-9211-4950-81c4-1fc5588701f0"
 style: |-
   Dark atmospheric experimental electro, 126 BPM, one continuous 7-minute evolution. Haunting melancholic minor-key synth motif, intimate organic textures, distant ghostly human vocal fragments without words, unconventional granular sound design, resonant metal, glass friction, reversed acoustic transients, subtly shifting polyrhythms. Extremely slow emergence of a deep mechanical pulse, powerful distorted analog bass, precise industrial electro percussion, hypnotic raw techno groove. Emotional warmth against cold threatening machinery, sophisticated harmony, immense stereo depth, clear spatial separation, microscopic background details, constantly evolving timbres. Patient uninterrupted escalation into overwhelming physical intensity, no resets, no drops, no conventional breakdowns. Dark, beautiful, mysterious, cinematic but not orchestral. Sparse instrumentation, instrumental focus, no pop structure.
 ---

@@ -35,6 +35,7 @@ export type Analysis = {
 };
 const analyses = analysisData as Record<string, Analysis>;
 export const trackAnalysis = (t: Track): Analysis | undefined => analyses[`${t.data.release}/${trackSlug(t)}`];
+export const archiveAnalysis = (a: ArchiveSong): Analysis | undefined => (a.data.audio ? analyses[`archive/${a.id}`] : undefined);
 
 // where a value sits among all our songs (each recording counted once): 0–100
 const uniqueAnalyses = [...new Map(Object.values(analyses).map((a) => [a.spec, a])).values()];

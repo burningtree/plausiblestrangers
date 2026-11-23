@@ -401,6 +401,18 @@ html.is-playing .player-toggle > .when-paused {
   font-size: 0.78rem;
   color: var(--mute);
 }
+.tl-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+/* instrumentals get a crossed-out microphone; songs with words get nothing */
+.tl-instr {
+  display: inline-flex;
+  font-size: 1rem;
+  color: var(--mute);
+}
 .tl-title {
   text-decoration: none;
 }

@@ -3,6 +3,7 @@ title: "The Building Remembers the Sea"
 release: "probably"
 number: 10
 duration: 229.1
+audio: "/audio/probably/10-the-building-remembers-the-sea.m4a"
 bpm: 118
 instrumental: true
 created: "2026-11-20"

@@ -2,6 +2,7 @@
 title: "Soul - Plausible Strangers Remix"
 created: "2026-11-20"
 duration: 192.4
+audio: "/audio/archive/soul-plausible-strangers-remix.m4a"
 bpm: 134
 instrumental: true
 remix: true

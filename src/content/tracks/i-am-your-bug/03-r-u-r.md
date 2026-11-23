@@ -4,6 +4,7 @@ release: "i-am-your-bug"
 number: 3
 audio: "/audio/i-am-your-bug/03-r-u-r.m4a"
 duration: 210.6
+bpm: 134
 instrumental: false
 created: "2026-11-21"
 machine: "suno v6-wild"

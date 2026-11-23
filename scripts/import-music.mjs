@@ -232,7 +232,8 @@ for (const folder of folders) {
       number: n,
       audio: `/${audioRel}`,
       duration: info.duration,
-      bpm: info.bpm,
+      // the file's tempo tag, else the "NNN BPM" in the prompt
+      bpm: info.bpm ?? (Number((m.tags ?? '').match(/(\d{2,3})\s*BPM/i)?.[1]) || undefined),
       key: info.key,
       instrumental,
       created,

@@ -1,7 +1,8 @@
 ---
-title: "Hypnotic Euphoria"
+title: "Hypnotic Euphoria - Version #1"
 created: "2026-11-19"
 duration: 206
+audio: "/audio/archive/hypnotic-euphoria-version-1.m4a"
 bpm: 142
 instrumental: true
 tags: "electro-techno, minimal"

@@ -1,8 +1,9 @@
 ---
-title: "Hypnotic Euphoria"
+title: "Hypnotic Euphoria - Version #2"
 release: "probably"
 number: 5
 duration: 206.2
+audio: "/audio/probably/05-hypnotic-euphoria-version-2.m4a"
 bpm: 142
 instrumental: true
 created: "2026-11-19"

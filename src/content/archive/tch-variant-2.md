@@ -2,6 +2,7 @@
 title: "Tch - Variant #2"
 created: "2026-11-22"
 duration: 192.4
+audio: "/audio/archive/tch-variant-2.m4a"
 bpm: 138
 instrumental: false
 tags: "electro, electroclash, psychedelic"

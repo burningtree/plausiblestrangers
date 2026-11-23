@@ -3,6 +3,8 @@ title: "Fractured Ritual"
 release: "probably"
 number: 3
 duration: 232.8
+bpm: 123
+audio: "/audio/probably/03-fractured-ritual.m4a"
 instrumental: true
 created: "2026-11-18"
 machine: "suno v6-mini"

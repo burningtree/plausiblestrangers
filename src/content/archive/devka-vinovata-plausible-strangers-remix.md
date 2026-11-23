@@ -2,6 +2,7 @@
 title: "Девка виновата - Plausible Strangers Remix"
 created: "2026-11-20"
 duration: 184
+audio: "/audio/archive/devka-vinovata-plausible-strangers-remix.m4a"
 bpm: 138
 instrumental: false
 lyricsHidden: true

@@ -2,6 +2,7 @@
 title: "🧬 08 — MUTANT FREQUENCY 1 - Plausible Strangers Remix"
 created: "2026-11-19"
 duration: 200.8
+audio: "/audio/archive/08-mutant-frequency-1-plausible-strangers-remix.m4a"
 bpm: 136
 instrumental: true
 remix: true

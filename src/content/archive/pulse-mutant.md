@@ -2,6 +2,8 @@
 title: "Pulse Mutant"
 created: "2026-11-18"
 duration: 244.7
+audio: "/audio/archive/pulse-mutant.m4a"
+bpm: 146
 instrumental: true
 tags: "electronica, organic-house, psychedelic"
 machine: "suno v6-mini"

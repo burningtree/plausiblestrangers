@@ -2,6 +2,7 @@
 title: "Dance Instructions for Nobody"
 created: "2026-11-20"
 duration: 230
+audio: "/audio/archive/dance-instructions-for-nobody.m4a"
 bpm: 138
 instrumental: false
 tags: "electroclash, techno"

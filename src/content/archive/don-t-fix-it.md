@@ -2,6 +2,7 @@
 title: "Don't Fix It"
 created: "2026-11-20"
 duration: 125.6
+audio: "/audio/archive/don-t-fix-it.m4a"
 bpm: 126
 instrumental: false
 tags: "disco, electroclash"

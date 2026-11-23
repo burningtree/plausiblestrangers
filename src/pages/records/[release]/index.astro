@@ -129,7 +129,7 @@ const d = release.data;
     <header class="release-head">
       <h1 class="title">{d.title}</h1>
       <p class="meta">
-        {d.kind} · {tracks.length} tracks · {fmtTotal(total)} · {unfinished ? `in progress, ${ready.length} of ${tracks.length} audible so far` : fmtDate(d.date)}
+        {d.kind} · {tracks.length} tracks · {fmtTotal(total)} · {unfinished ? (ready.length < tracks.length ? `in progress, ${ready.length} of ${tracks.length} audible so far` : 'in progress') : fmtDate(d.date)}
       </p>
       {ready.length > 0 && (
         <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} class="play--big" /></p>
@@ -153,8 +153,12 @@ const d = release.data;
                 {t.data.title}
               </a>
               <span class="tl-info">
-                {t.data.instrumental ? 'instr.' : 'lyrics'}
-                {t.data.bpm && ` · ${t.data.bpm} bpm`}
+                {t.data.instrumental && (
+                  <span class="tl-instr" role="img" aria-label="instrumental" title="instrumental, no vocals">
+                    <Icon name="microphone-mute" />
+                  </span>
+                )}
+                {t.data.bpm && <span>{t.data.bpm} bpm</span>}
               </span>
               <span class="tl-dur">{fmtTime(t.data.duration)}</span>
               {qi >= 0 ? (

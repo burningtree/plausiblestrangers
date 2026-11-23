@@ -2,6 +2,7 @@
 title: "Analog Ticks"
 created: "2026-11-20"
 duration: 198.3
+audio: "/audio/archive/analog-ticks.m4a"
 bpm: 125
 instrumental: true
 tags: "techno, minimal"

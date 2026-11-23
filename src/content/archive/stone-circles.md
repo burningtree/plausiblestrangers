@@ -2,6 +2,7 @@
 title: "Stone Circles"
 created: "2026-11-18"
 duration: 357.7
+audio: "/audio/archive/stone-circles.m4a"
 bpm: 132
 instrumental: false
 tags: "organic house, electronica, psychedelic"

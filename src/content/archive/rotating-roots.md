@@ -2,6 +2,7 @@
 title: "Rotating Roots"
 created: "2026-11-18"
 duration: 229.2
+audio: "/audio/archive/rotating-roots.m4a"
 bpm: 128
 instrumental: true
 tags: "techno, organic"

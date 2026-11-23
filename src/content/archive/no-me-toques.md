@@ -2,6 +2,7 @@
 title: "No Me Toques"
 created: "2026-11-19"
 duration: 133.9
+audio: "/audio/archive/no-me-toques.m4a"
 bpm: 134
 instrumental: false
 machine: "suno v6-mini"

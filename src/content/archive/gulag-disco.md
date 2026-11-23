@@ -2,6 +2,7 @@
 title: "Gulag Disco"
 created: "2026-11-19"
 duration: 184.8
+audio: "/audio/archive/gulag-disco.m4a"
 bpm: 132
 instrumental: true
 tags: "electroclash, industrial disco"

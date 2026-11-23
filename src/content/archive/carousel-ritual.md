@@ -2,6 +2,7 @@
 title: "Carousel Ritual"
 created: "2026-11-18"
 duration: 234.4
+audio: "/audio/archive/carousel-ritual.m4a"
 bpm: 124
 instrumental: true
 tags: "psychedelic, tribal, industrial dub"

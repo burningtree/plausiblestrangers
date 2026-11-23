@@ -2,6 +2,7 @@
 title: "R.U.R. - Original Version"
 created: "2026-11-19"
 duration: 203
+audio: "/audio/archive/r-u-r-original-version.m4a"
 bpm: 134
 instrumental: false
 tags: "electroclash, mechanical disco, industrial"

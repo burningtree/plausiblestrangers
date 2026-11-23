@@ -3,6 +3,7 @@ title: "Violence Mécanique"
 release: "probably"
 number: 8
 duration: 214.8
+audio: "/audio/probably/08-violence-mecanique.m4a"
 bpm: 134
 instrumental: true
 created: "2026-11-22"

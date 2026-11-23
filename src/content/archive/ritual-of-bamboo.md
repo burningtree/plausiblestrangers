@@ -2,6 +2,8 @@
 title: "Ritual of Bamboo"
 created: "2026-11-18"
 duration: 239.2
+audio: "/audio/archive/ritual-of-bamboo.m4a"
+bpm: 111
 instrumental: true
 tags: "electronica, organic-house, dub"
 machine: "suno v6-mini"

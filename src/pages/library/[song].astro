@@ -7,9 +7,13 @@ import Icon from '../../components/Icon.astro';
 import PlayButton from '../../components/PlayButton.astro';
 import Queue from '../../components/Queue.astro';
 import PixelArt from '../../components/PixelArt.astro';
+import Spectrogram from '../../components/Spectrogram.astro';
+import SoundStats from '../../components/SoundStats.astro';
+import Wave from '../../components/Wave.astro';
 import {
   getArchive,
   playableArchive,
+  archiveAnalysis,
   getCatalog,
   archiveUrl,
   trackUrl,
@@ -32,6 +36,7 @@ export const getStaticPaths = (async () => {
 const { song, newer, older } = Astro.props as { song: ArchiveSong; newer?: ArchiveSong; older?: ArchiveSong };
 const d = song.data;
 const recording = playableArchive(song);
+const analysis = recording ? archiveAnalysis(song) : undefined;
 
 // other versions: released tracks and archive songs sharing the same base title
 const base = songBase(d.title);
@@ -110,6 +115,15 @@ const details: [string, string | undefined][] = [
       </header>
 
       {
+        recording &&
+          (analysis ? (
+            <Spectrogram analysis={analysis} id={recording.id} queue={recording.id} index={0} duration={recording.duration} />
+          ) : (
+            <Wave id={recording.id} peaks={recording.peaks} duration={recording.duration} queue={recording.id} index={0} class="wave--big" />
+          ))
+      }
+
+      {
         (releasedVersions.length > 0 || archiveVersions.length > 0) && (
           <section class="versions" aria-labelledby="versions-h">
             <h2 id="versions-h" class="label">other versions</h2>
@@ -143,6 +157,7 @@ const details: [string, string | undefined][] = [
           </section>
         )
       }
+      {analysis && recording && <SoundStats analysis={analysis} id={recording.id} queue={recording.id} index={0} />}
       {
         d.notes && (
           <section aria-labelledby="notes-h">

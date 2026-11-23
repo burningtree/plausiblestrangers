@@ -277,10 +277,17 @@ const songs = released + archive.length;
       (() => {
         const side = document.querySelector('.about-side');
         if (!side) return;
+        // keep clear of the player bar at the bottom, when it's showing
+        const bar = () => {
+          const p = document.getElementById('player');
+          return p && !p.hidden ? p.offsetHeight : 0;
+        };
         const place = () =>
-          side.style.setProperty('--side-top', `${Math.min(32, innerHeight - side.offsetHeight - 32)}px`);
+          side.style.setProperty('--side-top', `${Math.min(32, innerHeight - side.offsetHeight - 32 - bar())}px`);
         const ro = new ResizeObserver(place);
         ro.observe(side);
+        const player = document.getElementById('player');
+        if (player) ro.observe(player);
         addEventListener('resize', place);
         document.addEventListener(
           'astro:before-swap',

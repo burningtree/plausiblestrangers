@@ -2,6 +2,7 @@
 title: "Mechanical Breathing"
 created: "2026-11-18"
 duration: 184.4
+audio: "/audio/archive/mechanical-breathing.m4a"
 bpm: 118
 instrumental: true
 machine: "suno v6-mini"

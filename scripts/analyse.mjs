@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Sound analysis for every track with audio.
+// Sound analysis for every track and archive song with audio.
 //
 //   npm run analyse            # analyse tracks not done yet
 //   npm run analyse -- --force # redo all
@@ -208,5 +208,19 @@ for (const rel of (await readdir(tracksDir)).sort()) {
     console.log(`  ${key}  ${a.lufs} LUFS, LRA ${a.lra}, ${a.brightness} Hz, width ${a.width}  (${Date.now() - t0} ms)`);
   }
 }
+// archive songs with audio; key = "archive/<song>"
+const archiveDir = path.join(ROOT, 'src/content/archive');
+for (const f of (await readdir(archiveDir)).filter((f) => f.endsWith('.md')).sort()) {
+  const md = await readFile(path.join(archiveDir, f), 'utf8');
+  const audio = md.match(/^audio:\s*"?([^"\n]+)"?/m)?.[1];
+  if (!audio) continue;
+  const key = `archive/${f.replace(/\.md$/, '')}`;
+  if (data[key]) continue;
+  const t0 = Date.now();
+  data[key] = await analyse(path.join(ROOT, 'public', audio));
+  const a = data[key];
+  console.log(`  ${key}  ${a.lufs} LUFS, LRA ${a.lra}, ${a.brightness} Hz, width ${a.width}  (${Date.now() - t0} ms)`);
+}
+
 await writeFile(OUT, JSON.stringify(data));
 console.log(`wrote ${path.relative(ROOT, OUT)} (${Object.keys(data).length} tracks)`);

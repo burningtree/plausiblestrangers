@@ -2,6 +2,7 @@
 title: "Counterpoint of the Acid"
 created: "2026-11-19"
 duration: 182.4
+audio: "/audio/archive/counterpoint-of-the-acid.m4a"
 bpm: 138
 instrumental: true
 tags: "electroclash, acid, counterpoint"

@@ -2,6 +2,7 @@
 title: "Tch - Variant #1"
 created: "2026-11-22"
 duration: 171.7
+audio: "/audio/archive/tch-variant-1.m4a"
 bpm: 138
 instrumental: false
 tags: "electro, French house, experimental rave funk"

@@ -21,6 +21,7 @@ import {
   fmtTotal,
   blurStyle,
   trackAnalysis,
+  archiveAnalysis,
   miniSpec,
   miniLevels,
   MINI,
@@ -99,6 +100,7 @@ for (const a of archive) {
     vocal: a.data.instrumental ? 'instrumental' : 'lyrics',
     tags: splitTags(a.data.tags),
     play: recording ? { queue: recording.id, index: 0, id: recording.id } : undefined,
+    spec: recording && archiveAnalysis(a) ? miniSpec(archiveAnalysis(a)!) : undefined,
   });
 }
 

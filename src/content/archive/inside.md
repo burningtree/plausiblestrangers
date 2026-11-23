@@ -2,6 +2,7 @@
 title: "Inside"
 created: "2026-11-19"
 duration: 246.4
+audio: "/audio/archive/inside.m4a"
 bpm: 145
 instrumental: false
 tags: "hard techno, French rave"
