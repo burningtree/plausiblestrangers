@@ -7,6 +7,7 @@ import Stamp from '../../../components/Stamp.astro';
 import Gallery from '../../../components/Gallery.astro';
 import Icon from '../../../components/Icon.astro';
 import PlayButton from '../../../components/PlayButton.astro';
+import VinylCover from '../../../components/VinylCover.astro';
 import {
   getCatalog,
   releaseUrl,
@@ -17,7 +18,6 @@ import {
   playable,
   hasAudio,
   downloadName,
-  blurStyle,
   isUnfinished,
   type Release,
 } from '../../../lib/catalog';
@@ -49,19 +49,18 @@ const d = release.data;
 
     {
       d.cover && (
-        <figure class:list={['release-cover', { 'release-cover--playable': ready.length > 0 }]} data-play-art={ready.length > 0 ? '' : undefined}>
-          <img src={d.cover} class="blur" style={blurStyle(d.cover)} alt={`Cover of ${d.title}`} width="1400" height="1400" transition:name={`cover-${release.id}`} />
-          {ready.length > 0 && (
-            <PlayButton
-              queue={release.id}
-              index={0}
-              id={playable(ready[0], release).id}
-              record={release.id}
-              label={`play ${d.title}`}
-              iconOnly
-              class="cover-play cover-play--release"
-            />
-          )}
+        <figure class="release-cover">
+          <VinylCover
+            cover={d.cover}
+            backCover={d.backCover}
+            vinylLabel={d.vinylLabel}
+            title={d.title}
+            catalog={d.catalog}
+            release={release.id}
+            trackTitles={tracks.map((track) => track.data.title)}
+            transitionName={`cover-${release.id}`}
+          />
+          <figcaption class="release-cover-hint">drag to rotate</figcaption>
         </figure>
       )
     }

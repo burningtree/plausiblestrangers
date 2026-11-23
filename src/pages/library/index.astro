@@ -9,6 +9,7 @@ import Icon from '../../components/Icon.astro';
 import {
   getCatalog,
   getArchive,
+  playableArchive,
   releaseUrl,
   trackUrl,
   archiveUrl,
@@ -84,6 +85,7 @@ for (const r of releases) {
   }
 }
 for (const a of archive) {
+  const recording = playableArchive(a);
   rows.push({
     type: 'song',
     status: 'archive',
@@ -95,6 +97,7 @@ for (const a of archive) {
     bpm: a.data.bpm,
     vocal: a.data.instrumental ? 'instrumental' : 'lyrics',
     tags: splitTags(a.data.tags),
+    play: recording ? { queue: recording.id, index: 0, id: recording.id } : undefined,
   });
 }
 
@@ -123,12 +126,13 @@ const short = (d?: Date) =>
 
 <Base title="library" description={`Everything Plausible Strangers has made: ${counts.records} records and ${counts.songs} songs, released or not.`}>
   {releases.map((r) => <Queue release={r} tracks={tracksOf(r.id)} />)}
+  {archive.filter((song) => song.data.audio).map((song) => <Queue archiveSong={song} />)}
 
   <section class="library" aria-labelledby="library-h">
     <p class="crumbs"><a href="/">home</a> / library</p>
     <h1 id="library-h" class="title">library</h1>
     <p class="lede library-lede">
-      {`Everything we kept: ${counts.songs} songs, about ${counts.minutes} minutes. ${counts.released} made it onto a record, ${counts.unfinished} are waiting on an unfinished one, ${counts.archive} never will. The archive is words and instructions only; the sounds are on Suno.`}
+      {`Everything we kept: ${counts.songs} songs, about ${counts.minutes} minutes. ${counts.released} made it onto a record, ${counts.unfinished} are waiting on an unfinished one, ${counts.archive} never will. The archive includes words, instructions, and links to recordings where available.`}
     </p>
 
     <form class="lib-controls" role="search" aria-label="filter the library" onsubmit="return false">

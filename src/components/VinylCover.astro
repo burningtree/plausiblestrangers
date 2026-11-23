@@ -1,0 +1,706 @@
+---
+import { blurStyle, type Release } from '../lib/catalog';
+
+interface Props {
+  cover: string;
+  backCover?: string;
+  vinylLabel?: Release['data']['vinylLabel'];
+  title: string;
+  catalog: string;
+  release: string;
+  href?: string;
+  compact?: boolean;
+  lazy?: boolean;
+  transitionName?: string;
+  trackTitles?: string[];
+}
+
+const { cover, backCover, vinylLabel, title, catalog, release, href, compact = false, lazy = false, transitionName, trackTitles } = Astro.props;
+const Surface = href ? 'a' : 'button';
+const size = compact ? 480 : 1400;
+const separateLabelWords = release === 'make-room' || release === 'the-door';
+const thumbnail = cover.replace(/\.webp$/, '-480.webp');
+const edgeArtwork = {
+  '--edge-front-art': `url("${lazy || compact ? thumbnail : cover}")`,
+  '--edge-back-art': backCover ? `url("${backCover}")` : 'none',
+};
+const labelStyle = vinylLabel && {
+  backgroundImage: `url("${backCover ?? thumbnail}")`,
+  backgroundPosition: `${vinylLabel.x}% ${vinylLabel.y}%`,
+  backgroundSize: `${vinylLabel.zoom}%`,
+};
+---
+
+<vinyl-cover data-release={release}>
+  <Surface
+    class="surface"
+    href={href}
+    type={href ? undefined : 'button'}
+    aria-label={href ? `Open ${title}` : `Flip the vinyl sleeve for ${title}`}
+    aria-description="Drag to rotate, or use the arrow keys. Press Home to reset."
+    draggable="false"
+  >
+    <span class="sleeve" style={edgeArtwork} aria-hidden="true">
+      <span class="record-disc">
+        <span class="disc-rotation">
+          {[false, true].map((reverse) => (
+            <span class:list={['disc-face', { 'disc-face--reverse': reverse }]}>
+              <span class="disc-label" data-label={release} style={labelStyle}>
+                <span class="disc-label-title">
+                  {separateLabelWords ? title.split(' ').map((word, i) => <>{i > 0 && ' '}<span>{word}</span></>) : title}
+                </span>
+                <span class="disc-label-artist">Plausible Strangers</span>
+                <span class="disc-label-catalog">{catalog}</span>
+              </span>
+            </span>
+          ))}
+        </span>
+      </span>
+      <span class="front">
+        <img
+          src={compact ? thumbnail : cover}
+          class="blur"
+          style={blurStyle(cover)}
+          alt=""
+          width={size}
+          height={size}
+          loading={lazy ? 'lazy' : undefined}
+          decoding="async"
+          draggable="false"
+          transition:name={transitionName}
+        />
+      </span>
+      <span class:list={['back', { 'back--artwork': backCover }]}>
+        {backCover ? (
+          <img class="back-art" src={backCover} width="1400" height="1400" alt="" loading="lazy" decoding="async" draggable="false" />
+        ) : (
+          <>
+            <span class="back-heading">
+              <span>plausible strangers.</span>
+              <strong>{title}</strong>
+            </span>
+            {trackTitles && (
+              <span class="back-tracks">
+                {trackTitles.slice(0, 12).map((track, index) => (
+                  <span><span class="back-number">{String(index + 1).padStart(2, '0')}</span>{track}</span>
+                ))}
+                {trackTitles.length > 12 && <span>+ {trackTitles.length - 12} more</span>}
+              </span>
+            )}
+            <span class="back-catalog">{catalog}</span>
+          </>
+        )}
+      </span>
+      <span class="edge edge--spine"></span>
+      <span class="edge edge--opening"></span>
+      <span class="edge edge--top"></span>
+      <span class="edge edge--bottom"></span>
+    </span>
+  </Surface>
+</vinyl-cover>
+
+<style>
+  vinyl-cover {
+    display: block;
+    container-type: inline-size;
+  }
+
+  .surface {
+    display: block;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-decoration: none;
+    color: inherit;
+    cursor: grab;
+    perspective: 330cqi;
+    touch-action: pan-y pinch-zoom;
+    user-select: none;
+  }
+
+  .surface::before {
+    content: '';
+    position: absolute;
+    inset: 83% 6% 3%;
+    background: radial-gradient(ellipse, #0003, transparent 68%);
+    transition: inset 420ms ease;
+    transform: scaleX(var(--shadow-width, 0.9));
+    pointer-events: none;
+  }
+
+  vinyl-cover[data-open] .surface::before { inset-block: 74% 12%; }
+
+  .surface:active { cursor: grabbing; }
+  .surface:focus-visible { outline: none; }
+  .surface:focus-visible :is(.front, .back) {
+    outline: 2px solid var(--hot);
+    outline-offset: 4px;
+  }
+
+  .sleeve {
+    --half-depth: clamp(0.75px, 0.38cqi, 3px);
+    position: absolute;
+    inset: 7% 8% 9%;
+    pointer-events: none;
+    transform-style: preserve-3d;
+    transform-origin: 50% 50%;
+    transform: rotateX(var(--tilt, 7deg)) rotateY(var(--turn, -15deg)) rotateZ(-2.5deg);
+    transition: transform 360ms ease, inset 420ms ease, transform-origin 420ms ease;
+  }
+
+  vinyl-cover[data-open] .sleeve {
+    inset: 18% 37% 20% 1%;
+    transform-origin: 80% 50%;
+  }
+
+  .surface[data-dragging] .sleeve { transition: inset 420ms ease, transform-origin 420ms ease; }
+
+  .front,
+  .back,
+  .disc-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+  }
+
+  .front, .back {
+    border-radius: 0.18cqi;
+    box-shadow: 0 0.6cqi 1.3cqi #0004;
+  }
+
+  .front {
+    transform: translateZ(var(--half-depth));
+  }
+
+  .front img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+    background-color: var(--faint);
+  }
+
+  .front::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(123deg, #fff4, transparent 50%, #05030248);
+    box-shadow: inset 0.12cqi 0.12cqi #fff5, inset -0.12cqi -0.12cqi #0004;
+    opacity: var(--sheen, 0.3);
+  }
+
+  .back {
+    display: flex;
+    flex-direction: column;
+    gap: 7%;
+    padding: 7%;
+    overflow: hidden;
+    background:
+      repeating-linear-gradient(118deg, #4a392405 0 1px, transparent 1px 4px),
+      linear-gradient(145deg, #f0e8d6, #d9ccb3);
+    box-shadow: inset 0 0 0 0.15cqi #56473339, 0 0.6cqi 1.3cqi #0004;
+    color: #29231c;
+    text-align: left;
+    transform: rotateY(180deg) translateZ(var(--half-depth));
+  }
+
+  .back-heading {
+    display: grid;
+    gap: 0.65cqi;
+    font: 2.1cqi / 1.2 var(--mono);
+  }
+
+  .back strong { font: 6cqi / 0.95 var(--serif); }
+
+  .back-tracks {
+    display: grid;
+    gap: 0.45cqi;
+    padding-top: 2%;
+    border-top: 1px solid #43362750;
+    font: 2.3cqi / 1.1 var(--serif);
+  }
+
+  vinyl-cover[data-open] .back-tracks { font-size: 1.7cqi; }
+
+  .back-tracks > span {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .back-number {
+    display: inline-block;
+    width: 3.4cqi;
+    font: 1.45cqi var(--mono);
+  }
+
+  .back-catalog {
+    margin-top: auto;
+    padding-top: 2%;
+    border-top: 1px solid #43362750;
+    font: 2cqi var(--mono);
+  }
+
+  .back--artwork {
+    padding: 0;
+    background: #252423;
+  }
+
+  .back-art {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .edge {
+    --edge-shade: #15110e30;
+    --edge-half: 50%;
+    position: absolute;
+  }
+
+  .edge::before,
+  .edge::after {
+    content: '';
+    position: absolute;
+    background-color: #9f917a;
+    background-size: 100% 100%, var(--edge-art-size);
+    background-repeat: no-repeat;
+  }
+
+  .edge::before {
+    background-image: linear-gradient(var(--edge-shade), var(--edge-shade)), var(--edge-front-art);
+    background-position: center, var(--edge-front-position);
+  }
+
+  .edge::after {
+    background-image: linear-gradient(var(--edge-shade), var(--edge-shade)), var(--edge-back-art);
+    background-position: center, var(--edge-back-position);
+  }
+
+  .edge--spine, .edge--opening {
+    --edge-art-size: auto 100%;
+    inset-block: 0;
+    width: calc(2 * var(--half-depth));
+    margin-left: calc(-1 * var(--half-depth));
+    transform: rotateY(90deg);
+  }
+
+  .edge--spine::before, .edge--opening::before { inset: 0 auto 0 0; width: var(--edge-half); }
+  .edge--spine::after, .edge--opening::after { inset: 0 0 0 auto; width: var(--edge-half); }
+
+  .edge--spine {
+    --edge-front-position: left center;
+    --edge-back-position: right center;
+    left: 0;
+  }
+
+  .edge--opening {
+    --edge-front-position: right center;
+    --edge-back-position: left center;
+    --edge-half: 33%;
+    --edge-shade: #15110e52;
+    left: 100%;
+  }
+
+  .edge--top, .edge--bottom {
+    --edge-art-size: 100% auto;
+    inset-inline: 0;
+    height: calc(2 * var(--half-depth));
+    margin-top: calc(-1 * var(--half-depth));
+    transform: rotateX(90deg);
+  }
+
+  .edge--top::before, .edge--bottom::before { inset: auto 0 0; height: 50%; }
+  .edge--top::after, .edge--bottom::after {
+    inset: 0 0 auto;
+    height: 50%;
+    transform: scaleX(-1);
+  }
+
+  .edge--top {
+    --edge-front-position: center top;
+    --edge-back-position: center top;
+    --edge-shade: #fff4df23;
+    top: 0;
+  }
+
+  .edge--bottom {
+    --edge-front-position: center bottom;
+    --edge-back-position: center bottom;
+    --edge-shade: #15110e65;
+    top: 100%;
+  }
+
+  .record-disc {
+    position: absolute;
+    inset: 3% 3% auto;
+    aspect-ratio: 1;
+    visibility: hidden;
+    transform-style: preserve-3d;
+    transition: transform 460ms ease, visibility 0s 460ms;
+  }
+
+  vinyl-cover[data-open] .record-disc {
+    visibility: visible;
+    transform: translateX(66%);
+    transition: transform 460ms ease, visibility 0s;
+  }
+
+  .disc-rotation {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    animation: vinyl-spin 1.8s linear infinite paused;
+  }
+
+  vinyl-cover[data-playing] .disc-rotation { animation-play-state: running; }
+
+  @keyframes vinyl-spin {
+    from { transform: rotateZ(0turn); }
+    to { transform: rotateZ(1turn); }
+  }
+
+  .record-disc::before,
+  .record-disc::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    background: conic-gradient(from 8deg, #fff0, #fff3 14%, #fff0 31%, #fff0 52%, #fff2 64%, #fff0 83%);
+    mask-image: radial-gradient(circle closest-side, transparent 34%, #000 35% 98%, transparent);
+    transform: translateZ(0.2px);
+  }
+
+  .record-disc::after { transform: rotateY(180deg) translateZ(0.2px); }
+
+  .disc-face {
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle closest-side, #1b1b1c 0 0.31cqi, #242426 0.36cqi 0.43cqi);
+    box-shadow: inset 0 0 0 0.33cqi #09090a, 0 0.4cqi 1.2cqi #0006;
+  }
+
+  .disc-face--reverse { transform: rotateY(180deg); }
+
+  .disc-label {
+    position: relative;
+    width: 34%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #4b4437;
+    background-repeat: no-repeat;
+    color: #fff2d9;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .disc-label::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(#0c0c10a8, #0c0c1033 48%, #0c0c1066 60%, #0c0c10c2);
+    box-shadow: inset 0 0 0 1px #fff4;
+  }
+
+  .disc-label-title,
+  .disc-label-artist,
+  .disc-label-catalog {
+    position: absolute;
+    text-shadow: 0 1px 2px #000;
+  }
+
+  .disc-label-title {
+    inset: 17% 12% auto;
+    font: 400 1.78cqi / 1.05 system-ui, sans-serif;
+    text-wrap: balance;
+  }
+
+  .disc-label-artist,
+  .disc-label-catalog {
+    font: 1cqi / 1.1 var(--mono);
+    letter-spacing: 0.05em;
+  }
+
+  .disc-label-artist { inset: auto 12% 21%; }
+  .disc-label-catalog { inset: auto 12% 13%; }
+
+  .disc-label[data-label='baroque-acid'] {
+    &::before { background: linear-gradient(160deg, #39233770, #160b1b20 42%, #28101abf); }
+
+    .disc-label-title {
+      inset: 60% 11% auto;
+      rotate: -12deg;
+      color: #ffe1bc;
+      font: italic 2.7cqi / 0.95 var(--serif);
+      text-transform: none;
+    }
+
+    .disc-label-artist {
+      inset: 15% 14% auto 22%;
+      color: #ffd5ea;
+      font-size: 0.92cqi;
+      text-align: right;
+      rotate: 14deg;
+    }
+
+    .disc-label-catalog {
+      inset: 24% auto auto 11%;
+      padding: 0.22cqi 0.42cqi;
+      background: #d5a1b4;
+      color: #332122;
+      text-shadow: none;
+      rotate: -14deg;
+    }
+  }
+
+  .disc-label[data-label='who-holds-whom'] {
+    &::before { background: linear-gradient(100deg, #4d1c1466, transparent 55%, #210f17b8); }
+
+    .disc-label-title {
+      inset: 12% 15% 12% auto;
+      display: grid;
+      place-items: center;
+      writing-mode: vertical-rl;
+      color: #ffc9a1;
+      font: 400 1.65cqi / 1 system-ui, sans-serif;
+      letter-spacing: 0.12em;
+      text-wrap: nowrap;
+    }
+
+    .disc-label-artist {
+      inset: auto 23% 18% 13%;
+      font-size: 0.9cqi;
+      rotate: 10deg;
+    }
+
+    .disc-label-catalog {
+      inset: 21% auto auto 17%;
+      color: #ffc9a1;
+      border-block-end: 1px solid currentColor;
+      padding-bottom: 0.3cqi;
+    }
+  }
+
+  .disc-label[data-label='make-room'] {
+    &::before { background: linear-gradient(105deg, #100c0cc9, transparent 68%); }
+
+    .disc-label-title {
+      inset: 23% auto auto 14%;
+      display: grid;
+      justify-items: start;
+      gap: 0.28cqi;
+      color: #fff0d7;
+      font: 400 2.25cqi / 0.92 'Arial Narrow', system-ui, sans-serif;
+      letter-spacing: 0.015em;
+    }
+
+    .disc-label-title span + span { translate: 1.2cqi; }
+
+    .disc-label-artist {
+      inset: auto 10% 16% 13%;
+      font-size: 0.88cqi;
+      letter-spacing: 0.13em;
+    }
+
+    .disc-label-catalog {
+      inset: 56% 12% auto auto;
+      padding: 0.36cqi 0.45cqi;
+      border: 1px solid #ff9b63;
+      color: #ffba8f;
+      background: #21130dd9;
+    }
+  }
+
+  .disc-label[data-label='the-door'] {
+    &::before { background: linear-gradient(#06172173, transparent 48%, #081219b8); }
+
+    .disc-label-title {
+      inset: 0;
+      color: #ffdb9b;
+      font: 400 2.2cqi / 1 system-ui, sans-serif;
+      letter-spacing: 0.34em;
+    }
+
+    .disc-label-title span:first-child {
+      position: absolute;
+      inset: 32% auto auto 14%;
+      font-size: 1.24cqi;
+      letter-spacing: 0.16em;
+      writing-mode: vertical-rl;
+      rotate: 180deg;
+    }
+
+    .disc-label-title span:last-child { position: absolute; inset: auto 11% 18%; }
+
+    .disc-label-artist { inset: 17% 12% auto; font-size: 0.86cqi; }
+    .disc-label-catalog {
+      inset: 43% 13% auto auto;
+      font-size: 0.97cqi;
+      color: #ffc379;
+      writing-mode: vertical-rl;
+    }
+  }
+
+  .disc-label[data-label='i-am-your-bug'] {
+    &::before { background: linear-gradient(140deg, #1017156b, transparent 56%, #07100fa1); }
+
+    .disc-label-title {
+      inset: 22% 12% auto;
+      padding: 0.65cqi 0.2cqi 0.55cqi;
+      border-block: 1px dashed #505955;
+      background: #dfdfce;
+      color: #252e2a;
+      font: 400 1.36cqi / 1.1 var(--mono);
+      text-shadow: none;
+      rotate: 12deg;
+    }
+
+    .disc-label-artist {
+      inset: auto 16% 17%;
+      font-size: 0.91cqi;
+      letter-spacing: 0.08em;
+    }
+
+    .disc-label-catalog {
+      inset: 61% 12% auto auto;
+      padding: 0.22cqi 0.45cqi;
+      border: 1px solid #bfdbcb;
+      color: #d0e9d8;
+    }
+  }
+
+  .disc-label[data-label='probably'] {
+    &::before { background: linear-gradient(160deg, #24243c44, transparent 58%, #341725b0); }
+
+    .disc-label-title {
+      inset: auto 7% 24%;
+      color: #ffabbe;
+      font: 400 2cqi / 1 system-ui, sans-serif;
+      letter-spacing: 0.18em;
+      text-shadow: 0 0 0.55cqi #df516b, 0 1px 2px #281224;
+      rotate: -12deg;
+    }
+
+    .disc-label-artist {
+      inset: 21% auto 21% 15%;
+      writing-mode: vertical-rl;
+      rotate: 180deg;
+      font-size: 0.92cqi;
+    }
+
+    .disc-label-catalog {
+      inset: 20% 17% auto auto;
+      color: #ffced4;
+      border-block-start: 1px solid currentColor;
+      padding-top: 0.32cqi;
+    }
+  }
+
+  .disc-label::after {
+    content: '';
+    position: absolute;
+    inset: 47%;
+    border-radius: 50%;
+    background: #111;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .surface::before,
+    .surface .sleeve,
+    .surface .record-disc { transition: none; }
+    .disc-rotation { animation: none; }
+  }
+</style>
+
+<script>
+  const frontTilt = 7;
+  const frontTurn = -15;
+
+  class VinylCover extends HTMLElement {
+    connectedCallback() {
+      const surface = this.querySelector<HTMLAnchorElement | HTMLButtonElement>('.surface');
+      if (!surface || surface.dataset.ready !== undefined) return;
+      surface.dataset.ready = '';
+
+      let tilt = frontTilt;
+      let turn = frontTurn;
+      let drag: { id: number; x: number; y: number; tilt: number; turn: number } | undefined;
+      let moved = false;
+
+      const rotate = (nextTilt: number, nextTurn: number) => {
+        tilt = Math.max(-30, Math.min(30, nextTilt));
+        turn = nextTurn;
+        const facing = Math.abs(Math.cos(turn * Math.PI / 180));
+        surface.style.setProperty('--tilt', `${tilt}deg`);
+        surface.style.setProperty('--turn', `${turn}deg`);
+        surface.style.setProperty('--sheen', String(0.28 + (1 - facing) * 0.6));
+        surface.style.setProperty('--shadow-width', String(0.25 + facing * 0.65));
+      };
+
+      surface.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0 || !event.isPrimary) return;
+        moved = false;
+        drag = { id: event.pointerId, x: event.clientX, y: event.clientY, tilt, turn };
+        surface.setPointerCapture(event.pointerId);
+      });
+
+      surface.addEventListener('pointermove', (event) => {
+        if (drag?.id !== event.pointerId) return;
+        const dx = event.clientX - drag.x;
+        const dy = event.clientY - drag.y;
+        if (!moved && Math.hypot(dx, dy) < 5) return;
+        moved = true;
+        surface.setAttribute('data-dragging', '');
+        const degreesPerPixel = 240 / Math.max(surface.clientWidth, 140);
+        rotate(drag.tilt - dy * degreesPerPixel * 0.6, drag.turn + dx * degreesPerPixel);
+      });
+
+      surface.addEventListener('lostpointercapture', (event) => {
+        if (drag?.id !== event.pointerId) return;
+        drag = undefined;
+        surface.removeAttribute('data-dragging');
+        if (moved) {
+          const face = Math.round(turn / 180) * 180;
+          const angle = Math.max(-30, Math.min(30, turn - face));
+          rotate(tilt, face + angle);
+        }
+      });
+
+      surface.addEventListener('click', (event) => {
+        if (moved && event.detail > 0) {
+          event.preventDefault();
+          event.stopPropagation();
+          moved = false;
+          return;
+        }
+        if (surface instanceof HTMLButtonElement) {
+          const face = Math.round(turn / 180) * 180;
+          rotate(frontTilt, face + 180 + frontTurn);
+        }
+      });
+
+      surface.addEventListener('keydown', (event) => {
+        switch (event.key) {
+          case 'ArrowLeft': rotate(tilt, turn - 15); break;
+          case 'ArrowRight': rotate(tilt, turn + 15); break;
+          case 'ArrowUp': rotate(tilt - 10, turn); break;
+          case 'ArrowDown': rotate(tilt + 10, turn); break;
+          case 'Home': rotate(frontTilt, Math.round((turn - frontTurn) / 360) * 360 + frontTurn); break;
+          default: return;
+        }
+        event.preventDefault();
+      });
+    }
+  }
+
+  customElements.define('vinyl-cover', VinylCover);
+</script>

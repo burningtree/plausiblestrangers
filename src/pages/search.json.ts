@@ -11,12 +11,13 @@ import {
   fmtTime,
   fmtDate,
   getArchive,
+  playableArchive,
   archiveUrl,
 } from '../lib/catalog';
 
 export const GET: APIRoute = async () => {
   const { releases, tracksOf } = await getCatalog();
-  const queues: Record<string, ReturnType<typeof playable>[]> = {};
+  const queues: Record<string, (ReturnType<typeof playable> | NonNullable<ReturnType<typeof playableArchive>>)[]> = {};
   const records = [];
   const tracks = [];
 
@@ -51,15 +52,16 @@ export const GET: APIRoute = async () => {
     }
   }
 
-  // the archive: unreleased songs, searchable like tracks but not playable here
   for (const a of await getArchive()) {
+    const recording = playableArchive(a);
+    if (recording) queues[recording.id] = [recording];
     tracks.push({
       title: a.data.title,
       release: 'archive',
-      releaseId: '',
+      releaseId: recording?.id ?? '',
       meta: `archive · unreleased${a.data.created ? ` · ${fmtDate(a.data.created)}` : ''}`,
       url: archiveUrl(a),
-      index: -1,
+      index: recording ? 0 : -1,
       tags: a.data.tags ?? '',
       lyrics: a.data.lyricsHidden
         ? []

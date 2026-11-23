@@ -1,11 +1,14 @@
 ---
-// One song from the archive: never released, kept here as words and instructions.
+// One unreleased song from the archive.
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
+import PlayButton from '../../components/PlayButton.astro';
+import Queue from '../../components/Queue.astro';
 import PixelArt from '../../components/PixelArt.astro';
 import {
   getArchive,
+  playableArchive,
   getCatalog,
   archiveUrl,
   trackUrl,
@@ -27,6 +30,7 @@ export const getStaticPaths = (async () => {
 
 const { song, newer, older } = Astro.props as { song: ArchiveSong; newer?: ArchiveSong; older?: ArchiveSong };
 const d = song.data;
+const recording = playableArchive(song);
 
 // other versions: released tracks and archive songs sharing the same base title
 const base = songBase(d.title);
@@ -53,6 +57,7 @@ const details: [string, string | undefined][] = [
 ---
 
 <Base title={`${d.title} — archive`} description={`${d.title}: an unreleased Plausible Strangers song from the archive.`}>
+  <Queue archiveSong={song} />
   <article class="track archive-song">
     <p class="crumbs">
       <a href="/library/">library</a> / archive <span class="stamp stamp--quiet">unreleased</span>
@@ -68,7 +73,15 @@ const details: [string, string | undefined][] = [
           </p>
           <p class="track-actions">
             {
-              d.suno ? (
+              recording ? (
+                <>
+                  <PlayButton queue={recording.id} index={0} id={recording.id} label="play" class="play--big" />
+                  <a class="download-btn" href={recording.src} download={`Plausible Strangers - ${d.title}.m4a`} aria-label={`download ${d.title}`}>
+                    <Icon name="download" /> download
+                  </a>
+                  {d.suno && <a class="suno-btn" href={d.suno}>on suno <Icon name="arrow-up-right" /></a>}
+                </>
+              ) : d.suno ? (
                 <a class="suno-btn" href={d.suno}>
                   <Icon name="play-solid" /> listen on suno <Icon name="arrow-up-right" />
                 </a>

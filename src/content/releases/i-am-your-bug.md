@@ -2,8 +2,10 @@
 title: "I Am Your Bug"
 kind: "album"
 catalog: "ps005"
+vinylLabel: { x: 93, y: 78, zoom: 310 }
 date: "2026-11-21"
 cover: "/covers/i-am-your-bug.webp"
+backCover: "/covers/i-am-your-bug-back-printed.webp"
 suno: "https://suno.com/playlist/21123866-b8fa-4a5f-803a-a2ee407ba771"
 gallery:
   - src: "/art/i-am-your-bug/01.webp"

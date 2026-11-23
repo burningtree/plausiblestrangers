@@ -2,9 +2,10 @@
 import Base from '../layouts/Base.astro';
 import Queue from '../components/Queue.astro';
 import PlayButton from '../components/PlayButton.astro';
+import VinylCover from '../components/VinylCover.astro';
 import Stamp from '../components/Stamp.astro';
 import Icon from '../components/Icon.astro';
-import { blurStyle, getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
+import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
 import { site } from '../site';
 
 const { releases, tracksOf } = await getCatalog();
@@ -58,20 +59,11 @@ const groups = [
         g.items.map(({ r, tracks, ready, total }) => (
           <li class:list={['record', { 'record--unfinished': isUnfinished(r) }]} data-record-row={r.id}>
             <div class="record-art">
-              <a href={releaseUrl(r.id)} class="record-cover" tabindex="-1" aria-hidden="true">
-                {r.data.cover && (
-                  <img
-                    src={g.album ? r.data.cover : r.data.cover.replace(/\.webp$/, '-480.webp')}
-                    class="blur"
-                    style={blurStyle(r.data.cover)}
-                    alt=""
-                    width="480"
-                    height="480"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                )}
-              </a>
+              {r.data.cover && (
+                <div class="record-cover">
+                  <VinylCover cover={r.data.cover} backCover={r.data.backCover} vinylLabel={r.data.vinylLabel} title={r.data.title} catalog={r.data.catalog} release={r.id} href={releaseUrl(r.id)} compact={!g.album} lazy />
+                </div>
+              )}
               {ready.length > 0 && (
                 <PlayButton
                   queue={r.id}

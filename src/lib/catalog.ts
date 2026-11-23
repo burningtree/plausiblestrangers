@@ -210,3 +210,11 @@ export const playable = (t: Track, r: Release) => ({
   lyrics: timedLyrics(t),
   bpm: t.data.bpm,
 });
+
+export function playableArchive(song: ArchiveSong) {
+  const { audio, title, duration, bpm } = song.data;
+  if (!audio) return undefined;
+
+  const id = `archive/${song.id}`;
+  return { id, title, release: 'archive', src: audio, url: archiveUrl(song), duration: duration ?? 0, peaks: peaks[id] ?? [], bpm };
+}

@@ -11,6 +11,12 @@ const releases = defineCollection({
     catalog: z.string(),
     date: z.coerce.date().optional(),
     cover: z.string().optional(),
+    backCover: z.string().optional(),
+    vinylLabel: z.object({
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+      zoom: z.number().min(100),
+    }).optional(),
     suno: z.string().url().optional(),
     // 'unfinished' records show up with a stamp, after the released ones
     status: z.enum(['released', 'unfinished']).default('released'),
@@ -53,6 +59,7 @@ const archive = defineCollection({
     title: z.string(),
     created: z.coerce.date().optional(),
     duration: z.number().optional(),
+    audio: z.string().optional(),
     bpm: z.number().optional(),
     instrumental: z.boolean().default(false),
     lyricsHidden: z.boolean().default(false),

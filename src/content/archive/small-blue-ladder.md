@@ -3,6 +3,7 @@ title: "Small Blue Ladder"
 created: "2026-11-18"
 duration: 143.6
 instrumental: false
+audio: "/audio/archive/small-blue-ladder.m4a"
 tags: "acid techno, psychedelic disco, punk"
 machine: "suno v6-mini"
 suno: "https://suno.com/song/d6fbe376-9a72-47f5-976f-c3aac8a58544"

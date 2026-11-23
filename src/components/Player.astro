@@ -575,7 +575,7 @@ import Icon from './Icon.astro';
   // ---- reflect state on whatever page we are on
   function sync() {
     const t = current();
-    const playing = !!t && !audio.paused;
+    const playing = !!t && !audio.paused && !audio.ended && !audio.error;
     document.documentElement.classList.toggle('is-playing', playing);
     document.documentElement.classList.toggle('has-player', !!t);
     document.querySelectorAll<HTMLElement>('[data-play]').forEach((b) => {
@@ -588,6 +588,11 @@ import Icon from './Icon.astro';
     });
     document.querySelectorAll<HTMLElement>('[data-record-row]').forEach((r) => {
       r.classList.toggle('is-current', !!t && t.id.startsWith(r.dataset.recordRow + '/'));
+    });
+    document.querySelectorAll<HTMLElement>('vinyl-cover[data-release]').forEach((cover) => {
+      const selected = !!t && t.id.startsWith(cover.dataset.release + '/');
+      cover.toggleAttribute('data-open', selected);
+      cover.toggleAttribute('data-playing', selected && playing);
     });
     $<HTMLButtonElement>('.player-toggle').setAttribute('aria-label', playing ? 'pause' : 'play');
     $<HTMLButtonElement>('[data-player="prev"]').disabled = index <= 0 && audio.currentTime < 4;
@@ -796,12 +801,6 @@ import Icon from './Icon.astro';
       }
       return;
     }
-    // album artwork that doubles as a play button
-    const art = target.closest<HTMLElement>('[data-play-art]');
-    if (art) {
-      art.querySelector<HTMLElement>('[data-play]')?.click();
-      return;
-    }
     // a synced lyric line: jump there (starting the track if needed)
     const line = target.closest<HTMLElement>('.lyrics[data-sync] [data-li]');
     if (line && lyricEl) {
@@ -876,6 +875,7 @@ import Icon from './Icon.astro';
       return;
     }
     player.classList.add('is-error');
+    sync();
     $<HTMLElement>('.player-release').textContent = 'this file refuses to play.';
   });
 
