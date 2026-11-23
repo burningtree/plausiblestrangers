@@ -756,19 +756,81 @@ const labelStyle = vinylLabel && {
         const reservePlayer = () => dialog.style.setProperty('--cover-player-height', `${player?.offsetHeight ?? 0}px`);
         const resize = new ResizeObserver(reservePlayer);
         let handlers: AbortController | undefined;
-        const collapse = (restoreFocus = true) => {
-          if (!dialog.matches(':popover-open')) return;
-          dialog.hidePopover();
-          this.prepend(surface);
-          resize.disconnect();
-          handlers?.abort();
-          if (restoreFocus) expand.focus();
+        let flight: Animation | undefined;
+        let closing = false;
+
+        // ---- the flight between the page and the full view (FLIP):
+        // measure both places, then animate the difference away
+        const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const EASE = 'cubic-bezier(0.2, 0.75, 0.15, 1)';
+        const FLY_MS = 720;
+        const offset = (from: DOMRect, to: DOMRect) =>
+          `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / Math.max(1, to.width)})`;
+        // the backdrop and buttons fade, the paper colour comes from the theme
+        const fadeDialog = (inward: boolean) => {
+          const bg = getComputedStyle(dialog).backgroundColor;
+          dialog.animate(
+            { backgroundColor: inward ? ['transparent', bg] : [bg, 'transparent'] },
+            { duration: FLY_MS * (inward ? 0.7 : 0.8), easing: 'ease', fill: inward ? 'none' : 'forwards' },
+          );
+          dialog.querySelectorAll<HTMLElement>('.cover-close, .cover-start').forEach((el) =>
+            el.animate(
+              { opacity: inward ? [0, 1] : [1, 0] },
+              { duration: inward ? 300 : 200, delay: inward ? FLY_MS * 0.55 : 0, easing: 'ease', fill: 'both' },
+            ),
+          );
+        };
+
+        const collapse = (restoreFocus = true, animate = true) => {
+          if (!dialog.matches(':popover-open') || closing) return;
+          const finish = () => {
+            flight?.cancel();
+            dialog.getAnimations().forEach((a) => a.cancel());
+            dialog.hidePopover();
+            this.prepend(surface);
+            this.style.minHeight = '';
+            closing = false;
+            resize.disconnect();
+            handlers?.abort();
+            if (restoreFocus) expand.focus({ preventScroll: true });
+          };
+          if (!animate || calm()) return finish();
+          closing = true;
+          flight?.cancel();
+          // fly back to where the cover sits on the page
+          const home = this.getBoundingClientRect();
+          const from = surface.getBoundingClientRect();
+          const to = new DOMRect(home.left, home.top, this.clientWidth, this.clientWidth);
+          flight = surface.animate(
+            [
+              { transform: 'none', transformOrigin: '0 0' },
+              { transform: offset(to, from), transformOrigin: '0 0' },
+            ],
+            { duration: FLY_MS * 0.85, easing: EASE, fill: 'forwards' },
+          );
+          fadeDialog(false);
+          flight.finished.then(finish, finish);
         };
         expand.addEventListener('click', () => {
           if (dialog.matches(':popover-open')) return;
+          // keep the cover's place on the page while it's away
+          const before = surface.getBoundingClientRect();
+          this.style.minHeight = `${this.offsetHeight}px`;
           stage.append(surface);
           reservePlayer();
           dialog.showPopover();
+          if (!calm()) {
+            const after = surface.getBoundingClientRect();
+            flight?.cancel();
+            flight = surface.animate(
+              [
+                { transform: offset(before, after), transformOrigin: '0 0' },
+                { transform: 'none', transformOrigin: '0 0' },
+              ],
+              { duration: FLY_MS, easing: EASE },
+            );
+            fadeDialog(true);
+          }
           if (player) resize.observe(player);
           handlers = new AbortController();
           const { signal } = handlers;
@@ -779,9 +841,10 @@ const labelStyle = vinylLabel && {
             }
           }, { signal });
           document.addEventListener('click', (event) => {
-            if ((event.target as Element).closest('[data-viz-open]')) collapse(false);
+            if ((event.target as Element).closest('[data-viz-open]')) collapse(false, false);
           }, { capture: true, signal });
-          document.addEventListener('astro:before-swap', () => collapse(false), { once: true, signal });
+          // leaving the page: no time for a flight
+          document.addEventListener('astro:before-swap', () => collapse(false, false), { once: true, signal });
         });
         close?.addEventListener('click', () => collapse());
       }

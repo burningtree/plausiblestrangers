@@ -8,33 +8,42 @@ import Icon from './Icon.astro';
 <aside id="player" class="player" transition:persist="player" aria-label="player" hidden>
   <audio id="ps-audio" preload="metadata"></audio>
   <div class="player-row">
-    <button class="player-toggle" data-player="toggle" aria-label="play">
-      <span class="when-paused"><Icon name="play-solid" /></span>
-      <span class="when-playing"><Icon name="pause-solid" /></span>
-    </button>
-    <button type="button" class="player-matrix-btn" data-player="pattern" aria-label="pixel pattern: auto (click to change)" title="pattern: auto">
-      <canvas class="player-matrix" width="100" height="30" aria-hidden="true"></canvas>
-    </button>
-    <p class="player-now">
-      <a class="player-title" href="/"></a>
-      <span class="player-release"></span>
-      <span class="player-lyric" aria-hidden="true"></span>
-    </p>
-    <span class="player-time" aria-live="off"><span data-t="cur">0:00</span> / <span data-t="dur">0:00</span></span>
-    <span class="player-volume">
-      <button type="button" data-player="mute" aria-label="mute (m)" title="mute (m)">
-        <Icon name="sound-high" class="vol-high" /><Icon name="sound-low" class="vol-low" /><Icon name="sound-off" class="vol-off" />
+    <!-- left: what's playing -->
+    <div class="player-left">
+      <button type="button" class="player-matrix-btn" data-player="pattern" aria-label="pixel pattern: auto (click to change)" title="pattern: auto">
+        <canvas class="player-matrix" width="100" height="30" aria-hidden="true"></canvas>
       </button>
-      <input class="player-vol" type="range" min="0" max="1" step="0.01" value="1" aria-label="volume" />
-    </span>
-    <span class="player-skip">
-      <button type="button" data-player="cast" hidden aria-label="play on another device" title="cast">
-        <Icon name="chromecast" class="cast-idle" /><Icon name="chromecast-active" class="cast-on" /><Icon name="airplay" class="cast-airplay" />
+      <p class="player-now">
+        <a class="player-title" href="/"></a>
+        <span class="player-release"></span>
+        <span class="player-lyric" aria-hidden="true"></span>
+      </p>
+    </div>
+    <!-- middle: transport -->
+    <div class="player-transport">
+      <button type="button" data-player="prev" aria-label="previous track" title="previous (p)"><Icon name="skip-prev" /></button>
+      <button class="player-toggle" data-player="toggle" aria-label="play">
+        <span class="when-paused"><Icon name="play-solid" /></span>
+        <span class="when-playing"><Icon name="pause-solid" /></span>
       </button>
-      <button type="button" data-viz-open aria-label="open visualiser (v)" title="visualise (v)"><Icon name="sine-wave" /><span class="pbtn-label">viz</span></button>
-      <button data-player="prev" aria-label="previous track" title="previous (p)"><Icon name="skip-prev" /></button>
-      <button data-player="next" aria-label="next track" title="next (n)"><Icon name="skip-next" /></button>
-    </span>
+      <button type="button" data-player="next" aria-label="next track" title="next (n)"><Icon name="skip-next" /></button>
+    </div>
+    <!-- right: time, volume, elsewhere -->
+    <div class="player-right">
+      <span class="player-time" aria-live="off"><span data-t="cur">0:00</span> / <span data-t="dur">0:00</span></span>
+      <span class="player-volume">
+        <button type="button" data-player="mute" aria-label="mute (m)" title="mute (m)">
+          <Icon name="sound-high" class="vol-high" /><Icon name="sound-low" class="vol-low" /><Icon name="sound-off" class="vol-off" />
+        </button>
+        <input class="player-vol" type="range" min="0" max="1" step="0.01" value="1" aria-label="volume" />
+      </span>
+      <span class="player-skip">
+        <button type="button" data-player="cast" hidden aria-label="play on another device" title="cast">
+          <Icon name="chromecast" class="cast-idle" /><Icon name="chromecast-active" class="cast-on" /><Icon name="airplay" class="cast-airplay" />
+        </button>
+        <button type="button" data-viz-open aria-label="open visualiser (v)" title="visualise (v)"><Icon name="sine-wave" /><span class="pbtn-label">viz</span></button>
+      </span>
+    </div>
   </div>
   <div class="wave wave--player" data-wave="" role="slider" tabindex="0" aria-label="seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 </aside>

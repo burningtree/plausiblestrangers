@@ -8,7 +8,7 @@ import { iconSvg } from '../lib/icons';
 const ICONS = Object.fromEntries(
   [
     'play-solid', 'pause-solid', 'skip-next', 'skip-prev', 'home-simple', 'half-moon', 'sun-light',
-    'sine-wave', 'dice-five', 'album', 'music-note', 'quote', 'search', 'archive', 'book-stack',
+    'sine-wave', 'dice-five', 'album', 'music-note', 'quote', 'search', 'archive', 'book-stack', 'journal', 'page',
   ].map((n) => [n, iconSvg(n)]),
 );
 ---
@@ -61,9 +61,10 @@ const ICONS = Object.fromEntries(
     lyrics: string[];
     archive?: boolean;
   };
-  type Index = { records: Rec[]; tracks: Trk[]; queues: Record<string, unknown[]> };
+  type News = { title: string; summary: string; meta: string; url: string };
+  type Index = { records: Rec[]; tracks: Trk[]; queues: Record<string, unknown[]>; news?: News[] };
   type Result = {
-    kind: 'command' | 'record' | 'track' | 'lyric' | 'archive';
+    kind: 'command' | 'record' | 'track' | 'lyric' | 'archive' | 'news';
     icon?: string;
     titleHits?: readonly [number, number][];
     snippetHits?: readonly [number, number][];
@@ -133,6 +134,8 @@ const ICONS = Object.fromEntries(
     const list: Omit<Result, 'score'>[] = [
       { kind: 'command', icon: 'home-simple', title: 'home', meta: 'go to the first page', run: () => navigate('/') },
       { kind: 'command', icon: 'book-stack', title: 'library', meta: 'everything, released or not', run: () => navigate('/library/') },
+      { kind: 'command', icon: 'journal', title: 'news', meta: 'what happened lately', run: () => navigate('/news/') },
+      { kind: 'command', icon: 'page', title: 'about', meta: 'what this is and how it happens', run: () => navigate('/about/') },
       {
         kind: 'command',
         icon: dark ? 'sun-light' : 'half-moon',
@@ -172,7 +175,7 @@ const ICONS = Object.fromEntries(
     // a word at the end of a title counts as much as one at the start
     ignoreLocation: true,
   };
-  let fuses: { records: Fuse<Rec>; tracks: Fuse<Trk>; lines: Fuse<Line> } | null = null;
+  let fuses: { records: Fuse<Rec>; tracks: Fuse<Trk>; lines: Fuse<Line>; news: Fuse<News> } | null = null;
   function buildFuses() {
     if (fuses || !index) return;
     const lines: Line[] = index.tracks.flatMap((t) => t.lyrics.map((line) => ({ line, t })));
@@ -194,6 +197,13 @@ const ICONS = Object.fromEntries(
       } as IFuseOptions<Trk>),
       // lyrics: a phrase can be anywhere in a line, and should match tighter
       lines: new Fuse(lines, { ...base, keys: ['line'], threshold: 0.18, minMatchCharLength: 3 } as IFuseOptions<Line>),
+      news: new Fuse(index.news ?? [], {
+        ...base,
+        keys: [
+          { name: 'title', weight: 3 },
+          { name: 'summary', weight: 0.6 },
+        ],
+      } as IFuseOptions<News>),
     };
   }
 
@@ -244,6 +254,19 @@ const ICONS = Object.fromEntries(
         titleHits: hitsFor(r, 'title'),
         run: () => navigate(it.url),
         play: it.playable ? () => playQueue(it.id, 0) : undefined,
+      });
+    }
+
+    for (const r of fuses.news.search(q, { limit: 8 })) {
+      const it = r.item;
+      out.push({
+        kind: 'news',
+        icon: 'journal',
+        title: it.title,
+        meta: it.meta,
+        score: rank(r, 0.95),
+        titleHits: hitsFor(r, 'title'),
+        run: () => navigate(it.url),
       });
     }
 
@@ -299,7 +322,7 @@ const ICONS = Object.fromEntries(
     return out + esc(text.slice(at));
   }
 
-  const LABEL = { command: 'do', record: 'record', track: 'track', lyric: 'lyrics', archive: 'archive' };
+  const LABEL = { command: 'do', record: 'record', track: 'track', lyric: 'lyrics', archive: 'archive', news: 'news' };
 
   function render() {
     const d = dlg();

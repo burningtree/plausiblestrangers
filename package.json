@@ -13,7 +13,8 @@
     "import": "node scripts/import-music.mjs",
     "import:archive": "node scripts/import-archive.mjs",
     "blurhash": "node scripts/blurhash.mjs",
-    "analyse": "node scripts/analyse.mjs"
+    "analyse": "node scripts/analyse.mjs",
+    "influences:spotify": "node --env-file-if-exists=.env scripts/influences-spotify.mjs"
   },
   "dependencies": {
     "astro": "^7.4.13",

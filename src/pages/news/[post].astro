@@ -1,0 +1,105 @@
+---
+// One news post, with the records it's about at the end.
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Queue from '../../components/Queue.astro';
+import PlayButton from '../../components/PlayButton.astro';
+import {
+  getNews,
+  getCatalog,
+  newsUrl,
+  releaseUrl,
+  fmtDate,
+  fmtTotal,
+  hasAudio,
+  playable,
+  isUnfinished,
+  blurStyle,
+  type NewsPost,
+} from '../../lib/catalog';
+
+export const getStaticPaths = (async () => {
+  const posts = await getNews();
+  return posts.map((post, i) => ({
+    params: { post: post.id },
+    props: { post, newer: posts[i - 1], older: posts[i + 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post, newer, older } = Astro.props as { post: NewsPost; newer?: NewsPost; older?: NewsPost };
+const { Content } = await render(post);
+const { releases, tracksOf } = await getCatalog();
+const records = post.data.records
+  .map((slug) => releases.find((r) => r.id === slug))
+  .filter((r) => r !== undefined)
+  .map((r) => {
+    const tracks = tracksOf(r.id);
+    const ready = tracks.filter(hasAudio);
+    return { r, tracks, ready, total: tracks.reduce((s, t) => s + t.data.duration, 0) };
+  });
+const firstCover = records[0]?.r.data.cover?.replace(/\.webp$/, '.jpg');
+---
+
+<Base title={post.data.title} description={post.data.summary} image={firstCover}>
+  <article class="news-post">
+    <p class="crumbs"><a href="/news/">news</a> / {fmtDate(post.data.date)}</p>
+    <header>
+      <time class="news-date" datetime={post.data.date.toISOString().slice(0, 10)}>{fmtDate(post.data.date)}</time>
+      <h1 class="title">{post.data.title}</h1>
+    </header>
+
+    <div class="prose news-body">
+      <Content />
+    </div>
+
+    {
+      records.length > 0 && (
+        <section class="news-records" aria-label="records in this post">
+          {records.map(({ r, tracks, ready, total }) => (
+            <div class="news-record">
+              <Queue release={r} tracks={tracks} />
+              <a class="news-record-art" href={releaseUrl(r.id)} tabindex="-1" aria-hidden="true">
+                {r.data.cover && (
+                  <img
+                    src={r.data.cover.replace(/\.webp$/, '-480.webp')}
+                    class="blur"
+                    style={blurStyle(r.data.cover)}
+                    alt=""
+                    width="480"
+                    height="480"
+                    loading="lazy"
+                  />
+                )}
+              </a>
+              <div>
+                <p class="record-cat">{r.data.catalog}</p>
+                <h2 class="news-record-title">
+                  <a href={releaseUrl(r.id)}>{r.data.title}</a>
+                </h2>
+                <p class="record-meta">
+                  {r.data.kind} · {tracks.length} tracks · {fmtTotal(total)}
+                  {isUnfinished(r) && ' · in progress'}
+                </p>
+                {ready[0] && (
+                  <PlayButton
+                    queue={r.id}
+                    index={0}
+                    id={playable(ready[0], r).id}
+                    record={r.id}
+                    label={isUnfinished(r) ? 'play what exists' : 'play'}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
+      )
+    }
+
+    <nav class="pager" aria-label="other news">
+      {newer ? <a href={newsUrl(newer)} rel="prev">← {newer.data.title}</a> : <a href="/news/">← all news</a>}
+      {older ? <a href={newsUrl(older)} rel="next">{older.data.title} →</a> : <a href="/news/">all news ↑</a>}
+    </nav>
+  </article>
+</Base>

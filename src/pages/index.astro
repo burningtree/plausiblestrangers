@@ -6,6 +6,7 @@ import VinylCover from '../components/VinylCover.astro';
 import Stamp from '../components/Stamp.astro';
 import Icon from '../components/Icon.astro';
 import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
+import { getNews, newsUrl, fmtDate as fmtNewsDate } from '../lib/catalog';
 import { site } from '../site';
 
 const { releases, tracksOf } = await getCatalog();
@@ -19,6 +20,7 @@ const groups = [
   { label: 'albums', items: records.filter((x) => isAlbum(x.r)), album: true },
   { label: 'eps & singles', items: records.filter((x) => !isAlbum(x.r)), album: false },
 ].filter((g) => g.items.length);
+const latestNews = (await getNews()).slice(0, 3);
 ---
 
 <Base home>
@@ -27,22 +29,36 @@ const groups = [
     <h2 id="what" class="label">what we are</h2>
     <p class="lede">An electronic music experiment. Human imagination, machine-generated sound.</p>
     <p>
-      We are not a band in the traditional sense. Plausible Strangers is a human-directed, AI-generated
-      music project. The machines make the sounds. We decide which accidents deserve to exist.
+      Not a band, more of a habit: the machines make the sounds, we decide which accidents deserve
+      to exist. Somewhere between house, techno and electroclash, with misplaced instruments and
+      occasionally just noise.
     </p>
+    <p class="home-influences">
+      Inspired by Vitalic, Sexy Sushi, Fischerspooner, The Blaze, МЫ
+      <a href="/about/#influences">and many more</a>.
+    </p>
+    <p class="more-link"><a href="/about/">more about us →</a></p>
   </section>
 
-  <section class="home-doing" aria-labelledby="doing">
-    <h2 id="doing" class="label">what we're doing</h2>
-    <p>
-      Hypnotic electronic music somewhere between house, techno and electroclash. Strange rhythms,
-      synthetic voices, misplaced instruments, playful melodies. Occasionally a little classical
-      elegance. Occasionally just noise.
-    </p>
-    <p>
-      We experiment, discard, repeat and keep what feels unfamiliar. There is no fixed genre, no
-      imaginary band mythology, and no particular destination.
-    </p>
+  <section class="home-news" aria-labelledby="news">
+    <h2 id="news" class="label">
+      news <a class="label-link" href="/news/">all of it →</a>
+    </h2>
+    <ol class="home-news-list">
+      {
+        latestNews.map((p) => (
+          <li>
+            <time class="news-date" datetime={p.data.date.toISOString().slice(0, 10)}>
+              {fmtNewsDate(p.data.date)}
+            </time>
+            <a class="home-news-title" href={newsUrl(p)}>
+              {p.data.title}
+            </a>
+            {p.data.summary && <span class="home-news-summary">{p.data.summary}</span>}
+          </li>
+        ))
+      }
+    </ol>
   </section>
 
   <section class="home-records" aria-labelledby="records">

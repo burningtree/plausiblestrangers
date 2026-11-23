@@ -113,6 +113,15 @@ export const hasAudio = (t: Track) => Boolean(t.data.audio);
 
 export const trackSlug = (t: Track) => t.id.split('/').pop()!.replace(/^\d+-/, '');
 export const releaseUrl = (slug: string) => `/records/${slug}/`;
+
+// ---- news
+export type NewsPost = CollectionEntry<'news'>;
+export const newsUrl = (n: NewsPost) => `/news/${n.id}/`;
+export async function getNews() {
+  return (await getCollection('news', (n) => !n.data.draft)).sort(
+    (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+  );
+}
 export const trackUrl = (t: Track) => `/records/${t.data.release}/${trackSlug(t)}/`;
 export const trackPeaks = (t: Track) => peaks[`${t.data.release}/${trackSlug(t)}`] ?? [];
 /** A friendly file name for downloads: "Plausible Strangers - R.U.R..m4a" */

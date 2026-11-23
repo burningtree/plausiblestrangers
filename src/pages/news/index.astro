@@ -1,0 +1,41 @@
+---
+// All news, newest first.
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import { getNews, newsUrl, fmtDate } from '../../lib/catalog';
+
+const posts = await getNews();
+---
+
+<Base title="news" description="News from Plausible Strangers: new records, unfinished ones, and whatever else happens.">
+  <section class="news" aria-labelledby="news-h">
+    <p class="crumbs"><a href="/">home</a> / news</p>
+    <h1 id="news-h" class="title">news</h1>
+    <p class="news-feed">
+      <a href="/rss.xml"><Icon name="rss-feed" /> follow with RSS</a>
+    </p>
+
+    {
+      posts.length ? (
+        <ol class="news-list">
+          {posts.map((p) => (
+            <li class="news-item">
+              <time class="news-date" datetime={p.data.date.toISOString().slice(0, 10)}>
+                {fmtDate(p.data.date)}
+              </time>
+              <h2 class="news-title">
+                <a href={newsUrl(p)}>{p.data.title}</a>
+              </h2>
+              {p.data.summary && <p class="news-summary">{p.data.summary}</p>}
+              <a class="news-more" href={newsUrl(p)} aria-label={`read ${p.data.title}`}>
+                read →
+              </a>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p class="muted">Nothing yet. Which is also news, in a way.</p>
+      )
+    }
+  </section>
+</Base>

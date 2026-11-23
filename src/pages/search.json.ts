@@ -14,6 +14,8 @@ import {
   getArchive,
   playableArchive,
   archiveUrl,
+  getNews,
+  newsUrl,
 } from '../lib/catalog';
 
 export const GET: APIRoute = async () => {
@@ -73,7 +75,14 @@ export const GET: APIRoute = async () => {
     });
   }
 
-  return new Response(JSON.stringify({ records, tracks, queues }), {
+  const news = (await getNews()).map((n) => ({
+    title: n.data.title,
+    summary: n.data.summary ?? '',
+    meta: `news · ${fmtDate(n.data.date)}`,
+    url: newsUrl(n),
+  }));
+
+  return new Response(JSON.stringify({ records, tracks, queues, news }), {
     headers: { 'content-type': 'application/json' },
   });
 };

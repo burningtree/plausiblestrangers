@@ -73,4 +73,18 @@ const archive = defineCollection({
   }),
 });
 
-export const collections = { releases, tracks, archive };
+// News: short posts, newest first. The body is markdown.
+const news = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/news' }),
+  schema: z.object({
+    title: z.string(),
+    date: z.coerce.date(),
+    // one or two sentences for lists, the home page and the RSS feed
+    summary: z.string().optional(),
+    // records this post is about: shown at the end with a play button
+    records: z.array(z.string()).default([]),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { releases, tracks, archive, news };

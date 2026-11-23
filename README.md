@@ -77,6 +77,54 @@ Covers and gallery images show a blurred colour preview while they load
 npm run blurhash
 ```
 
+## News
+
+Posts live in `src/content/news/`, one markdown file each:
+
+```
+---
+title: "Something happened"
+date: 2026-12-01
+summary: "One or two sentences for lists, the home page and the RSS feed."
+records: ["i-am-your-bug"]   # optional: shown at the end with a play button
+draft: true                   # optional: hide it until it's ready
+---
+The post itself, in markdown.
+```
+
+The newest three appear on the home page; all of them on `/news`, in search,
+and in the RSS feed at `/rss.xml`.
+
+## Influences (/about)
+
+The list lives in `src/data/influences.ts`. To give an artist a photo, save it
+as `public/art/influences/<slug>.webp` (or .jpg/.png), where the slug is the
+name in lowercase without accents or punctuation: `vitalic`, `miss-kittin`,
+`etienne-de-crecy`, `slagsmalsklubben`… Until then the tile shows initials.
+Photos are shown in black and white, in colour on hover. Run `npm run blurhash`
+after adding them for the blurred loading preview. Only use photos you have the
+rights to.
+
+### Photos from Spotify
+
+Tiles without a photo of your own can use the artist's Spotify picture:
+
+1. Create a free app at https://developer.spotify.com/dashboard and copy its
+   Client ID and Client Secret into `web/.env` (git ignores it):
+
+   ```
+   SPOTIFY_CLIENT_ID=...
+   SPOTIFY_CLIENT_SECRET=...
+   ```
+
+2. `npm run influences:spotify` — it prints each match (✓ exact, ≈ guessed).
+   For a wrong match, put the right artist id (from its
+   `open.spotify.com/artist/<id>` link) as `id` in
+   `src/data/influences-spotify.json`, remove its `image`, and run again.
+
+Only image addresses are stored; the pictures load from Spotify, unaltered and
+linked to the artist, with a credit under the grid (as Spotify's terms ask).
+
 ## Deploy
 
 `dist/` is plain files — any static host works (Netlify, Cloudflare Pages, a

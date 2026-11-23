@@ -1,0 +1,975 @@
+{
+  "vitalic": {
+    "id": "4M84umUNRbZy1mJleyyRM9",
+    "name": "Vitalic",
+    "url": "https://open.spotify.com/artist/4M84umUNRbZy1mJleyyRM9",
+    "image": "https://i.scdn.co/image/ab676161000051742a3fcb5349ba832f2aabe452",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb2a3fcb5349ba832f2aabe452"
+  },
+  "sexy-sushi": {
+    "id": "6yNXUzxIakMVY5LoVgZGHG",
+    "name": "Sexy Sushi",
+    "url": "https://open.spotify.com/artist/6yNXUzxIakMVY5LoVgZGHG",
+    "image": "https://i.scdn.co/image/ab676161000051743649e4fb8d618d1baa1f7bb5",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb3649e4fb8d618d1baa1f7bb5"
+  },
+  "fischerspooner": {
+    "id": "5R7K1GezC0jy24v1R2n4x3",
+    "name": "Fischerspooner",
+    "url": "https://open.spotify.com/artist/5R7K1GezC0jy24v1R2n4x3",
+    "image": "https://i.scdn.co/image/ab676161000051749b67e00c7f2a62689acdcce0",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb9b67e00c7f2a62689acdcce0"
+  },
+  "midi-lidi": {
+    "id": "3VhIkkxDekiXF9OuVhWRdD",
+    "name": "Midi Lidi",
+    "url": "https://open.spotify.com/artist/3VhIkkxDekiXF9OuVhWRdD",
+    "image": "https://i.scdn.co/image/ab67616100005174f9b627b4051b98b52e730364",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebf9b627b4051b98b52e730364"
+  },
+  "simian-mobile-disco": {
+    "id": "31DXlldabwPHwu6dYevuzK",
+    "name": "Simian Mobile Disco",
+    "url": "https://open.spotify.com/artist/31DXlldabwPHwu6dYevuzK",
+    "image": "https://i.scdn.co/image/ab67616100005174ecf9673ef5fc69196a63c235",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebecf9673ef5fc69196a63c235"
+  },
+  "teenage-bad-girl": {
+    "id": "6sD3igMnVxPgbmwistAoBb",
+    "name": "Teenage Bad Girl",
+    "url": "https://open.spotify.com/artist/6sD3igMnVxPgbmwistAoBb",
+    "image": "https://i.scdn.co/image/ab67616100005174e24e9821b8814a16ae93a4dd",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebe24e9821b8814a16ae93a4dd"
+  },
+  "aphex-twin": {
+    "id": "6kBDZFXuLrZgHnvmPu9NsG",
+    "name": "Aphex Twin",
+    "url": "https://open.spotify.com/artist/6kBDZFXuLrZgHnvmPu9NsG",
+    "image": "https://i.scdn.co/image/ab67616100005174eb89035b7c0d65720926d511",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebeb89035b7c0d65720926d511"
+  },
+  "justice": {
+    "id": "1gR0gsQYfi6joyO1dlp76N",
+    "name": "Justice",
+    "url": "https://open.spotify.com/artist/1gR0gsQYfi6joyO1dlp76N",
+    "image": "https://i.scdn.co/image/ab6761610000517431f6a05c867dce1ef426c2e0",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb31f6a05c867dce1ef426c2e0"
+  },
+  "the-blaze": {
+    "id": "1Dt1UKLtrJIW1xxRBejjos",
+    "name": "The Blaze",
+    "url": "https://open.spotify.com/artist/1Dt1UKLtrJIW1xxRBejjos",
+    "image": "https://i.scdn.co/image/ab67616100005174c47d7909754b4c16982e5626",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebc47d7909754b4c16982e5626"
+  },
+  "boys-noize": {
+    "id": "62k5LKMhymqlDNo2DWOvvv",
+    "name": "Boys Noize",
+    "url": "https://open.spotify.com/artist/62k5LKMhymqlDNo2DWOvvv",
+    "image": "https://i.scdn.co/image/ab67616100005174feba5f12b9eae4f42ac96063",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebfeba5f12b9eae4f42ac96063"
+  },
+  "mr-oizo": {
+    "id": "0b9ukmbg0MO5eMlorcgOwz",
+    "name": "Mr. Oizo",
+    "url": "https://open.spotify.com/artist/0b9ukmbg0MO5eMlorcgOwz",
+    "image": "https://i.scdn.co/image/ab6761610000517402b5851e1d1769748d64b908",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb02b5851e1d1769748d64b908"
+  },
+  "forest-swords": {
+    "id": "2VarlUiM6Lw0SA7BvwVPRP",
+    "name": "Forest Swords",
+    "url": "https://open.spotify.com/artist/2VarlUiM6Lw0SA7BvwVPRP",
+    "image": "https://i.scdn.co/image/ab6761610000517414b07e5c4d185afb8ab6b6b8",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb14b07e5c4d185afb8ab6b6b8"
+  },
+  "air": {
+    "id": "1P6U1dCeHxPui5pIrGmndZ",
+    "name": "Air",
+    "url": "https://open.spotify.com/artist/1P6U1dCeHxPui5pIrGmndZ",
+    "image": "https://i.scdn.co/image/ab67616100005174bba853968b8873dd4f6ef3c1",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebbba853968b8873dd4f6ef3c1"
+  },
+  "ladytron": {
+    "id": "0ucLPotcQNI7AViFytdhBz",
+    "name": "Ladytron",
+    "url": "https://open.spotify.com/artist/0ucLPotcQNI7AViFytdhBz",
+    "image": "https://i.scdn.co/image/ab676161000051741ebad3da51b5d7f38dcf807d",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb1ebad3da51b5d7f38dcf807d"
+  },
+  "somethingalamode": {
+    "id": "2QydXEtUFGq17FkJ7Wv31y",
+    "name": "SomethingALaMode",
+    "url": "https://open.spotify.com/artist/2QydXEtUFGq17FkJ7Wv31y",
+    "image": "https://i.scdn.co/image/1f7dee2784ea4ff58b5bd91b00d26d930d419abd",
+    "imageLarge": "https://i.scdn.co/image/1f7dee2784ea4ff58b5bd91b00d26d930d419abd"
+  },
+  "adult": {
+    "id": "2jh27vMWRDaPgtwvluMomC",
+    "name": "ADULT.",
+    "url": "https://open.spotify.com/artist/2jh27vMWRDaPgtwvluMomC",
+    "image": "https://i.scdn.co/image/ab676161000051745258c93247c865b1049c5f99",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb5258c93247c865b1049c5f99"
+  },
+  "miss-kittin": {
+    "id": "3QhNv79NoIvarU6N57GBzL",
+    "name": "Miss Kittin",
+    "url": "https://open.spotify.com/artist/3QhNv79NoIvarU6N57GBzL",
+    "image": "https://i.scdn.co/image/ab6761610000517400c5ff6ec17bc11956ee0405",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb00c5ff6ec17bc11956ee0405"
+  },
+  "vive-la-fete": {
+    "id": "5zDp4B8cjwn7CScyTJ5BPY",
+    "name": "Vive La Fête",
+    "url": "https://open.spotify.com/artist/5zDp4B8cjwn7CScyTJ5BPY",
+    "image": "https://i.scdn.co/image/ab676161000051744e1d521dd6e3e7fe94bb2e21",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb4e1d521dd6e3e7fe94bb2e21"
+  },
+  "kap-bambino": {
+    "id": "2EsL7l54h5MZm34uFVsRQi",
+    "name": "Kap Bambino",
+    "url": "https://open.spotify.com/artist/2EsL7l54h5MZm34uFVsRQi",
+    "image": "https://i.scdn.co/image/ab6761610000517403ded8d400add87352af7d07",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb03ded8d400add87352af7d07"
+  },
+  "tiga": {
+    "id": "5l9wiTZVfqQTfMDOt0HtwC",
+    "name": "Tiga",
+    "url": "https://open.spotify.com/artist/5l9wiTZVfqQTfMDOt0HtwC",
+    "image": "https://i.scdn.co/image/ab676161000051744cadec9a07cd964d1420a7bc",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb4cadec9a07cd964d1420a7bc"
+  },
+  "peaches": {
+    "id": "1gkSl4XpHIHI4I1WQbfXOE",
+    "name": "Peaches",
+    "url": "https://open.spotify.com/artist/1gkSl4XpHIHI4I1WQbfXOE",
+    "image": "https://i.scdn.co/image/ab67616100005174742308bc67e0af52374f8a71",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb742308bc67e0af52374f8a71"
+  },
+  "crystal-castles": {
+    "id": "7K3zpFXBvPcvzhj7zlGJdO",
+    "name": "Crystal Castles",
+    "url": "https://open.spotify.com/artist/7K3zpFXBvPcvzhj7zlGJdO",
+    "image": "https://i.scdn.co/image/d90a0865e8bca5e5084049e8adc3485b3880848e",
+    "imageLarge": "https://i.scdn.co/image/5419a05563a9ba8cb16fe207199c298f621eef85"
+  },
+  "royksopp": {
+    "id": "5nPOO9iTcrs9k6yFffPxjH",
+    "name": "Röyksopp",
+    "url": "https://open.spotify.com/artist/5nPOO9iTcrs9k6yFffPxjH",
+    "image": "https://i.scdn.co/image/ab676161000051746bc3053447db6b61f3fe444c",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb6bc3053447db6b61f3fe444c"
+  },
+  "gusgus": {
+    "id": "5sL9uDMwceYHPknnCLAAwJ",
+    "name": "GusGus",
+    "url": "https://open.spotify.com/artist/5sL9uDMwceYHPknnCLAAwJ",
+    "image": "https://i.scdn.co/image/ab6761610000517443c4425bd2dc352f925c4208",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb43c4425bd2dc352f925c4208"
+  },
+  "moderat": {
+    "id": "2exkZbmNqMKnT8LRWuxWgy",
+    "name": "Moderat",
+    "url": "https://open.spotify.com/artist/2exkZbmNqMKnT8LRWuxWgy",
+    "image": "https://i.scdn.co/image/ab6761610000517455a94b7fa21c9dbb2b986229",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb55a94b7fa21c9dbb2b986229"
+  },
+  "apparat": {
+    "id": "40Ojab0UtVQFjA76qXr8Ot",
+    "name": "Apparat",
+    "url": "https://open.spotify.com/artist/40Ojab0UtVQFjA76qXr8Ot",
+    "image": "https://i.scdn.co/image/ab67616100005174346724d82213cd3096cef469",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb346724d82213cd3096cef469"
+  },
+  "lorn": {
+    "id": "1PmVyfIR9KtCxbHWuga8E5",
+    "name": "Lorn",
+    "url": "https://open.spotify.com/artist/1PmVyfIR9KtCxbHWuga8E5",
+    "image": "https://i.scdn.co/image/ab67616100005174407dacc6afcca2e56bdf0b02",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb407dacc6afcca2e56bdf0b02"
+  },
+  "amon-tobin": {
+    "id": "3mvkWMe6swnknwscwvGCHO",
+    "name": "Amon Tobin",
+    "url": "https://open.spotify.com/artist/3mvkWMe6swnknwscwvGCHO",
+    "image": "https://i.scdn.co/image/ab67616100005174c2a1fce6cff99142dd2ad808",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebc2a1fce6cff99142dd2ad808"
+  },
+  "nicolas-jaar": {
+    "id": "5a0etAzO5V26gvlbmHzT9W",
+    "name": "Nicolas Jaar",
+    "url": "https://open.spotify.com/artist/5a0etAzO5V26gvlbmHzT9W",
+    "image": "https://i.scdn.co/image/ab67616100005174d8f87c884d83508eac7f7a06",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebd8f87c884d83508eac7f7a06"
+  },
+  "rone": {
+    "id": "3Dw9w3jnmr58ocgxiwITcq",
+    "name": "Rone",
+    "url": "https://open.spotify.com/artist/3Dw9w3jnmr58ocgxiwITcq",
+    "image": "https://i.scdn.co/image/ab676161000051749eab5ae6fe21eea649e4f7ae",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb9eab5ae6fe21eea649e4f7ae"
+  },
+  "digitalism": {
+    "id": "2fBURuq7FrlH6z5F92mpOl",
+    "name": "Digitalism",
+    "url": "https://open.spotify.com/artist/2fBURuq7FrlH6z5F92mpOl",
+    "image": "https://i.scdn.co/image/ab676161000051745f592fa7bcfc1940f1c32021",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb5f592fa7bcfc1940f1c32021"
+  },
+  "sebastian": {
+    "id": "5tOWIviwLM1EIqGAbF8VSU",
+    "name": "SebastiAn",
+    "url": "https://open.spotify.com/artist/5tOWIviwLM1EIqGAbF8VSU",
+    "image": "https://i.scdn.co/image/ab676161000051740f01cf1b3338b58b9551cb82",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb0f01cf1b3338b58b9551cb82"
+  },
+  "soulwax": {
+    "id": "43mWhBXSflupNLuNjM5vff",
+    "name": "Soulwax",
+    "url": "https://open.spotify.com/artist/43mWhBXSflupNLuNjM5vff",
+    "image": "https://i.scdn.co/image/ab67616100005174ca556b991df304bb6835dc58",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebca556b991df304bb6835dc58"
+  },
+  "the-subs": {
+    "id": "06h5xeeCDip3usS3go9zjI",
+    "name": "The Subs",
+    "url": "https://open.spotify.com/artist/06h5xeeCDip3usS3go9zjI",
+    "image": "https://i.scdn.co/image/ab676161000051747e64491627cd62a355660c64",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb7e64491627cd62a355660c64"
+  },
+  "les-petits-pilous": {
+    "id": "2MS8Aeh2jTfqu1VhRZ4x1P",
+    "name": "Les Petits Pilous",
+    "url": "https://open.spotify.com/artist/2MS8Aeh2jTfqu1VhRZ4x1P",
+    "image": "https://i.scdn.co/image/ab67616d0000b27379ed57a7ba1bdec321e26dad",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b27379ed57a7ba1bdec321e26dad"
+  },
+  "etienne-de-crecy": {
+    "id": "78YRbJhMi5kXKruiQGCJo7",
+    "name": "Etienne de Crécy ",
+    "url": "https://open.spotify.com/artist/78YRbJhMi5kXKruiQGCJo7",
+    "image": "https://i.scdn.co/image/ab67616100005174976162a7d8f6d64d20b9874f",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb976162a7d8f6d64d20b9874f"
+  },
+  "ventolin": {
+    "id": "68ECyg9qJD1yjHqC4yK40S",
+    "name": "Ventolin",
+    "url": "https://open.spotify.com/artist/68ECyg9qJD1yjHqC4yK40S",
+    "image": "https://i.scdn.co/image/ab67616d0000b273109fe0e576bd3589eeb691b4",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b273109fe0e576bd3589eeb691b4"
+  },
+  "monikino-kino": {
+    "id": "2eqjdjSEJRM4bfes5AKeni",
+    "name": "Monikino Kino",
+    "url": "https://open.spotify.com/artist/2eqjdjSEJRM4bfes5AKeni",
+    "image": "https://i.scdn.co/image/ab67616d0000b27320164492bdc9428025f0c32a",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b27320164492bdc9428025f0c32a"
+  },
+  "dva": {
+    "id": "5KBiPJpYVQsbjL3PGZoMSx",
+    "name": "DVA",
+    "url": "https://open.spotify.com/artist/5KBiPJpYVQsbjL3PGZoMSx",
+    "image": "https://i.scdn.co/image/ab67616100005174db90dfd860af3beac18b9eab",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebdb90dfd860af3beac18b9eab"
+  },
+  "slagsmalsklubben": {
+    "id": "4TzSCfS4LS5SVChh2AB2wH",
+    "name": "Slagsmålsklubben",
+    "url": "https://open.spotify.com/artist/4TzSCfS4LS5SVChh2AB2wH",
+    "image": "https://i.scdn.co/image/ab67616d0000b273aa9adbb6b712a555fab25274",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b273aa9adbb6b712a555fab25274"
+  },
+  "kompromat": {
+    "id": "1QYA7hFYKc0EuhE2MGpjH7",
+    "name": "KOMPROMAT",
+    "url": "https://open.spotify.com/artist/1QYA7hFYKc0EuhE2MGpjH7",
+    "image": "https://i.scdn.co/image/ab676161000051746f3c2bcee7c0174a706756ba",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb6f3c2bcee7c0174a706756ba"
+  },
+  "my": {
+    "id": "3WGL5CRtgYd8Tm5elcbsdV",
+    "name": "My",
+    "url": "https://open.spotify.com/artist/3WGL5CRtgYd8Tm5elcbsdV",
+    "image": "https://i.scdn.co/image/ab676161000051740a48dafb29b4fb3c793b1135",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb0a48dafb29b4fb3c793b1135"
+  },
+  "modeselektor": {
+    "id": "2jYMYP2SVifgmzNRQJx3SJ",
+    "name": "Modeselektor",
+    "url": "https://open.spotify.com/artist/2jYMYP2SVifgmzNRQJx3SJ",
+    "image": "https://i.scdn.co/image/ab67616100005174efa7241f9675cf3ea768830c",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebefa7241f9675cf3ea768830c"
+  },
+  "autokratz": {
+    "id": "47cwlbmfcqKZQsisqRfQz8",
+    "name": "autoKratz",
+    "url": "https://open.spotify.com/artist/47cwlbmfcqKZQsisqRfQz8",
+    "image": "https://i.scdn.co/image/ab67616100005174a0cc718b44a7bc462b518e4a",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eba0cc718b44a7bc462b518e4a"
+  },
+  "the-chemical-brothers": {
+    "id": "1GhPHrq36VKCY3ucVaZCfo",
+    "name": "The Chemical Brothers",
+    "url": "https://open.spotify.com/artist/1GhPHrq36VKCY3ucVaZCfo",
+    "image": "https://i.scdn.co/image/ab67616100005174ae05213e52565bfd7e7489b3",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebae05213e52565bfd7e7489b3"
+  },
+  "the-knife": {
+    "id": "7eQZTqEMozBcuSubfu52i4",
+    "name": "The Knife",
+    "url": "https://open.spotify.com/artist/7eQZTqEMozBcuSubfu52i4",
+    "image": "https://i.scdn.co/image/ab67616100005174ac528fa9a19961733193cbf7",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebac528fa9a19961733193cbf7"
+  },
+  "gesaffelstein": {
+    "id": "3hteYQFiMFbJY7wS0xDymP",
+    "name": "Gesaffelstein",
+    "url": "https://open.spotify.com/artist/3hteYQFiMFbJY7wS0xDymP",
+    "image": "https://i.scdn.co/image/ab67616100005174d1b0c16bf77cfe30c09b4951",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebd1b0c16bf77cfe30c09b4951"
+  },
+  "siriusmo": {
+    "id": "22680B8sUdq6bL6nQaJfwg",
+    "name": "Siriusmo",
+    "url": "https://open.spotify.com/artist/22680B8sUdq6bL6nQaJfwg",
+    "image": "https://i.scdn.co/image/ab676161000051748210d0a1164f432682c28880",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb8210d0a1164f432682c28880"
+  },
+  "bicep": {
+    "id": "73A3bLnfnz5BoQjb4gNCga",
+    "name": "BICEP",
+    "url": "https://open.spotify.com/artist/73A3bLnfnz5BoQjb4gNCga",
+    "image": "https://i.scdn.co/image/ab676161000051741a32edf0e6db1fd3a443ab6c",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb1a32edf0e6db1fd3a443ab6c"
+  },
+  "nto": {
+    "id": "7ry8L53T4oJtSIogGYuioq",
+    "name": "NTO",
+    "url": "https://open.spotify.com/artist/7ry8L53T4oJtSIogGYuioq",
+    "image": "https://i.scdn.co/image/ab676161000051746ea1974d71c81a203647ce06",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb6ea1974d71c81a203647ce06"
+  },
+  "giorgio-moroder": {
+    "id": "6jU2Tt13MmXYk0ZBv1KmfO",
+    "name": "Giorgio Moroder",
+    "url": "https://open.spotify.com/artist/6jU2Tt13MmXYk0ZBv1KmfO",
+    "image": "https://i.scdn.co/image/6a95d158d48456476575e58d9782654ce5f8ba22",
+    "imageLarge": "https://i.scdn.co/image/ae53e43ad044fe30298ac986a606bef7db4617bb"
+  },
+  "kraftwerk": {
+    "id": "0dmPX6ovclgOy8WWJaFEUU",
+    "name": "Kraftwerk",
+    "url": "https://open.spotify.com/artist/0dmPX6ovclgOy8WWJaFEUU",
+    "image": "https://i.scdn.co/image/ab67616100005174c46999e5afaf35c91cbe652b",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebc46999e5afaf35c91cbe652b"
+  },
+  "french-79": {
+    "id": "6MJKlN8ya42Agsw3iQZs6e",
+    "name": "French 79",
+    "url": "https://open.spotify.com/artist/6MJKlN8ya42Agsw3iQZs6e",
+    "image": "https://i.scdn.co/image/ab67616100005174a2d0d7d6550e7c1b504f6ba8",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eba2d0d7d6550e7c1b504f6ba8"
+  },
+  "the-hacker": {
+    "id": "763V8ZisRsw5kCoquzKTUp",
+    "name": "The Hacker",
+    "url": "https://open.spotify.com/artist/763V8ZisRsw5kCoquzKTUp",
+    "image": "https://i.scdn.co/image/ab676161000051741039076df8c0631daa8a2dde",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb1039076df8c0631daa8a2dde"
+  },
+  "whomadewho": {
+    "id": "50Lr1puweM1hFsF1LpIZLM",
+    "name": "WhoMadeWho",
+    "url": "https://open.spotify.com/artist/50Lr1puweM1hFsF1LpIZLM",
+    "image": "https://i.scdn.co/image/ab6761610000517411cdb87d955ea3af2f8174d0",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb11cdb87d955ea3af2f8174d0"
+  },
+  "daft-punk": {
+    "id": "4tZwfgrHOc3mvqYlEYSvVi",
+    "name": "Daft Punk",
+    "url": "https://open.spotify.com/artist/4tZwfgrHOc3mvqYlEYSvVi",
+    "image": "https://i.scdn.co/image/ab67616100005174d3aa7cc0e419b6c459b08e8e",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebd3aa7cc0e419b6c459b08e8e"
+  },
+  "golden-bug": {
+    "id": "2i3LPFJ85TQROM0zjHYaQq",
+    "name": "Golden Bug",
+    "url": "https://open.spotify.com/artist/2i3LPFJ85TQROM0zjHYaQq",
+    "image": "https://i.scdn.co/image/ab67616100005174179bd714a89fd6525415ffd1",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb179bd714a89fd6525415ffd1"
+  },
+  "the-bloody-beetroots": {
+    "id": "0QJKELJZZuLAjqLOOixJm5",
+    "name": "The Bloody Beetroots",
+    "url": "https://open.spotify.com/artist/0QJKELJZZuLAjqLOOixJm5",
+    "image": "https://i.scdn.co/image/ab6761610000517404be73258c44224e808de2d8",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb04be73258c44224e808de2d8"
+  },
+  "ascii-disko": {
+    "id": "3ryQXfij07gcxeck68pBEx",
+    "name": "Ascii.Disko",
+    "url": "https://open.spotify.com/artist/3ryQXfij07gcxeck68pBEx",
+    "image": "https://i.scdn.co/image/ab676161000051741f970b63d94c1e1b81f09197",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb1f970b63d94c1e1b81f09197"
+  },
+  "hot-chip": {
+    "id": "37uLId6Z5ZXCx19vuruvv5",
+    "name": "Hot Chip",
+    "url": "https://open.spotify.com/artist/37uLId6Z5ZXCx19vuruvv5",
+    "image": "https://i.scdn.co/image/ab676161000051744ae0995daed2681783bdb31d",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb4ae0995daed2681783bdb31d"
+  },
+  "the-toxic-avenger": {
+    "id": "5zExRf0VQCl3GO4Jrj8r0s",
+    "name": "The Toxic Avenger",
+    "url": "https://open.spotify.com/artist/5zExRf0VQCl3GO4Jrj8r0s",
+    "image": "https://i.scdn.co/image/ab67616100005174541fb550aa4b5f3a7f05f040",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb541fb550aa4b5f3a7f05f040"
+  },
+  "scratch-massive": {
+    "id": "5udXThiZTVoHa4g0GDjgxA",
+    "name": "Scratch Massive",
+    "url": "https://open.spotify.com/artist/5udXThiZTVoHa4g0GDjgxA",
+    "image": "https://i.scdn.co/image/ab67616100005174f93c4ff609772b5ebdc88e1e",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebf93c4ff609772b5ebdc88e1e"
+  },
+  "orbital": {
+    "id": "3csPCeXsj2wezyvkRFzvmV",
+    "name": "Orbital",
+    "url": "https://open.spotify.com/artist/3csPCeXsj2wezyvkRFzvmV",
+    "image": "https://i.scdn.co/image/ab676161000051747a26fb9c4155397964a6fe29",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb7a26fb9c4155397964a6fe29"
+  },
+  "leftfield": {
+    "id": "72hqBMsw7x5jnfxxwkii8L",
+    "name": "Leftfield",
+    "url": "https://open.spotify.com/artist/72hqBMsw7x5jnfxxwkii8L",
+    "image": "https://i.scdn.co/image/ab67616100005174268b59428f3f0223910ab358",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb268b59428f3f0223910ab358"
+  },
+  "rival-consoles": {
+    "id": "05lIUgmmsmTX2N9dCKc8rC",
+    "name": "Rival Consoles",
+    "url": "https://open.spotify.com/artist/05lIUgmmsmTX2N9dCKc8rC",
+    "image": "https://i.scdn.co/image/ab67616100005174df10426e6353edde061c73a4",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebdf10426e6353edde061c73a4"
+  },
+  "clark": {
+    "id": "6kic5bCjlohhDn9KzXbOta",
+    "name": "Clark",
+    "url": "https://open.spotify.com/artist/6kic5bCjlohhDn9KzXbOta",
+    "image": "https://i.scdn.co/image/ab6761610000517432f01214c7c8c1fc7a1fa922",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb32f01214c7c8c1fc7a1fa922"
+  },
+  "the-bug": {
+    "id": "213i4NKah1DX9q0FNiKsuw",
+    "name": "The Bug",
+    "url": "https://open.spotify.com/artist/213i4NKah1DX9q0FNiKsuw",
+    "image": "https://i.scdn.co/image/ab6772690000dd22e2bef4bcb43bb7eabb51c014",
+    "imageLarge": "https://i.scdn.co/image/ab6772690000c46ce2bef4bcb43bb7eabb51c014"
+  },
+  "lcd-soundsystem": {
+    "id": "066X20Nz7iquqkkCW6Jxy6",
+    "name": "LCD Soundsystem",
+    "url": "https://open.spotify.com/artist/066X20Nz7iquqkkCW6Jxy6",
+    "image": "https://i.scdn.co/image/ab676161000051746a0838a408f8c9cf82915ac8",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb6a0838a408f8c9cf82915ac8"
+  },
+  "arnaud-rebotini": {
+    "id": "4qnTdOhzCAvoRf8PObGr1h",
+    "name": "Arnaud Rebotini",
+    "url": "https://open.spotify.com/artist/4qnTdOhzCAvoRf8PObGr1h",
+    "image": "https://i.scdn.co/image/ab676161000051749a25b511c2754969f18decae",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb9a25b511c2754969f18decae"
+  },
+  "trentemoller": {
+    "id": "4O71i7ke5iIBX6RNSFoZbS",
+    "name": "trentemøller",
+    "url": "https://open.spotify.com/artist/4O71i7ke5iIBX6RNSFoZbS",
+    "image": "https://i.scdn.co/image/ab6761610000517486201a4cb6c0173f076f394c",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb86201a4cb6c0173f076f394c"
+  },
+  "fever-ray": {
+    "id": "5hE6NCoobhyEu6TRSbjOJY",
+    "name": "Fever Ray",
+    "url": "https://open.spotify.com/artist/5hE6NCoobhyEu6TRSbjOJY",
+    "image": "https://i.scdn.co/image/ab67616100005174192bd6ab7833349b3b7bf135",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb192bd6ab7833349b3b7bf135"
+  },
+  "the-presets": {
+    "id": "1zTAQ6zkGz2L2i6lfR30EX",
+    "name": "The Presets",
+    "url": "https://open.spotify.com/artist/1zTAQ6zkGz2L2i6lfR30EX",
+    "image": "https://i.scdn.co/image/ab67616100005174a0dcf90d9d15788e5bdd5673",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eba0dcf90d9d15788e5bdd5673"
+  },
+  "the-faint": {
+    "id": "4A1yfFuBmBOgzv4Oe3fFHk",
+    "name": "The Faint",
+    "url": "https://open.spotify.com/artist/4A1yfFuBmBOgzv4Oe3fFHk",
+    "image": "https://i.scdn.co/image/ab67616100005174560ad720d5c51b090239ebe2",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb560ad720d5c51b090239ebe2"
+  },
+  "burial": {
+    "id": "0uCCBpmg6MrPb1KY2msceF",
+    "name": "Burial",
+    "url": "https://open.spotify.com/artist/0uCCBpmg6MrPb1KY2msceF",
+    "image": "https://i.scdn.co/image/ab676161000051744be7334b7aed9ca32a732aeb",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb4be7334b7aed9ca32a732aeb"
+  },
+  "aigel": {
+    "id": "1gpjSKJC0UekvhaI8fAcoq",
+    "name": "АИГЕЛ",
+    "url": "https://open.spotify.com/artist/1gpjSKJC0UekvhaI8fAcoq",
+    "image": "https://i.scdn.co/image/ab67616100005174e09d73395f4b8a6490ac172a",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebe09d73395f4b8a6490ac172a"
+  },
+  "portishead": {
+    "id": "6liAMWkVf5LH7YR9yfFy1Y",
+    "name": "Portishead",
+    "url": "https://open.spotify.com/artist/6liAMWkVf5LH7YR9yfFy1Y",
+    "image": "https://i.scdn.co/image/27802710b01453435de93d71bab2c9988a841ace",
+    "imageLarge": "https://i.scdn.co/image/05d3721739aee511a898081ab140daa7890a0120"
+  },
+  "soldout": {
+    "id": "5g40eoVT3f0lZbIa1mGbzs",
+    "name": "Soldout",
+    "url": "https://open.spotify.com/artist/5g40eoVT3f0lZbIa1mGbzs",
+    "image": "https://i.scdn.co/image/ab6761610000517460c2f016b93a7ff45a2fc24b",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb60c2f016b93a7ff45a2fc24b"
+  },
+  "depeche-mode": {
+    "id": "762310PdDnwsDxAQxzQkfX",
+    "name": "Depeche Mode",
+    "url": "https://open.spotify.com/artist/762310PdDnwsDxAQxzQkfX",
+    "image": "https://i.scdn.co/image/ab67616100005174aff13c9484fdad590ccfb73c",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebaff13c9484fdad590ccfb73c"
+  },
+  "ohm-square": {
+    "id": "0Rgshzw7865kmfDoJ7gIK8",
+    "name": "Ohm Square",
+    "url": "https://open.spotify.com/artist/0Rgshzw7865kmfDoJ7gIK8",
+    "image": "https://i.scdn.co/image/ab67616100005174444ffbd8562bb73825f0b5ae",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb444ffbd8562bb73825f0b5ae"
+  },
+  "sevdaliza": {
+    "id": "5MraexJKZDrQYzS98kNwie",
+    "name": "Sevdaliza",
+    "url": "https://open.spotify.com/artist/5MraexJKZDrQYzS98kNwie",
+    "image": "https://i.scdn.co/image/ab676161000051740086af40aaead26bd90c9b0a",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb0086af40aaead26bd90c9b0a"
+  },
+  "fm-belfast": {
+    "id": "22V3XeUvqBmVzu82JdKFWi",
+    "name": "FM Belfast",
+    "url": "https://open.spotify.com/artist/22V3XeUvqBmVzu82JdKFWi",
+    "image": "https://i.scdn.co/image/ab67616100005174290b52d482993ce1f85de36b",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb290b52d482993ce1f85de36b"
+  },
+  "robots-in-disguise": {
+    "id": "6p0e3Ff2s0DVh1I7WjOeqq",
+    "name": "Robots In Disguise",
+    "url": "https://open.spotify.com/artist/6p0e3Ff2s0DVh1I7WjOeqq",
+    "image": "https://i.scdn.co/image/ab67616d0000b2739c069ddc6120bf5d2b32ed9c",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b2739c069ddc6120bf5d2b32ed9c"
+  },
+  "uffie": {
+    "id": "2s6lxOYvvCvzpHtd3VyuMj",
+    "name": "Uffie",
+    "url": "https://open.spotify.com/artist/2s6lxOYvvCvzpHtd3VyuMj",
+    "image": "https://i.scdn.co/image/ab67616100005174136657586494d9b9340b0a94",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb136657586494d9b9340b0a94"
+  },
+  "stereo-total": {
+    "id": "662bj9rCw8Twt6JDAMmMDb",
+    "name": "Stereo Total",
+    "url": "https://open.spotify.com/artist/662bj9rCw8Twt6JDAMmMDb",
+    "image": "https://i.scdn.co/image/ab67616100005174c7ed6a9ee7bddee65d2c6b3a",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebc7ed6a9ee7bddee65d2c6b3a"
+  },
+  "yelle": {
+    "id": "0WbqAlM1WvfUD6dF7omThd",
+    "name": "Yelle",
+    "url": "https://open.spotify.com/artist/0WbqAlM1WvfUD6dF7omThd",
+    "image": "https://i.scdn.co/image/ab67616100005174dd81c7a7fd069ea898153a19",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebdd81c7a7fd069ea898153a19"
+  },
+  "m-i-a": {
+    "id": "0QJIPDAEDILuo8AIq3pMuU",
+    "name": "M.I.A.",
+    "url": "https://open.spotify.com/artist/0QJIPDAEDILuo8AIq3pMuU",
+    "image": "https://i.scdn.co/image/ab6761610000517408e45eab541fbffd3e657f02",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb08e45eab541fbffd3e657f02"
+  },
+  "does-it-offend-you-yeah": {
+    "id": "4bFfSfCBYpFh37ziXCSqUs",
+    "name": "Does It Offend You, Yeah?",
+    "url": "https://open.spotify.com/artist/4bFfSfCBYpFh37ziXCSqUs",
+    "image": "https://i.scdn.co/image/ab676161000051745cae76c26287be408b1fbcfd",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb5cae76c26287be408b1fbcfd"
+  },
+  "fake-blood": {
+    "id": "6NaTOhsj6iiUNONPrE980Z",
+    "name": "Fake Blood",
+    "url": "https://open.spotify.com/artist/6NaTOhsj6iiUNONPrE980Z",
+    "image": "https://i.scdn.co/image/b488351e52e9466159e7594ad6b8d87b603a14ac",
+    "imageLarge": "https://i.scdn.co/image/2ba7b3470e363be7393a552ca046ac328b66dfe5"
+  },
+  "crookers": {
+    "id": "3o1cwVQfiDWafhYA02k13C",
+    "name": "Crookers",
+    "url": "https://open.spotify.com/artist/3o1cwVQfiDWafhYA02k13C",
+    "image": "https://i.scdn.co/image/ab6761610000517421e6c818fa5506891944a779",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb21e6c818fa5506891944a779"
+  },
+  "mu-ziq": {
+    "id": "7AiamoV760pPGGM5PbOC6X",
+    "name": "µ-Ziq",
+    "url": "https://open.spotify.com/artist/7AiamoV760pPGGM5PbOC6X",
+    "image": "https://i.scdn.co/image/ab67616100005174d4b7f8e8b63977b63a3adb32",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebd4b7f8e8b63977b63a3adb32"
+  },
+  "felix-da-housecat": {
+    "id": "4rC8J4M4aOqsQSCP4yoyJI",
+    "name": "Felix Da Housecat",
+    "url": "https://open.spotify.com/artist/4rC8J4M4aOqsQSCP4yoyJI",
+    "image": "https://i.scdn.co/image/ab67616100005174064979168204603d32b5950e",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb064979168204603d32b5950e"
+  },
+  "felix-kubin": {
+    "id": "66BaUCSXtLbyBUvsep9plc",
+    "name": "Felix Kubin",
+    "url": "https://open.spotify.com/artist/66BaUCSXtLbyBUvsep9plc",
+    "image": "https://i.scdn.co/image/ab6772690000dd2218f5e4379cd7eb517c95d088",
+    "imageLarge": "https://i.scdn.co/image/ab6772690000c46c18f5e4379cd7eb517c95d088"
+  },
+  "brandt-brauer-frick": {
+    "id": "29TG40TGDvrOFQZM4adBf7",
+    "name": "Brandt Brauer Frick",
+    "url": "https://open.spotify.com/artist/29TG40TGDvrOFQZM4adBf7",
+    "image": "https://i.scdn.co/image/ab6761610000517430707151bb712cd66c6a8f6d",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb30707151bb712cd66c6a8f6d"
+  },
+  "dj-hell": {
+    "id": "4WgFczZafuUFBvsCuSK44C",
+    "name": "DJ Hell",
+    "url": "https://open.spotify.com/artist/4WgFczZafuUFBvsCuSK44C",
+    "image": "https://i.scdn.co/image/ab67616100005174d9879d463760a62eec347523",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebd9879d463760a62eec347523"
+  },
+  "acid-arab": {
+    "id": "3ShO8tPKqXUUpOA0urOWW7",
+    "name": "Acid Arab",
+    "url": "https://open.spotify.com/artist/3ShO8tPKqXUUpOA0urOWW7",
+    "image": "https://i.scdn.co/image/ab676161000051749eccc6c86d94555300f514ca",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb9eccc6c86d94555300f514ca"
+  },
+  "moullinex": {
+    "id": "1XFbnj1jNNzzyg46ni3dnr",
+    "name": "Moullinex",
+    "url": "https://open.spotify.com/artist/1XFbnj1jNNzzyg46ni3dnr",
+    "image": "https://i.scdn.co/image/ab67616100005174b594983fc67471af77a375c5",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebb594983fc67471af77a375c5"
+  },
+  "onuka": {
+    "id": "2MVGuFg7kJgmXC2RkpJxz6",
+    "name": "ONUKA",
+    "url": "https://open.spotify.com/artist/2MVGuFg7kJgmXC2RkpJxz6",
+    "image": "https://i.scdn.co/image/ab676161000051742120c0222828247dbad5bb74",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb2120c0222828247dbad5bb74"
+  },
+  "zzt": {
+    "id": "2gv0vhtUiUJeGcYkTybo7G",
+    "name": "ZZT",
+    "url": "https://open.spotify.com/artist/2gv0vhtUiUJeGcYkTybo7G",
+    "image": "https://i.scdn.co/image/ab67616d0000b273b4dfdf80903577e4ebb757e7",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b273b4dfdf80903577e4ebb757e7"
+  },
+  "proxy": {
+    "id": "3KOzW9NF2ZGwYRo0KfID1R",
+    "name": "Proxy",
+    "url": "https://open.spotify.com/artist/3KOzW9NF2ZGwYRo0KfID1R",
+    "image": "https://i.scdn.co/image/ab67616100005174a6857ea5d8b2a5b058977092",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eba6857ea5d8b2a5b058977092"
+  },
+  "rex-the-dog": {
+    "id": "5zbQoW1WWTzvITE8w4ckoC",
+    "name": "Rex The Dog",
+    "url": "https://open.spotify.com/artist/5zbQoW1WWTzvITE8w4ckoC",
+    "image": "https://i.scdn.co/image/ab67616100005174350ad0bf637b7f2ea918b765",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb350ad0bf637b7f2ea918b765"
+  },
+  "djedjotronic": {
+    "id": "5c8Rd2gCeW7KAdTnwWIZKL",
+    "name": "Djedjotronic",
+    "url": "https://open.spotify.com/artist/5c8Rd2gCeW7KAdTnwWIZKL",
+    "image": "https://i.scdn.co/image/ab6761610000517402a631826b45544e094b774e",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb02a631826b45544e094b774e"
+  },
+  "planningtorock": {
+    "id": "7qHOphlWaJrfFa0BqpayDG",
+    "name": "Planningtorock",
+    "url": "https://open.spotify.com/artist/7qHOphlWaJrfFa0BqpayDG",
+    "image": "https://i.scdn.co/image/ab6761610000517455ec30ddfb8b886706208954",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb55ec30ddfb8b886706208954"
+  },
+  "chicks-on-speed": {
+    "id": "4EySud7Ww0GNvkwhRYZHLV",
+    "name": "Chicks On Speed",
+    "url": "https://open.spotify.com/artist/4EySud7Ww0GNvkwhRYZHLV",
+    "image": "https://i.scdn.co/image/ab67616100005174ae82b6939979ddd244c1b7ac",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebae82b6939979ddd244c1b7ac"
+  },
+  "shit-robot": {
+    "id": "2ZvXaOrinJFZDexa3fWqMZ",
+    "name": "Shit Robot",
+    "url": "https://open.spotify.com/artist/2ZvXaOrinJFZDexa3fWqMZ",
+    "image": "https://i.scdn.co/image/ab67616100005174c61a23b5a641dcc13505c745",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebc61a23b5a641dcc13505c745"
+  },
+  "daniel-avery": {
+    "id": "1EULJuDFWpZ9xg4YwtUGGt",
+    "name": "Daniel Avery",
+    "url": "https://open.spotify.com/artist/1EULJuDFWpZ9xg4YwtUGGt",
+    "image": "https://i.scdn.co/image/ab676161000051743a57e2a6ad7c7325c07c81f0",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb3a57e2a6ad7c7325c07c81f0"
+  },
+  "the-juan-maclean": {
+    "id": "7gG6LkU3pCSQmCIPR4aSBt",
+    "name": "The Juan Maclean",
+    "url": "https://open.spotify.com/artist/7gG6LkU3pCSQmCIPR4aSBt",
+    "image": "https://i.scdn.co/image/66d901b1a26b5acbfeade62852c8b8dce35a60c0",
+    "imageLarge": "https://i.scdn.co/image/a831d9d008a12cb0d4f12695ed8484e7a6e0341a"
+  },
+  "zombie-nation": {
+    "id": "7vFpNLbCXbBFs4kFBUlkSl",
+    "name": "Zombie Nation",
+    "url": "https://open.spotify.com/artist/7vFpNLbCXbBFs4kFBUlkSl",
+    "image": "https://i.scdn.co/image/ab6772690000dd221f935db9be39c8816ff49e4a",
+    "imageLarge": "https://i.scdn.co/image/ab6772690000c46c1f935db9be39c8816ff49e4a"
+  },
+  "dopplereffekt": {
+    "id": "2w3mvReNNIQ7S44MAr89zu",
+    "name": "Dopplereffekt",
+    "url": "https://open.spotify.com/artist/2w3mvReNNIQ7S44MAr89zu",
+    "image": "https://i.scdn.co/image/ab6761610000517416e1d97d50782630bf2c9dd9",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb16e1d97d50782630bf2c9dd9"
+  },
+  "legowelt": {
+    "id": "0cG9dZ6X8YfLeGe24QWMwM",
+    "name": "Legowelt",
+    "url": "https://open.spotify.com/artist/0cG9dZ6X8YfLeGe24QWMwM",
+    "image": "https://i.scdn.co/image/ab676161000051746cd7a15231d3b3ed7386359c",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb6cd7a15231d3b3ed7386359c"
+  },
+  "ellen-allien": {
+    "id": "5lsC3H1vh9YSRQckyGv0Up",
+    "name": "Ellen Allien",
+    "url": "https://open.spotify.com/artist/5lsC3H1vh9YSRQckyGv0Up",
+    "image": "https://i.scdn.co/image/ab67616100005174075f5a81bacdf0cdb0e8a6f4",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb075f5a81bacdf0cdb0e8a6f4"
+  },
+  "ascendant-vierge": {
+    "id": "3IMOGrM63og03I4jMYo35G",
+    "name": "ascendant vierge",
+    "url": "https://open.spotify.com/artist/3IMOGrM63og03I4jMYo35G",
+    "image": "https://i.scdn.co/image/ab676161000051745ddebeca6ccdaf9d9593ea68",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb5ddebeca6ccdaf9d9593ea68"
+  },
+  "the-golden-filter": {
+    "id": "6ys6r2ftzNbWUTSlqlkPO2",
+    "name": "The Golden Filter",
+    "url": "https://open.spotify.com/artist/6ys6r2ftzNbWUTSlqlkPO2",
+    "image": "https://i.scdn.co/image/ab6761610000517435dfa20dea350f2c9f8f84f8",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb35dfa20dea350f2c9f8f84f8"
+  },
+  "dat-politics": {
+    "id": "56UPLEcLj18f5hSxWOvHaZ",
+    "name": "Dat Politics",
+    "url": "https://open.spotify.com/artist/56UPLEcLj18f5hSxWOvHaZ",
+    "image": "https://i.scdn.co/image/8fd426f8313eb19364549482d3b465e7a038279f",
+    "imageLarge": "https://i.scdn.co/image/8fd426f8313eb19364549482d3b465e7a038279f"
+  },
+  "mstrkrft": {
+    "id": "2squZ8HjM4AzR0j6jsPn4a",
+    "name": "MSTRKRFT",
+    "url": "https://open.spotify.com/artist/2squZ8HjM4AzR0j6jsPn4a",
+    "image": "https://i.scdn.co/image/ab67616100005174b32dc9a5cff61e0a4dae728b",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebb32dc9a5cff61e0a4dae728b"
+  },
+  "huoratron": {
+    "id": "2SRSJhAtFtJRhizJMdf0Gt",
+    "name": "Huoratron",
+    "url": "https://open.spotify.com/artist/2SRSJhAtFtJRhizJMdf0Gt",
+    "image": "https://i.scdn.co/image/ab67616100005174379dfe9f8efd7410dc699d66",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb379dfe9f8efd7410dc699d66"
+  },
+  "kormac": {
+    "id": "64FRiqIrUyWPvGb83fAYLn",
+    "name": "Kormac",
+    "url": "https://open.spotify.com/artist/64FRiqIrUyWPvGb83fAYLn",
+    "image": "https://i.scdn.co/image/ab676161000051740f09954f8dd0f47114f91430",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb0f09954f8dd0f47114f91430"
+  },
+  "casiokids": {
+    "id": "7MEBuOs4NysWceqYZ9J8gy",
+    "name": "Casiokids",
+    "url": "https://open.spotify.com/artist/7MEBuOs4NysWceqYZ9J8gy",
+    "image": "https://i.scdn.co/image/ab67616100005174e9824c2f457da694302a1ec5",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebe9824c2f457da694302a1ec5"
+  },
+  "kazety": {
+    "id": "6TXriXMNmNnXjOQOvPS8Pr",
+    "name": "Kazety",
+    "url": "https://open.spotify.com/artist/6TXriXMNmNnXjOQOvPS8Pr",
+    "image": "https://i.scdn.co/image/ab67616d0000b273cb70db6383da8d2174ef323f",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b273cb70db6383da8d2174ef323f"
+  },
+  "moimir-papalescu-the-nihilists": {
+    "id": "7F7kp2LftvBrNKfSWd5S5u",
+    "name": "Moimir Papalescu & The Nihilists",
+    "url": "https://open.spotify.com/artist/7F7kp2LftvBrNKfSWd5S5u",
+    "image": "https://i.scdn.co/image/ab6761610000517450025e7f97e51244f803bc28",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb50025e7f97e51244f803bc28"
+  },
+  "client": {
+    "id": "1IjPJum5sJ6iSr3mBsSYJk",
+    "name": "Client",
+    "url": "https://open.spotify.com/artist/1IjPJum5sJ6iSr3mBsSYJk",
+    "image": "https://i.scdn.co/image/113fcc350d3dfaaf07f9c31fc4f4c29ac8b371a7",
+    "imageLarge": "https://i.scdn.co/image/bee30d90217e260b83c04c972e2bda4b26228506"
+  },
+  "iamx": {
+    "id": "223iUzG0kb5V166FJP9ovD",
+    "name": "IAMX",
+    "url": "https://open.spotify.com/artist/223iUzG0kb5V166FJP9ovD",
+    "image": "https://i.scdn.co/image/ab67616100005174826b29b76dc1b0cc9b734c06",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb826b29b76dc1b0cc9b734c06"
+  },
+  "acid-washed": {
+    "id": "1kj8lYIqDHtSn2x6jgFmIW",
+    "name": "Acid Washed",
+    "url": "https://open.spotify.com/artist/1kj8lYIqDHtSn2x6jgFmIW",
+    "image": "https://i.scdn.co/image/4274b6351417f6ead9d0f13e47da17226d842274",
+    "imageLarge": "https://i.scdn.co/image/4274b6351417f6ead9d0f13e47da17226d842274"
+  },
+  "noze": {
+    "id": "6rbW4PmepEAeeow5x9eW3u",
+    "name": "Nôze",
+    "url": "https://open.spotify.com/artist/6rbW4PmepEAeeow5x9eW3u",
+    "image": "https://i.scdn.co/image/ab676161000051743f1438a69bf3d06bf82249e1",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb3f1438a69bf3d06bf82249e1"
+  },
+  "mumbai-science": {
+    "id": "7jmeOWayhjsGSvY5YNpV65",
+    "name": "Mumbai Science",
+    "url": "https://open.spotify.com/artist/7jmeOWayhjsGSvY5YNpV65",
+    "image": "https://i.scdn.co/image/ab676161000051748af8d5b62e7f8a01703affac",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb8af8d5b62e7f8a01703affac"
+  },
+  "danger": {
+    "id": "2o3U0ld93tHYowkoari4Vi",
+    "name": "Danger",
+    "url": "https://open.spotify.com/artist/2o3U0ld93tHYowkoari4Vi",
+    "image": "https://i.scdn.co/image/ab67616100005174ce9d520fd3da75656c1fa554",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebce9d520fd3da75656c1fa554"
+  },
+  "don-rimini": {
+    "id": "2IA2rAfPyDDhqqcu6UaSOM",
+    "name": "Don Rimini",
+    "url": "https://open.spotify.com/artist/2IA2rAfPyDDhqqcu6UaSOM",
+    "image": "https://i.scdn.co/image/ab67616100005174fbe41f1d85caa7af5edcb9c2",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebfbe41f1d85caa7af5edcb9c2"
+  },
+  "yuksek": {
+    "id": "2ePIzx9NjxplS724QMZtsf",
+    "name": "Yuksek",
+    "url": "https://open.spotify.com/artist/2ePIzx9NjxplS724QMZtsf",
+    "image": "https://i.scdn.co/image/ab67616100005174a8ccf16584dd0ff9b2a37982",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eba8ccf16584dd0ff9b2a37982"
+  },
+  "birdy-nam-nam": {
+    "id": "4e7qJTThm5uI3CplqZObfT",
+    "name": "Birdy Nam Nam",
+    "url": "https://open.spotify.com/artist/4e7qJTThm5uI3CplqZObfT",
+    "image": "https://i.scdn.co/image/ab67616100005174a905450ea45b7932413ef9ff",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eba905450ea45b7932413ef9ff"
+  },
+  "weval": {
+    "id": "12tZvy2xFpWSkuJ3FsfisZ",
+    "name": "Weval",
+    "url": "https://open.spotify.com/artist/12tZvy2xFpWSkuJ3FsfisZ",
+    "image": "https://i.scdn.co/image/ab67616100005174ebc22c0d21b0e64239896eb6",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebebc22c0d21b0e64239896eb6"
+  },
+  "the-whip": {
+    "id": "4M2H1fDQR5ygAi7MMOVxAA",
+    "name": "The Whip",
+    "url": "https://open.spotify.com/artist/4M2H1fDQR5ygAi7MMOVxAA",
+    "image": "https://i.scdn.co/image/ab67616d0000b273bdd933440f4006e5992c94be",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b273bdd933440f4006e5992c94be"
+  },
+  "northern-lite": {
+    "id": "243v6y74lia0v8jy6FH5iF",
+    "name": "Northern Lite",
+    "url": "https://open.spotify.com/artist/243v6y74lia0v8jy6FH5iF",
+    "image": "https://i.scdn.co/image/ab676161000051741dbb9e156a2bb370ecde3603",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb1dbb9e156a2bb370ecde3603"
+  },
+  "le-tigre": {
+    "id": "2n6FviARgtjjimZXu18uRM",
+    "name": "Le Tigre",
+    "url": "https://open.spotify.com/artist/2n6FviARgtjjimZXu18uRM",
+    "image": "https://i.scdn.co/image/276ae4694276915fe8de080df120c00c7ad3e459",
+    "imageLarge": "https://i.scdn.co/image/3bc85fea3c1ed9320f63e50bf7c6e0b1c9ced6c5"
+  },
+  "the-teenagers": {
+    "id": "6EU3ei9Aim1yaX6hTJrjXE",
+    "name": "The Teenagers",
+    "url": "https://open.spotify.com/artist/6EU3ei9Aim1yaX6hTJrjXE",
+    "image": "https://i.scdn.co/image/ab6761610000517421842967983ab76bab8c1c51",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb21842967983ab76bab8c1c51"
+  },
+  "metronomy": {
+    "id": "54QMjE4toDfiCryzYWCpXX",
+    "name": "Metronomy",
+    "url": "https://open.spotify.com/artist/54QMjE4toDfiCryzYWCpXX",
+    "image": "https://i.scdn.co/image/ab67616100005174ceff4142bf102931cd3cd61d",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5ebceff4142bf102931cd3cd61d"
+  },
+  "cut-copy": {
+    "id": "4EENT7N7rCBwrddM3s0vFS",
+    "name": "Cut Copy",
+    "url": "https://open.spotify.com/artist/4EENT7N7rCBwrddM3s0vFS",
+    "image": "https://i.scdn.co/image/ab676161000051743f5e2ee9b37b39a691d2d7c6",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb3f5e2ee9b37b39a691d2d7c6"
+  },
+  "breakbot": {
+    "id": "0iui2Be5CP8EWxvHYsVspL",
+    "name": "Breakbot",
+    "url": "https://open.spotify.com/artist/0iui2Be5CP8EWxvHYsVspL",
+    "image": "https://i.scdn.co/image/ab676161000051746d38086452e28cd10f9c6c5a",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb6d38086452e28cd10f9c6c5a"
+  },
+  "todd-terje": {
+    "id": "49gaZqfow2v8EEQmjGyEIw",
+    "name": "Todd Terje",
+    "url": "https://open.spotify.com/artist/49gaZqfow2v8EEQmjGyEIw",
+    "image": "https://i.scdn.co/image/ab6772690000dd22ee826f3090c979fb0772e925",
+    "imageLarge": "https://i.scdn.co/image/ab6772690000c46cee826f3090c979fb0772e925"
+  },
+  "ecstasy-of-saint-theresa": {
+    "id": "7bgjou2Fwb15jvve7eXZrm",
+    "name": "The Ecstasy Of Saint Theresa",
+    "url": "https://open.spotify.com/artist/7bgjou2Fwb15jvve7eXZrm",
+    "image": "https://i.scdn.co/image/ab6761610000517449383b1408681fa5885668db",
+    "imageLarge": "https://i.scdn.co/image/ab6761610000e5eb49383b1408681fa5885668db"
+  },
+  "jan-p-muchow": {
+    "id": "2Vg2jNCvRDst0EdLLcc3Br",
+    "name": "Jan P. Muchow",
+    "url": "https://open.spotify.com/artist/2Vg2jNCvRDst0EdLLcc3Br",
+    "image": "https://i.scdn.co/image/ab67616d0000b273342483d129b3789ffc8e2eb5",
+    "imageLarge": "https://i.scdn.co/image/ab67616d0000b273342483d129b3789ffc8e2eb5"
+  }
+}

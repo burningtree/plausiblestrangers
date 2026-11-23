@@ -34,6 +34,7 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
     {site.links.map((l) => <link rel="me" href={l.href} />)}
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title="plausible strangers. news" href="/rss.xml" />
     <script is:inline>
       // set the theme before first paint, so there is no flash
       try {
@@ -46,7 +47,31 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
   </head>
   <body>
     <a class="skip" href="#main">skip to content</a>
-    <div class="corner">
+    <nav class="corner" aria-label="menu">
+      {
+        // first, so pages without it (home) don't shift the other items
+        !home && (
+          <button type="button" class="corner-btn" data-random title="play a random track">
+            <Icon name="dice-five" /> random
+          </button>
+        )
+      }
+      <a
+        class="corner-btn"
+        href="/news/"
+        title="what happened lately"
+        aria-current={Astro.url.pathname.startsWith('/news') ? 'page' : undefined}
+      >
+        <Icon name="journal" /> news
+      </a>
+      <a
+        class="corner-btn"
+        href="/about/"
+        title="what this is"
+        aria-current={Astro.url.pathname.startsWith('/about') ? 'page' : undefined}
+      >
+        <Icon name="info-circle" /> about
+      </a>
       <a
         class="corner-btn"
         href="/library/"
@@ -55,16 +80,9 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
       >
         <Icon name="book-stack" /> library
       </a>
-      {
-        !home && (
-          <button type="button" class="corner-btn" data-random title="play a random track">
-            <Icon name="dice-five" /> random
-          </button>
-        )
-      }
       <Palette />
       <ThemeSwitch />
-    </div>
+    </nav>
     <header class:list={['masthead', { 'masthead--home': home }]}>
       {home ? <h1 class="wordmark">{site.name}</h1> : <a class="wordmark" href="/">{site.name}</a>}
       {
@@ -80,7 +98,7 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
     </main>
     <footer class="colophon">
       <p>
-        No cookies, no analytics, no algorithm. Just files on a server.<br />
+        No cookies, no analytics, no algorithm. Just files on a server. <a href="/about/">About us.</a><br />
         Sounds by machines, decisions by humans, mistakes by both.
       </p>
       <p class="keys">

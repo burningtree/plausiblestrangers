@@ -11,5 +11,37 @@
     {"line": 20, "prompt": "A: Who stays?", "lines": ["Who stays?"]},
     {"line": 21, "prompt": "B: The door.", "lines": ["The door."]},
     {"line": 24, "prompt": "The do-o-o-or.", "lines": ["The door.", "The door."]}
+  ],
+  "/audio/i-am-your-bug/01-i-am-your-bug.m4a": [
+    {"line": 24, "prompt": "TA PANNE !", "lines": []},
+    {"line": 29, "prompt": "BOUM!", "lines": ["BOUM BOUM!", "BOUM BOUM!"]}
+  ],
+  "/audio/i-am-your-bug/04-automatic-desire.m4a": [
+    {"line": 15, "prompt": "Turn it up", "lines": ["Turn it up", "Turn it up"]}
+  ],
+  "/audio/i-am-your-bug/05-cinq-cents-claudias.m4a": [
+    {"line": 3, "prompt": "*(click... click... click...)*", "lines": []},
+    {"line": 15, "prompt": "*(silence)*", "lines": []},
+    {"line": 19, "prompt": "La la la la!", "lines": ["La la la la la!"]},
+    {"line": 34, "prompt": "Where's the original?", "lines": ["Where is the original?"]},
+    {"line": 35, "prompt": "*(printer error beep)*", "lines": []},
+    {"line": 40, "prompt": "La la la la!", "lines": ["La la la la la!"]},
+    {"line": 53, "prompt": "*(machine jams, drums explode back in)*", "lines": []},
+    {"line": 56, "prompt": "CINQ CENTS CLAUDIAS!", "lines": ["CINQ CENTS CLAUDIAS!", "La la la la la!", "CINQ CENTS CLAUDIAS!"]},
+    {"line": 57, "prompt": "PAS UNE À TOI!", "lines": ["PAS UNE À TOI!", "CINQ CENTS CLAUDIAS!", "La la la la la!"]},
+    {"line": 59, "prompt": "*(click)*", "lines": []}
+  ],
+  "/audio/i-am-your-bug/08-wrong-side-right-time.m4a": [
+    {"line": 28, "prompt": "I don't follow the rhythm.", "lines": ["I don't follow the rhythm.", "I don't follow the rhythm."]},
+    {"line": 31, "prompt": "Left-right-wrong-right!", "lines": ["Left-right-wrong-right!", "Left-right-wrong-right!"]},
+    {"line": 36, "prompt": "[Unexpected tiny sil", "lines": []}
+  ],
+  "/audio/i-am-your-bug/09-out-of-sight.m4a": [
+    {"line": 15, "prompt": "Not there yet.", "lines": ["Not there yet.", "Out of sight.", "In my head.", "Out of sight.", "Not there yet."]}
+  ],
+  "/audio/i-am-your-bug/10-were-we-there.m4a": [
+    {"line": 16, "prompt": "Somewhere in the morning", "lines": ["Does it matter in the morning?"]},
+    {"line": 25, "prompt": "We were there.", "lines": ["Were we there?", "Were we there?", "Were we there?"]},
+    {"line": 26, "prompt": "I remember the floor.", "lines": ["I remember the floor.", "I remember the floor.", "I remember the floor."]}
   ]
 }

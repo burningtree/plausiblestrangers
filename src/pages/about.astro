@@ -1,0 +1,259 @@
+---
+// About: the longer version of "what we are".
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import PixelArt from '../components/PixelArt.astro';
+import { getCatalog, getArchive, blurStyle } from '../lib/catalog';
+import { site } from '../site';
+import { influences, slug, type Influence } from '../data/influences';
+import spotifyData from '../data/influences-spotify.json';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
+// a photo per influence if one has been dropped into public/art/influences/
+const photoFor = (i: Influence) => {
+  for (const ext of ['webp', 'jpg', 'jpeg', 'png']) {
+    const rel = `/art/influences/${slug(i)}.${ext}`;
+    if (existsSync(path.join(process.cwd(), 'public', rel))) return rel;
+  }
+};
+// tiles without a photo show initials: "Miss Kittin" → MK, "Vitalic" → V (max three letters)
+const initials = (name: string) =>
+  name
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase())
+    .slice(0, 3)
+    .join('');
+// Spotify images (scripts/influences-spotify.mjs): shown unaltered and linked
+// back to the artist, as Spotify's terms ask. A photo of our own wins.
+const spotify = spotifyData as Record<
+  string,
+  { id: string; name: string; url: string; image?: string; imageLarge?: string }
+>;
+const tiles = influences.map((i) => {
+  const s = spotify[slug(i)];
+  const photo = photoFor(i);
+  return {
+    ...i,
+    slug: slug(i),
+    photo,
+    // big tiles get the large picture
+    spotifyImage: photo ? undefined : i.tier === 3 ? s?.image : (s?.imageLarge ?? s?.image),
+    spotifyUrl: s?.url,
+    initials: initials(i.also ?? i.name),
+  };
+});
+const usesSpotify = tiles.some((t) => t.spotifyImage);
+const PORTRAIT = '/art/about/plausible-strangers.webp';
+
+const { releases, tracksOf } = await getCatalog();
+const archive = await getArchive();
+const released = releases.reduce((n, r) => n + tracksOf(r.id).length, 0);
+const songs = released + archive.length;
+---
+
+<Base
+  title="about"
+  description="What Plausible Strangers is, how the songs happen, who we listen to, and why we don't hide the machines."
+  image="/art/about/plausible-strangers.jpg"
+>
+  <article class="about">
+    <p class="crumbs"><a href="/">home</a> / about</p>
+    <h1 class="title">about</h1>
+
+    <div class="about-layout">
+    <figure class="about-portrait">
+      <img
+        src={PORTRAIT}
+        srcset={`/art/about/plausible-strangers-640.webp 640w, ${PORTRAIT} 1600w`}
+        sizes="(min-width: 68rem) 40vw, 100vw"
+        class="blur"
+        style={blurStyle(PORTRAIT)}
+        width="1600"
+        height="1600"
+        alt="Two figures seen from behind, holding hands in a grey fog, under the words PLAUSIBLE STRANGERS in heavy worn type."
+      />
+    </figure>
+    <div class="about-text">
+
+    <section aria-labelledby="a-what">
+      <h2 id="a-what" class="label">what we are</h2>
+      <p class="lede">An electronic music experiment. Human imagination, machine-generated sound.</p>
+      <p>
+        We are not a band in the traditional sense. Plausible Strangers is a human-directed, AI-generated music
+        project. Nobody plays an instrument here and nobody sings into a microphone. The machines make the sounds.
+        We decide which accidents deserve to exist.
+      </p>
+      <p>
+        There's no band photo, because there's no band. There's no invented backstory either: no mysterious
+        producer, no imaginary city we grew up in. Just a person, a machine, and a lot of listening.
+      </p>
+    </section>
+
+    <section aria-labelledby="a-how">
+      <h2 id="a-how" class="label">how a song happens</h2>
+      <ol class="about-steps">
+        <li><strong>Something catches our ear:</strong> a sound, a topic, a song we love.</li>
+        <li><strong>We invent an idea,</strong> and words if it wants any, often written with AI language models.</li>
+        <li>
+          <strong>The machine makes the rest.</strong> Usually we give it just the idea and a mood; the prompt is on
+          every song's page.
+        </li>
+        <li><strong>We choose</strong> what stays, what goes, and where it belongs.</li>
+      </ol>
+      <p>Sounds by Suno, lyrics often co-written with language models, artwork generated. Ideas and choices are ours.</p>
+    </section>
+
+    <section aria-labelledby="a-sound">
+      <h2 id="a-sound" class="label">what it sounds like</h2>
+      <p>
+        Hypnotic electronic music somewhere between house, techno and electroclash. Strange rhythms, synthetic
+        voices, misplaced instruments, playful melodies. Occasionally a little classical elegance. Occasionally
+        just noise.
+      </p>
+      <p>
+        We experiment, discard, repeat and keep what feels unfamiliar. There is no fixed genre and no particular
+        destination.
+      </p>
+    </section>
+
+    <section aria-labelledby="a-why">
+      <h2 id="a-why" class="label">why we don't hide the machines</h2>
+      <p>
+        Because hiding them would be the least interesting thing to do. Making music this way is strange, and the
+        strangeness is part of the music: the near misses, the voices that almost make sense, the accidents that turn
+        out better than the plan.
+      </p>
+      <p>
+        So everything is open. The lyrics, the instructions, the unfinished album, the songs we decided not to
+        release. You can see exactly where the human ends and the machine begins, or at least where we think it does.
+      </p>
+    </section>
+
+    <section aria-labelledby="a-here">
+      <h2 id="a-here" class="label">what's here</h2>
+      <ul class="about-here">
+        <li>
+          <a href="/#records">{releases.length} records</a>, playable, with sleeves you can turn over and vinyl you can
+          watch spin.
+        </li>
+        <li>
+          <a href="/library/">the library</a>: all {songs} songs, including {archive.length} that never made it onto a
+          record.
+        </li>
+        <li>lyrics that light up as they're sung, the prompt behind every song, and a picture of how each one sounds.</li>
+        <li><a href="/news/">news</a>, when something happens.</li>
+      </ul>
+      <p class="muted">
+        No cookies, no analytics, no algorithm deciding what you hear next. Just files on a server.
+      </p>
+    </section>
+
+    </div>
+    </div>
+
+    <section aria-labelledby="a-influences" id="influences" class="influences about-text">
+      <h2 id="a-influences" class="label">who inspires us <span class="count">thank you, all {tiles.length}</span></h2>
+      <p>
+        Nobody makes anything from nothing, machines included. Everything we ask the machine for, we first heard
+        somewhere, and usually it was one of these people. French electro and electroclash, Scandinavian oddness,
+        Czech underground, IDM, and everyone who made a dancefloor feel slightly wrong in a good way. Thank you.
+        We wouldn't know what to ask for without you.
+      </p>
+    </section>
+
+    <div class="influence-wrap">
+    <ul class="influence-grid" aria-label="who inspires us">
+      {
+        tiles.map((t) => {
+          const Tag = t.spotifyUrl ? 'a' : 'span';
+          return (
+            <li
+              class:list={['influence', `influence--t${t.tier}`, { 'influence--photo': t.photo, 'influence--spotify': t.spotifyImage }]}
+              data-slug={t.slug}
+            >
+              <Tag
+                class="influence-art"
+                href={t.spotifyUrl}
+                aria-label={t.spotifyUrl ? `${t.name}${t.also ? ` (${t.also})` : ''} on Spotify` : undefined}
+                tabindex={t.spotifyUrl ? undefined : 0}
+              >
+                {t.photo ? (
+                  <img src={t.photo} class="blur" style={blurStyle(t.photo)} alt="" loading="lazy" decoding="async" />
+                ) : t.spotifyImage ? (
+                  <img src={t.spotifyImage} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+                ) : (
+                  <span class="influence-type" aria-hidden="true">
+                    <span class="influence-initials">{t.initials}</span>
+                    <PixelArt seed={t.name} class="influence-px" />
+                  </span>
+                )}
+                <span class="influence-hover">
+                  <span class="influence-name">
+                    {t.name}
+                    {t.also && <span class="influence-also"> {t.also}</span>}
+                  </span>
+                  {t.note && <span class="influence-note">{t.note}</span>}
+                </span>
+              </Tag>
+            </li>
+          );
+        })
+      }
+    </ul>
+    </div>
+    <script is:inline>
+      // a new order on every visit, so the big tiles land somewhere different each time
+      (() => {
+        const grid = document.querySelector('.influence-grid');
+        if (!grid) return;
+        const tiles = [...grid.children];
+        for (let i = tiles.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+        }
+        grid.append(...tiles);
+      })();
+    </script>
+    {usesSpotify && (
+      <p class="influence-credit">
+        <Icon name="spotify" /> Artist photos from <a href="https://open.spotify.com">Spotify</a>; each one links to the
+        artist there.
+      </p>
+    )}
+
+    <div class="about-after">
+    <section aria-labelledby="a-live">
+      <h2 id="a-live" class="label">live</h2>
+      <p>
+        We're working on an audiovisual set: the recordings taken apart, remixed in the room, with visuals that react
+        to whatever is left. If you have a room, a projector and a tolerant audience, we should talk.
+      </p>
+    </section>
+
+    <section aria-labelledby="a-else">
+      <h2 id="a-else" class="label">elsewhere / contact</h2>
+      <ul class="plain">
+        {
+          site.links.map((l) => (
+            <li>
+              <a href={l.href} rel="me">
+                {l.label} <Icon name="arrow-up-right" />
+              </a>
+            </li>
+          ))
+        }
+        {
+          site.email && (
+            <li>
+              <a href={`mailto:${site.email}`}>{site.email}</a>
+            </li>
+          )
+        }
+      </ul>
+    </section>
+    </div>
+  </article>
+</Base>

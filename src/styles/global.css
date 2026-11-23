@@ -2843,3 +2843,634 @@ html.is-playing .viz-toggle > .when-paused {
 html {
   scrollbar-gutter: stable;
 }
+
+/* ---- news ---- */
+
+.news-date {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--mute);
+}
+.home-news-list,
+.news-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.home-news-list li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0 0 1.1rem;
+}
+.home-news-title {
+  font-size: 1.15rem;
+  line-height: 1.25;
+  text-decoration: none;
+}
+.home-news-title:hover {
+  text-decoration: underline;
+}
+.home-news-summary {
+  color: var(--mute);
+  font-size: 0.95rem;
+}
+.news-lede {
+  max-width: 40rem;
+}
+.news-feed {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  margin-bottom: 2.5rem;
+}
+.news-feed a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--mute);
+  text-decoration: none;
+}
+.news-feed a:hover {
+  color: var(--hot);
+}
+.news-list {
+  max-width: 44rem;
+  border-top: 1px solid var(--faint);
+}
+.news-item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.6rem 0;
+  border-bottom: 1px solid var(--faint);
+}
+.news-title {
+  margin: 0;
+  font-weight: 400;
+  font-size: clamp(1.45rem, 1.15rem + 1.2vw, 1.9rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.news-title a {
+  text-decoration: none;
+}
+.news-title a:hover {
+  text-decoration: underline;
+}
+.news-summary {
+  margin: 0;
+  color: var(--mute);
+}
+.news-more {
+  justify-self: start;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+.news-post {
+  max-width: 44rem;
+}
+.news-post header {
+  margin-bottom: 2rem;
+}
+.news-post .title {
+  margin-top: 0.4rem;
+}
+.news-body {
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+.news-body p {
+  margin: 0 0 1.1em;
+}
+.news-body a:hover {
+  color: var(--hot);
+}
+.news-body kbd {
+  font: 0.8em var(--mono);
+  padding: 0 0.35em;
+  border: 1px solid var(--faint);
+  border-radius: 2px;
+}
+.news-records {
+  display: grid;
+  gap: 1.5rem;
+  margin: 2.5rem 0 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--faint);
+}
+.news-record {
+  display: grid;
+  grid-template-columns: clamp(6rem, 22vw, 9rem) 1fr;
+  gap: 1.25rem;
+  align-items: center;
+}
+.news-record-art img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.news-record-title {
+  margin: 0 0 0.25rem;
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+.news-record-title a {
+  text-decoration: none;
+}
+
+.more-link {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.more-link a:hover {
+  color: var(--hot);
+}
+
+/* ---- about ---- */
+
+.about {
+  max-width: none;
+}
+.about-text,
+.about-after {
+  max-width: var(--measure);
+}
+.about-portrait {
+  margin: 0 0 2.5rem;
+}
+.about-portrait img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+@media (min-width: 68rem) {
+  /* big screens: the picture stands beside the text and stays in view */
+  .about-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 38rem) minmax(0, 1fr);
+    gap: clamp(2.5rem, 4vw, 5rem);
+    align-items: start;
+  }
+  .about-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .about-portrait {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 2rem;
+    margin: 0;
+    width: min(100%, calc(100vh - 7rem));
+    justify-self: end;
+  }
+}
+.about section {
+  margin-bottom: clamp(2.5rem, 6vw, 3.75rem);
+}
+.about-steps {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 1rem;
+}
+.about-steps li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 2.5rem;
+}
+.about-steps li::before {
+  content: counter(step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--hot);
+}
+.about-steps strong {
+  font-weight: 400;
+  font-style: italic;
+}
+.about-here {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+}
+.about-here li {
+  margin-bottom: 0.4rem;
+}
+.about a:not(.label-link):hover {
+  color: var(--hot);
+}
+.colophon a {
+  color: inherit;
+}
+
+/* ---- player layout: [ what's playing | prev ▶ next | time · volume · viz ] ---- */
+
+.player-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+.player-left,
+.player-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.player-right {
+  justify-content: flex-end;
+}
+.player-left .player-now {
+  flex: 1;
+  min-width: 0;
+}
+.player-transport {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.player-transport button {
+  display: grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: 50%;
+  color: var(--ink);
+}
+.player-transport button:not(:disabled):hover {
+  background: var(--hover);
+  color: var(--hot);
+}
+.player-transport .icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+/* play/pause is the big one in the middle */
+.player-transport .player-toggle {
+  width: 3rem;
+  height: 3rem;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
+}
+.player-transport .player-toggle:hover {
+  border-color: var(--hot);
+}
+.player-transport .player-toggle .icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+.player-transport .player-toggle .when-paused .icon {
+  transform: translateX(0.08em);
+}
+@media (max-width: 34rem) {
+  .player-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.4rem;
+  }
+  /* "previous" has its place again in the middle */
+  .player .player-transport [data-player='prev'] {
+    display: grid;
+  }
+  .player-transport button {
+    min-width: 2.4rem;
+  }
+}
+/* phones: the corner row (news, library, random, search, theme) needs its own line */
+@media (max-width: 34rem) {
+  .masthead {
+    padding-top: 4.25rem;
+  }
+}
+
+/* ---- influences ---- */
+
+.influences {
+  margin-bottom: 1.5rem !important;
+}
+.influence-grid {
+  list-style: none;
+  margin: 0 0 clamp(3rem, 7vw, 4.5rem);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+  gap: 1.25rem 1rem;
+}
+.influence {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.influence-art {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+}
+.influence-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.08);
+  transition: filter 0.35s ease;
+}
+.influence:hover .influence-art img {
+  filter: none;
+}
+/* no photo yet: the name, set large, with a little pixel mark */
+.influence-type {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: end;
+  padding: 0.7rem;
+}
+.influence-initials {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 1.6rem + 2.4vw, 3.6rem);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+  transition: color 0.2s ease;
+}
+.influence:hover .influence-initials {
+  color: var(--ink);
+}
+.influence-type .influence-px {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: none;
+  opacity: 0.55;
+}
+.influence-name {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.influence--photo .influence-name {
+  color: var(--ink);
+}
+
+.home-influences {
+  color: var(--mute);
+  font-size: 0.95rem;
+}
+
+/* ---- breathing room: prev/next row and footer ---- */
+.pager {
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+}
+.release-foot .pager {
+  margin-top: 0;
+}
+.colophon {
+  margin-top: clamp(3rem, 8vw, 5rem);
+}
+
+/* ---- phones: the menu is a row of evenly spaced icons with small labels ---- */
+@media (max-width: 34rem) {
+  .corner {
+    top: 0;
+    left: 0;
+    right: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0;
+    padding: 0.35rem 0.5rem;
+    background: var(--paper);
+    border-bottom: 1px solid var(--faint);
+  }
+  .corner > .corner-btn,
+  .corner > .palette-open,
+  .corner > .theme-switch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    min-height: 3rem;
+    padding: 0.3rem 0;
+    margin: 0;
+    border-radius: 3px;
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+    color: var(--mute);
+  }
+  .corner > .corner-btn .icon,
+  .corner > .palette-open .icon,
+  .corner .theme-icons {
+    font-size: 1rem;
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+  .corner > .palette-open kbd {
+    display: none;
+  }
+  .corner a.corner-btn[aria-current='page'] {
+    color: var(--ink);
+    box-shadow: inset 0 -2px var(--hot);
+  }
+  .masthead {
+    padding-top: 5.25rem;
+  }
+}
+/* space between the about text/image and the artist grid */
+.influence-grid {
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+}
+
+/* Spotify photos: shown as provided (no filters), linked to the artist */
+.influence--spotify .influence-art img {
+  filter: none;
+}
+.influence-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+a.influence-name {
+  text-decoration: none;
+  color: var(--ink);
+}
+a.influence-name:hover {
+  color: var(--hot);
+}
+.influence-credit {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: -1.5rem 0 clamp(3rem, 7vw, 4.5rem);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--mute);
+}
+
+/* ---- who inspires us: sized by influence, names on hover ---- */
+
+.influence-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(30%, 6.25rem), 1fr));
+  grid-auto-flow: dense;
+  gap: 0.5rem;
+}
+.influence {
+  display: block;
+  aspect-ratio: 1;
+  min-width: 0;
+}
+/* the five biggest: 3×3; the core top 15: 2×2; everyone else: 1×1 */
+.influence--t1 {
+  grid-column: span 3;
+  grid-row: span 3;
+}
+.influence--t2 {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.influence .influence-art {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+}
+.influence .influence-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease, filter 0.35s ease;
+}
+.influence .influence-art:hover img,
+.influence .influence-art:focus-visible img {
+  transform: scale(1.04);
+}
+.influence .influence-art:focus-visible {
+  outline: 2px solid var(--hot);
+  outline-offset: 2px;
+}
+
+/* the name lives inside the tile and only shows on hover / focus */
+.influence-hover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  padding: 0.6rem;
+  background: linear-gradient(transparent 35%, #000000c4);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.influence .influence-art:hover .influence-hover,
+.influence .influence-art:focus-visible .influence-hover {
+  opacity: 1;
+}
+.influence-hover .influence-name {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: #fff;
+  white-space: normal;
+  overflow: visible;
+}
+.influence--t2 .influence-hover .influence-name {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+.influence--t1 .influence-hover {
+  padding: 1rem 1.1rem;
+}
+.influence--t1 .influence-hover .influence-name {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 1rem + 1.4vw, 2.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.influence-also {
+  font-family: var(--mono);
+  font-size: 0.6em;
+  opacity: 0.7;
+}
+.influence-note {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: #ffffffcc;
+}
+.influence--t1 .influence-note {
+  font-size: 0.75rem;
+  max-width: 22rem;
+}
+/* tiles still without a picture: initials scale with the tile */
+.influence--t1 .influence-initials {
+  font-size: clamp(4rem, 2.5rem + 4vw, 7rem);
+}
+.influence--t3 .influence-initials {
+  font-size: clamp(1.6rem, 1.2rem + 1vw, 2.2rem);
+}
+
+/* touch screens can't hover: keep a small name visible on each tile */
+@media (hover: none) {
+  .influence-hover {
+    opacity: 1;
+    background: linear-gradient(transparent 55%, #000000a8);
+  }
+  .influence-note {
+    display: none;
+  }
+  .influence--t3 .influence-hover .influence-name {
+    font-size: 0.6rem;
+  }
+}
+/* "who inspires us" starts clear of the picture above it */
+.about .influences {
+  margin-top: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+/* ---- influence grid: square cells, so every tile is a true square ----
+   Rows are exactly as tall as columns are wide (worked out from the
+   container's width), and the column count follows the available space. */
+.influence-wrap {
+  container-type: inline-size;
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+}
+.influence-wrap .influence-grid {
+  --cols: 3;
+  --gap: 0.5rem;
+  margin-top: 0;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-auto-rows: calc((100cqi - (var(--cols) - 1) * var(--gap)) / var(--cols));
+  gap: var(--gap);
+}
+@container (min-width: 28rem) { .influence-wrap .influence-grid { --cols: 4; } }
+@container (min-width: 40rem) { .influence-wrap .influence-grid { --cols: 6; } }
+@container (min-width: 56rem) { .influence-wrap .influence-grid { --cols: 8; } }
+@container (min-width: 72rem) { .influence-wrap .influence-grid { --cols: 10; } }
+@container (min-width: 90rem) { .influence-wrap .influence-grid { --cols: 12; } }
+.influence-wrap .influence {
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+}
