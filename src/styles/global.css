@@ -2845,3 +2845,9 @@ html.is-playing .viz-toggle > .when-paused {
     right: calc(var(--gutter) + 22rem);
   }
 }
+
+/* keep the scrollbar's space reserved, so hiding it (visualiser, dialogs)
+   doesn't change the page width and redraw everything underneath */
+html {
+  scrollbar-gutter: stable;
+}

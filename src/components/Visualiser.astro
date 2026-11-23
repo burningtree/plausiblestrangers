@@ -113,9 +113,10 @@ import Icon from './Icon.astro';
   }
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = innerWidth;
     const h = innerHeight;
+    // sharp on retina, but never more than ~8 megapixels to copy each line
+    dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(8e6 / (w * h))));
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     canvas.style.width = `${w}px`;
@@ -251,12 +252,15 @@ import Icon from './Icon.astro';
     viz.hidden = false;
     wake();
     document.documentElement.classList.add('viz-open');
-    resize();
     fillText();
-    requestAnimationFrame(() => viz.classList.add('is-on'));
     viz.focus({ preventScroll: true });
     cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(frame);
+    // paint the overlay first, size the canvas on the next frame
+    requestAnimationFrame(() => {
+      resize();
+      viz.classList.add('is-on');
+      raf = requestAnimationFrame(frame);
+    });
   }
 
   function close() {
@@ -325,7 +329,13 @@ import Icon from './Icon.astro';
       audio.paused ? audio.play().catch(() => {}) : audio.pause();
     }
   });
+  // On desktop, set up the analyser as soon as music plays (a user gesture),
+  // so opening the visualiser later doesn't interrupt the sound mid-song.
+  // Phones wait until the visualiser is opened: once audio is routed through
+  // Web Audio, iOS may stop it when the screen locks.
+  const desktop = matchMedia('(hover: hover) and (pointer: fine)').matches;
   audio.addEventListener('play', () => {
+    if (desktop) ensureGraph();
     actx?.resume();
     if (!viz.hidden) fillText();
   });
