@@ -3062,6 +3062,31 @@ html {
 .about-here li {
   margin-bottom: 0.4rem;
 }
+.about-people {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1.5rem;
+}
+.about-people p {
+  margin: 0 0 0.4rem;
+}
+.about-person strong {
+  font-weight: 400;
+  font-style: italic;
+  font-size: 1.15em;
+  margin-right: 0.5rem;
+}
+.about-person .muted {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+.about-person-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
 .about a:not(.label-link):hover {
   color: var(--hot);
 }

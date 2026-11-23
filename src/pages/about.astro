@@ -68,7 +68,10 @@ const songs = released + archive.length;
       name: 'About Plausible Strangers',
       mainEntity: { '@id': band()['@id'] },
     },
-    band({ foundingDate: '2026' }),
+    band({
+      foundingDate: '2026',
+      member: site.people.map((p) => ({ '@type': 'Person', name: p.name, roleName: p.role })),
+    }),
     breadcrumbs([['plausible strangers.', '/'], ['about', '/about/']]),
   )}
 >
@@ -101,7 +104,21 @@ const songs = released + archive.length;
       </p>
       <p>
         There's no band photo, because there's no band. There's no invented backstory either: no mysterious
-        producer, no imaginary city we grew up in. Just a person, a machine, and a lot of listening.
+        producer, no imaginary city we grew up in. Just people who love music, a machine, and a lot of listening.
+      </p>
+    </section>
+
+    <section aria-labelledby="a-human">
+      <h2 id="a-human" class="label">why a machine</h2>
+      <p>
+        We have loved music all our lives and always wanted to make our own. What we never had was the rest: years
+        of lessons, a music education, a room full of instruments and the hands to play them all. So for a long time
+        the songs stayed in our heads.
+      </p>
+      <p>
+        The machine plays the instruments we never learned. It doesn't decide what a song is about, how it should
+        feel, or when it's finished. That part is human, and it takes a lot of listening: most of what the machine
+        makes, we throw away.
       </p>
     </section>
 
@@ -143,6 +160,31 @@ const songs = released + archive.length;
         So everything is open. The lyrics, the instructions, the unfinished album, the songs we decided not to
         release. You can see exactly where the human ends and the machine begins, or at least where we think it does.
       </p>
+    </section>
+
+    <section aria-labelledby="a-people">
+      <h2 id="a-people" class="label">the people behind it</h2>
+      <ul class="about-people">
+        {
+          site.people.map((p) => (
+            <li>
+              <p class="about-person">
+                <strong>{p.name}</strong> <span class="muted">{p.role}</span>
+              </p>
+              <p>{p.bio}</p>
+              {p.links.length > 0 && (
+                <p class="about-person-links">
+                  {p.links.map((l) => (
+                    <a href={l.href} rel="me">
+                      {l.label} <Icon name="arrow-up-right" />
+                    </a>
+                  ))}
+                </p>
+              )}
+            </li>
+          ))
+        }
+      </ul>
     </section>
 
     <section aria-labelledby="a-here">
