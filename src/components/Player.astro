@@ -176,6 +176,7 @@ import Icon from './Icon.astro';
     document.querySelectorAll<HTMLElement>('.wave[data-wave]').forEach((el) => {
       const mine = el.dataset.wave === t.id;
       el.style.setProperty('--p', mine ? `${p * 100}%` : '0%');
+      el.classList.toggle('is-mine', mine);
       if (mine) el.setAttribute('aria-valuenow', String(Math.round(p * 100)));
     });
     $<HTMLElement>('[data-t="cur"]').textContent = fmt(audio.currentTime);
@@ -419,8 +420,9 @@ import Icon from './Icon.astro';
     mid: ['spectrum', 'scroll', 'mirror', 'wave'],
     loud: ['flood', 'burst', 'mirror', 'spectrum'],
   };
-  const MODES = ['auto', ...Object.keys(PATTERNS)];
-  let mode = 'auto';
+  // the pattern you pick stays put (and is remembered); no automatic switching
+  const MODES = Object.keys(PATTERNS);
+  let mode = 'spectrum';
   try {
     const m = localStorage.getItem('ps:pattern');
     if (m && MODES.includes(m)) mode = m;
@@ -437,7 +439,7 @@ import Icon from './Icon.astro';
   }
 
   function pickPattern(t: Item, time: number, beat: number) {
-    if (mode !== 'auto') return mode;
+    if (mode !== 'auto') return mode; // (auto is kept for possible later use, but not offered)
     const len = beat * 16; // 4 bars
     const section = Math.floor(time / len);
     // how loud is this whole section?
@@ -522,7 +524,7 @@ import Icon from './Icon.astro';
   }
   const matrixQuiet = () => glow.every((g) => g < 0.05);
 
-  // click the matrix: auto → each pattern → auto …
+  // click the matrix: next pattern, round and round
   let labelTimer = 0;
   function cycleMode() {
     mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
@@ -547,7 +549,7 @@ import Icon from './Icon.astro';
       const t = current();
       if (t) {
         const wasPaused = audio.paused;
-        PATTERNS[mode === 'auto' ? 'spectrum' : mode]({
+        PATTERNS[mode]({
           time: audio.currentTime, energy: 0.8, kick: 1, beatNo: 0, sixteenth: Math.floor(Math.random() * 999),
           bands: Float32Array.from(shape.map((v) => v * 0.8)), out: fresh, hot,
         });
@@ -777,6 +779,21 @@ import Icon from './Icon.astro';
       const q = readQueue(play.dataset.queue);
       const i = Number(play.dataset.index || 0);
       if (q) load(q, i);
+      return;
+    }
+    // "jump to" buttons (e.g. the busiest moment in the sound analysis)
+    const seek = target.closest<HTMLElement>('[data-seek]');
+    if (seek) {
+      const time = Number(seek.dataset.seek);
+      if (current()?.id === seek.dataset.seekId) {
+        audio.currentTime = time;
+        if (audio.paused) audio.play().catch(() => {});
+        progress();
+      } else {
+        const q = readQueue(seek.dataset.seekQueue);
+        const i = Number(seek.dataset.seekIndex);
+        if (q?.[i]) load(q, i, { time });
+      }
       return;
     }
     // album artwork that doubles as a play button

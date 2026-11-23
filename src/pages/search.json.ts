@@ -9,6 +9,9 @@ import {
   playable,
   parseLyrics,
   fmtTime,
+  fmtDate,
+  getArchive,
+  archiveUrl,
 } from '../lib/catalog';
 
 export const GET: APIRoute = async () => {
@@ -46,6 +49,26 @@ export const GET: APIRoute = async () => {
         lyrics: lines,
       });
     }
+  }
+
+  // the archive: unreleased songs, searchable like tracks but not playable here
+  for (const a of await getArchive()) {
+    tracks.push({
+      title: a.data.title,
+      release: 'archive',
+      releaseId: '',
+      meta: `archive · unreleased${a.data.created ? ` · ${fmtDate(a.data.created)}` : ''}`,
+      url: archiveUrl(a),
+      index: -1,
+      tags: a.data.tags ?? '',
+      lyrics: a.data.lyricsHidden
+        ? []
+        : parseLyrics(a.body)
+            .flat()
+            .filter((l) => !l.direction)
+            .map((l) => l.text),
+      archive: true,
+    });
   }
 
   return new Response(JSON.stringify({ records, tracks, queues }), {

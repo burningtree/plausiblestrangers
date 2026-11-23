@@ -30,6 +30,8 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
     <meta property="og:description" content={description} />
     {imageUrl && <meta property="og:image" content={imageUrl} />}
     <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:site" content={site.twitter} />
+    {site.links.map((l) => <link rel="me" href={l.href} />)}
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script is:inline>
@@ -45,6 +47,14 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
   <body>
     <a class="skip" href="#main">skip to content</a>
     <div class="corner">
+      <a
+        class="corner-btn"
+        href="/library/"
+        title="everything, released or not"
+        aria-current={Astro.url.pathname.startsWith('/library') ? 'page' : undefined}
+      >
+        <Icon name="book-stack" /> library
+      </a>
       {
         !home && (
           <button type="button" class="corner-btn" data-random title="play a random track">
@@ -74,7 +84,12 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
         Sounds by machines, decisions by humans, mistakes by both.
       </p>
       <p class="keys">
-        <kbd>space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> 10 seconds · <kbd>n</kbd> <kbd>p</kbd> next / previous · <kbd>m</kbd> mute · <kbd>v</kbd> visualise · <kbd class="palette-kbd">⌘K</kbd> or <kbd>/</kbd> search
+        <span><kbd>space</kbd> play / pause</span>
+        <span><kbd>←</kbd> <kbd>→</kbd> 10 seconds</span>
+        <span><kbd>n</kbd> <kbd>p</kbd> next / previous</span>
+        <span><kbd>m</kbd> mute</span>
+        <span><kbd>v</kbd> visualise</span>
+        <span><kbd class="palette-kbd">⌘K</kbd> or <kbd>/</kbd> search</span>
       </p>
     </footer>
     <Player />

@@ -52,6 +52,31 @@ computes waveforms and pulls lyrics + style prompts from Suno. It never
 overwrites markdown you already edited (`--rewrite` forces that, `--force`
 re-encodes audio and covers).
 
+## The archive (/library)
+
+Songs that never made it onto a record live in `src/content/archive/`, one
+markdown file each (title, date, tempo, tags, prompt, lyrics). They're info
+only: no audio is hosted, each page links to the song on Suno. To pull in new
+public Suno songs that aren't on a record:
+
+```
+npm run import:archive
+```
+
+Existing files are never overwritten, so edit freely. Remixes of other
+people's songs get `lyricsHidden: true` (their words aren't ours to print).
+Set `hidden: true` to leave a song out of the library.
+
+## Image placeholders
+
+Covers and gallery images show a blurred colour preview while they load
+(BlurHash, decoded at build time into a tiny inline PNG — no JavaScript).
+`npm run import` refreshes them; after adding images by hand run:
+
+```
+npm run blurhash
+```
+
 ## Deploy
 
 `dist/` is plain files — any static host works (Netlify, Cloudflare Pages, a

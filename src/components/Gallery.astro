@@ -1,5 +1,6 @@
 ---
 import Icon from './Icon.astro';
+import { blurStyle } from '../lib/catalog';
 // Extra images for a record (concept art, outtakes). Thumbnails sit loosely
 // like prints on a table; clicking one opens it big. ← → to browse, esc to close.
 interface Props {
@@ -20,7 +21,7 @@ const thumb = (src: string) => src.replace(/(\.[a-z]+)$/i, '-640$1');
         {images.map((img, i) => (
           <li>
             <a class="gallery-item" href={img.src} data-gallery-index={i}>
-              <img src={thumb(img.src)} alt={img.alt} width="640" height="640" loading="lazy" decoding="async" />
+              <img src={thumb(img.src)} class="blur" style={blurStyle(img.src)} alt={img.alt} width="640" height="640" loading="lazy" decoding="async" />
             </a>
             {img.caption && <p class="gallery-caption">{img.caption}</p>}
           </li>

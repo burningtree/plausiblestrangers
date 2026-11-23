@@ -268,4 +268,7 @@ for (const folder of folders) {
 
 await mkdir(path.dirname(peaksFile), { recursive: true });
 await writeFile(peaksFile, JSON.stringify(allPeaks));
+
+// blurry placeholders for any new covers
+await run('node', [path.join(ROOT, 'scripts/blurhash.mjs')]);
 console.log('\ndone.');

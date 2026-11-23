@@ -1,0 +1,384 @@
+---
+// Everything we've made: records, released songs, and the archive of songs
+// that never made it onto a record. Filterable, sortable, shareable (?query).
+import Base from '../../layouts/Base.astro';
+import Queue from '../../components/Queue.astro';
+import PlayButton from '../../components/PlayButton.astro';
+import PixelArt from '../../components/PixelArt.astro';
+import Icon from '../../components/Icon.astro';
+import {
+  getCatalog,
+  getArchive,
+  releaseUrl,
+  trackUrl,
+  archiveUrl,
+  hasAudio,
+  isUnfinished,
+  playable,
+  splitTags,
+  fmtTime,
+  fmtTotal,
+  blurStyle,
+  trackAnalysis,
+  miniSpec,
+  miniLevels,
+  MINI,
+} from '../../lib/catalog';
+
+type Row = {
+  type: 'song' | 'record';
+  status: 'released' | 'unfinished' | 'archive';
+  title: string;
+  sub: string;
+  url: string;
+  date?: Date;
+  dur?: number;
+  bpm?: number;
+  vocal: 'lyrics' | 'instrumental';
+  tags: string[];
+  cover?: string;
+  play?: { queue: string; index: number; id: string; record?: string };
+  spec?: string; // mini spectrogram, for songs with audio
+};
+
+const { releases, tracksOf } = await getCatalog();
+const archive = await getArchive();
+const rows: Row[] = [];
+
+for (const r of releases) {
+  const tracks = tracksOf(r.id);
+  const ready = tracks.filter(hasAudio);
+  const status = isUnfinished(r) ? 'unfinished' : 'released';
+  const cover = r.data.cover?.replace(/\.webp$/, '-480.webp');
+  const recTags = [...new Set(tracks.flatMap((t) => splitTags(t.data.tags)))];
+  rows.push({
+    type: 'record',
+    status,
+    title: r.data.title,
+    sub: `${r.data.catalog} · ${r.data.kind} · ${tracks.length} tracks`,
+    url: releaseUrl(r.id),
+    date: r.data.date ?? tracks.map((t) => t.data.created).filter(Boolean).sort().at(-1),
+    dur: tracks.reduce((s, t) => s + t.data.duration, 0),
+    vocal: tracks.some((t) => !t.data.instrumental) ? 'lyrics' : 'instrumental',
+    tags: recTags,
+    cover,
+    play: ready[0] ? { queue: r.id, index: 0, id: playable(ready[0], r).id, record: r.id } : undefined,
+  });
+  for (const t of tracks) {
+    const qi = ready.indexOf(t);
+    rows.push({
+      type: 'song',
+      status: qi >= 0 && !isUnfinished(r) ? 'released' : qi >= 0 ? 'released' : 'unfinished',
+      title: t.data.title,
+      sub: `${r.data.title} · ${String(t.data.number).padStart(2, '0')}`,
+      url: trackUrl(t),
+      date: t.data.created,
+      dur: t.data.duration,
+      bpm: t.data.bpm,
+      vocal: t.data.instrumental ? 'instrumental' : 'lyrics',
+      tags: splitTags(t.data.tags),
+      cover,
+      play: qi >= 0 ? { queue: r.id, index: qi, id: playable(t, r).id } : undefined,
+      spec: qi >= 0 && trackAnalysis(t) ? miniSpec(trackAnalysis(t)!) : undefined,
+    });
+  }
+}
+for (const a of archive) {
+  rows.push({
+    type: 'song',
+    status: 'archive',
+    title: a.data.title,
+    sub: a.data.remix ? 'archive · remix' : 'archive',
+    url: archiveUrl(a),
+    date: a.data.created,
+    dur: a.data.duration,
+    bpm: a.data.bpm,
+    vocal: a.data.instrumental ? 'instrumental' : 'lyrics',
+    tags: splitTags(a.data.tags),
+  });
+}
+
+// the tags worth offering as filters: the most common ones
+const tagCount = new Map<string, number>();
+for (const r of rows) if (r.type === 'song') for (const t of r.tags) tagCount.set(t, (tagCount.get(t) ?? 0) + 1);
+const topTags = [...tagCount.entries()]
+  .filter(([, n]) => n >= 2)
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .slice(0, 16)
+  .map(([t]) => t);
+
+const songs = rows.filter((r) => r.type === 'song');
+const counts = {
+  songs: songs.length,
+  released: songs.filter((r) => r.status === 'released').length,
+  unfinished: songs.filter((r) => r.status === 'unfinished').length,
+  archive: songs.filter((r) => r.status === 'archive').length,
+  records: rows.filter((r) => r.type === 'record').length,
+  minutes: Math.round(songs.reduce((s, r) => s + (r.dur ?? 0), 0) / 60),
+};
+const iso = (d?: Date) => (d ? d.toISOString().slice(0, 10) : '');
+const short = (d?: Date) =>
+  d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }).toLowerCase() : '—';
+---
+
+<Base title="library" description={`Everything Plausible Strangers has made: ${counts.records} records and ${counts.songs} songs, released or not.`}>
+  {releases.map((r) => <Queue release={r} tracks={tracksOf(r.id)} />)}
+
+  <section class="library" aria-labelledby="library-h">
+    <p class="crumbs"><a href="/">home</a> / library</p>
+    <h1 id="library-h" class="title">library</h1>
+    <p class="lede library-lede">
+      {`Everything we kept: ${counts.songs} songs, about ${counts.minutes} minutes. ${counts.released} made it onto a record, ${counts.unfinished} are waiting on an unfinished one, ${counts.archive} never will. The archive is words and instructions only; the sounds are on Suno.`}
+    </p>
+
+    <form class="lib-controls" role="search" aria-label="filter the library" onsubmit="return false">
+      <label class="lib-search">
+        <Icon name="search" />
+        <input type="search" name="q" placeholder="filter by title, record, tag…" autocomplete="off" spellcheck="false" />
+      </label>
+
+      <div class="lib-row">
+        <fieldset class="seg" data-filter="type">
+          <legend>show</legend>
+          <button type="button" data-value="song" aria-pressed="true">songs</button>
+          <button type="button" data-value="record" aria-pressed="false">records</button>
+        </fieldset>
+
+        <fieldset class="seg" data-filter="status">
+          <legend>status</legend>
+          <button type="button" data-value="" aria-pressed="true">all</button>
+          <button type="button" data-value="released" aria-pressed="false">released <span class="n">{counts.released}</span></button>
+          <button type="button" data-value="unfinished" aria-pressed="false">unfinished <span class="n">{counts.unfinished}</span></button>
+          <button type="button" data-value="archive" aria-pressed="false">archive <span class="n">{counts.archive}</span></button>
+        </fieldset>
+
+        <fieldset class="seg" data-filter="vocal">
+          <legend>voice</legend>
+          <button type="button" data-value="" aria-pressed="true">any</button>
+          <button type="button" data-value="lyrics" aria-pressed="false">lyrics</button>
+          <button type="button" data-value="instrumental" aria-pressed="false">instrumental</button>
+        </fieldset>
+
+        <label class="lib-sort">
+          <span>sort</span>
+          <select name="sort">
+            <option value="new">newest</option>
+            <option value="old">oldest</option>
+            <option value="az">a–z</option>
+            <option value="long">longest</option>
+            <option value="short">shortest</option>
+            <option value="fast">fastest</option>
+            <option value="slow">slowest</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset class="lib-tags" data-filter="tags">
+        <legend>tags</legend>
+        {topTags.map((t) => <button type="button" data-value={t} aria-pressed="false">{t}</button>)}
+      </fieldset>
+    </form>
+
+    <p class="lib-count" aria-live="polite"><span data-count>{counts.songs}</span> shown <button type="button" class="lib-reset" hidden>reset filters</button></p>
+
+    <ol class="lib-list">
+      {
+        rows.map((r) => (
+          <li
+            class:list={['lib-item', `is-${r.status}`, `is-${r.type}`]}
+            data-type={r.type}
+            data-status={r.status}
+            data-vocal={r.vocal}
+            data-tags={r.tags.join('|')}
+            data-date={iso(r.date)}
+            data-dur={r.dur ?? 0}
+            data-bpm={r.bpm ?? 0}
+            data-title={r.title.toLowerCase()}
+            data-search={`${r.title} ${r.sub} ${r.tags.join(' ')}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()}
+            data-row={r.play && r.type === 'song' ? r.play.id : undefined}
+            hidden={r.type === 'record'}
+          >
+            <a class="lib-art" href={r.url} tabindex="-1" aria-hidden="true">
+              {r.cover ? <img src={r.cover} class="blur" style={blurStyle(r.cover)} alt="" width="48" height="48" loading="lazy" decoding="async" /> : <PixelArt seed={r.title} />}
+            </a>
+            <span class="lib-main">
+              <a class="lib-title" href={r.url}>
+                {r.title}
+              </a>
+              <span class="lib-sub">{r.sub}</span>
+            </span>
+            <span class="lib-spec">
+              {r.spec && r.play ? (
+                <span
+                  class="wave spectro spectro--mini"
+                  data-wave={r.play.id}
+                  data-queue={r.play.queue}
+                  data-index={r.play.index}
+                  data-duration={r.dur}
+                  role="slider"
+                  tabindex="-1"
+                  aria-label={`${r.title}: click to play from that moment`}
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                >
+                  <canvas
+                    class="spectro-canvas"
+                    data-spec={r.spec}
+                    data-cols={MINI.cols}
+                    data-bands={MINI.bands}
+                    data-levels={miniLevels.join(',')}
+                    aria-hidden="true"
+                  />
+                </span>
+              ) : (
+                r.type === 'song' && <span class="lib-nospec" title="no recording here" />
+              )}
+            </span>
+            <span class="lib-status">{r.status}</span>
+            <span class="lib-date">{short(r.date)}</span>
+            <span class="lib-dur">{r.dur ? (r.type === 'record' ? fmtTotal(r.dur) : fmtTime(r.dur)) : '—'}</span>
+            <span class="lib-bpm">{r.bpm ? `${r.bpm}` : ''}</span>
+            <span class="lib-act">
+              {r.play ? (
+                <PlayButton queue={r.play.queue} index={r.play.index} id={r.play.id} record={r.play.record} label={`play ${r.title}`} iconOnly class="play--icon" />
+              ) : (
+                <a class="lib-ext" href={r.url} title="read about it" aria-label={`read about ${r.title}`}>
+                  <Icon name="page" />
+                </a>
+              )}
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="lib-empty" hidden>Nothing matches. Even the machines didn't make that one.</p>
+  </section>
+</Base>
+
+<script>
+  import { initSpectros } from '../../lib/spectro';
+  initSpectros();
+
+  type State = { q: string; type: string; status: string; vocal: string; tags: string[]; sort: string };
+  const DEFAULT: State = { q: '', type: 'song', status: '', vocal: '', tags: [], sort: 'new' };
+
+  function setup() {
+    const root = document.querySelector<HTMLElement>('.library');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const list = root.querySelector<HTMLOListElement>('.lib-list')!;
+    const items = [...list.querySelectorAll<HTMLLIElement>('.lib-item')];
+    const input = root.querySelector<HTMLInputElement>('input[name="q"]')!;
+    const select = root.querySelector<HTMLSelectElement>('select[name="sort"]')!;
+    const countEl = root.querySelector<HTMLElement>('[data-count]')!;
+    const reset = root.querySelector<HTMLButtonElement>('.lib-reset')!;
+    const empty = root.querySelector<HTMLElement>('.lib-empty')!;
+
+    // state from the URL, so a filtered view can be shared
+    const p = new URLSearchParams(location.search);
+    const state: State = {
+      q: p.get('q') ?? '',
+      type: p.get('show') === 'records' ? 'record' : 'song',
+      status: p.get('status') ?? '',
+      vocal: p.get('voice') ?? '',
+      tags: (p.get('tags') ?? '').split(',').filter(Boolean),
+      sort: p.get('sort') ?? 'new',
+    };
+
+    const norm = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase();
+
+    function writeUrl() {
+      const u = new URLSearchParams();
+      if (state.q) u.set('q', state.q);
+      if (state.type === 'record') u.set('show', 'records');
+      if (state.status) u.set('status', state.status);
+      if (state.vocal) u.set('voice', state.vocal);
+      if (state.tags.length) u.set('tags', state.tags.join(','));
+      if (state.sort !== 'new') u.set('sort', state.sort);
+      const qs = u.toString();
+      history.replaceState(history.state, '', qs ? `?${qs}` : location.pathname);
+    }
+
+    function paint() {
+      // controls
+      input.value = state.q;
+      select.value = state.sort;
+      root!.querySelectorAll<HTMLElement>('[data-filter]').forEach((fs) => {
+        const key = fs.dataset.filter as 'type' | 'status' | 'vocal' | 'tags';
+        fs.querySelectorAll<HTMLButtonElement>('button').forEach((b) => {
+          const on = key === 'tags' ? state.tags.includes(b.dataset.value!) : state[key] === b.dataset.value;
+          b.setAttribute('aria-pressed', String(on));
+        });
+      });
+
+      // filter
+      const words = norm(state.q).split(/\s+/).filter(Boolean);
+      let shown = 0;
+      for (const li of items) {
+        const d = li.dataset;
+        const tags = d.tags ? d.tags.split('|') : [];
+        const ok =
+          d.type === state.type &&
+          (!state.status || d.status === state.status) &&
+          (!state.vocal || d.vocal === state.vocal) &&
+          (!state.tags.length || state.tags.some((t) => tags.includes(t))) &&
+          words.every((w) => d.search!.includes(w));
+        li.hidden = !ok;
+        if (ok) shown++;
+      }
+
+      // sort (stable, by moving the nodes)
+      const val = (li: HTMLLIElement) => li.dataset;
+      const by: Record<string, (a: HTMLLIElement, b: HTMLLIElement) => number> = {
+        new: (a, b) => val(b).date!.localeCompare(val(a).date!),
+        old: (a, b) => (val(a).date || '9').localeCompare(val(b).date || '9'),
+        az: (a, b) => val(a).title!.localeCompare(val(b).title!),
+        long: (a, b) => +val(b).dur! - +val(a).dur!,
+        short: (a, b) => (+val(a).dur! || 1e9) - (+val(b).dur! || 1e9),
+        fast: (a, b) => +val(b).bpm! - +val(a).bpm!,
+        slow: (a, b) => (+val(a).bpm! || 1e9) - (+val(b).bpm! || 1e9),
+      };
+      [...items].sort(by[state.sort] ?? by.new).forEach((li) => list.appendChild(li));
+
+      countEl.textContent = String(shown);
+      empty.hidden = shown > 0;
+      const dirty = JSON.stringify({ ...state }) !== JSON.stringify(DEFAULT);
+      reset.hidden = !dirty;
+      root!.classList.toggle('show-records', state.type === 'record');
+      writeUrl();
+    }
+
+    root.addEventListener('click', (e) => {
+      const b = (e.target as Element).closest<HTMLButtonElement>('[data-filter] button');
+      if (b) {
+        const key = b.closest<HTMLElement>('[data-filter]')!.dataset.filter as keyof State;
+        const v = b.dataset.value!;
+        if (key === 'tags') state.tags = state.tags.includes(v) ? state.tags.filter((t) => t !== v) : [...state.tags, v];
+        else (state as any)[key] = key === 'type' ? v : state[key] === v ? '' : v;
+        paint();
+        return;
+      }
+      if ((e.target as Element).closest('.lib-reset')) {
+        Object.assign(state, { ...DEFAULT, tags: [] });
+        paint();
+      }
+    });
+    input.addEventListener('input', () => {
+      state.q = input.value;
+      paint();
+    });
+    select.addEventListener('change', () => {
+      state.sort = select.value;
+      paint();
+    });
+    paint();
+  }
+
+  document.addEventListener('astro:page-load', setup);
+  setup();
+</script>

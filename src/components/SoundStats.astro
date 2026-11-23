@@ -1,0 +1,109 @@
+---
+// Where the energy sits and a few numbers in plain words, each compared
+// with the rest of our songs (the spectrogram itself is Spectrogram.astro).
+import { fmtTime, percentile, type Analysis } from '../lib/catalog';
+
+interface Props {
+  analysis: Analysis;
+  id: string; // player id of this track
+  queue: string;
+  index: number;
+}
+const { analysis: a, id, queue, index } = Astro.props;
+
+const BAND_LABELS: Record<string, string> = {
+  sub: 'sub',
+  bass: 'bass',
+  'low-mid': 'low mids',
+  mid: 'mids',
+  high: 'highs',
+};
+const maxShare = Math.max(...Object.values(a.balance));
+const CELLS = 24;
+
+const pct = {
+  lufs: percentile('lufs', a.lufs),
+  lra: percentile('lra', a.lra),
+  brightness: percentile('brightness', a.brightness),
+  width: percentile('width', a.width),
+};
+// "louder than 70% of our songs" / "the quietest we have" …
+const compare = (p: number | undefined, more: string, most: string, least: string) =>
+  p == null ? '' : p >= 98 ? `the ${most} we have` : p <= 2 ? `the ${least} we have` : `${more} than ${p}% of our songs`;
+
+const stats: { k: string; v: string; note: string }[] = [
+  {
+    k: 'loudness',
+    v: a.lufs != null ? `${a.lufs.toFixed(1)} LUFS` : '—',
+    note: compare(pct.lufs, 'louder', 'loudest', 'quietest'),
+  },
+  {
+    k: 'dynamics',
+    v: a.lra != null ? `${a.lra.toFixed(1)} LU range` : '—',
+    note: compare(pct.lra, 'more dynamic', 'most dynamic', 'flattest'),
+  },
+  {
+    k: 'brightness',
+    v: `${a.brightness} Hz centre`,
+    note: compare(pct.brightness, 'brighter', 'brightest', 'darkest'),
+  },
+  {
+    k: 'stereo width',
+    v: `${Math.round(a.width * 100)}%`,
+    note: compare(pct.width, 'wider', 'widest', 'narrowest'),
+  },
+  { k: 'peak', v: `${a.peak.toFixed(1)} dBFS`, note: a.peak > -0.5 ? 'right up against the ceiling' : '' },
+];
+
+---
+
+<section class="sound-stats" aria-labelledby="sound-h">
+  <h2 id="sound-h" class="label">the sound, measured</h2>
+  <div class="analysis-grid">
+    <div>
+      <h3 class="sublabel">where the energy sits</h3>
+      <ul class="balance">
+        {
+          Object.entries(a.balance).map(([band, share]) => {
+            const filled = Math.max(share > 0.004 ? 1 : 0, Math.round((share / maxShare) * CELLS));
+            return (
+              <li>
+                <span class="balance-k">{BAND_LABELS[band] ?? band}</span>
+                <span class="balance-bar" aria-hidden="true">
+                  {Array.from({ length: CELLS }, (_, i) => (
+                    <i class:list={{ on: i < filled, hot: i < filled && share === maxShare }} />
+                  ))}
+                </span>
+                <span class="balance-v">{Math.round(share * 100)}%</span>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="sublabel">in numbers</h3>
+      <dl class="details analysis-stats">
+        {
+          stats.map((s) => (
+            <>
+              <dt>{s.k}</dt>
+              <dd>
+                {s.v}
+                {s.note && <span class="stat-note">{s.note}</span>}
+              </dd>
+            </>
+          ))
+        }
+        <dt>busiest moment</dt>
+        <dd>
+          <button type="button" class="stat-jump" data-seek={a.busiest} data-seek-queue={queue} data-seek-index={index} data-seek-id={id}>
+            {fmtTime(a.busiest)} →
+          </button>
+          <span class="stat-note">where the most is going on at once</span>
+        </dd>
+      </dl>
+    </div>
+  </div>
+</section>

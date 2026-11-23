@@ -1,0 +1,181 @@
+---
+// One song from the archive: never released, kept here as words and instructions.
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import PixelArt from '../../components/PixelArt.astro';
+import {
+  getArchive,
+  getCatalog,
+  archiveUrl,
+  trackUrl,
+  releaseUrl,
+  songBase,
+  parseLyrics,
+  fmtTime,
+  fmtDate,
+  type ArchiveSong,
+} from '../../lib/catalog';
+
+export const getStaticPaths = (async () => {
+  const songs = await getArchive();
+  return songs.map((song, i) => ({
+    params: { song: song.id },
+    props: { song, newer: songs[i - 1], older: songs[i + 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+const { song, newer, older } = Astro.props as { song: ArchiveSong; newer?: ArchiveSong; older?: ArchiveSong };
+const d = song.data;
+
+// other versions: released tracks and archive songs sharing the same base title
+const base = songBase(d.title);
+const { releases, tracksOf } = await getCatalog();
+const releasedVersions = releases.flatMap((r) =>
+  tracksOf(r.id)
+    .filter((t) => songBase(t.data.title) === base)
+    .map((t) => ({ title: t.data.title, url: trackUrl(t), where: r.data.title, whereUrl: releaseUrl(r.id) })),
+);
+const archiveVersions = (await getArchive()).filter((a) => a.id !== song.id && songBase(a.data.title) === base);
+
+const stanzas = parseLyrics(song.body);
+const hasWords = stanzas.length > 1 || (stanzas.length === 1 && !stanzas[0][0].direction);
+
+const details: [string, string | undefined][] = [
+  ['status', 'unreleased · archive'],
+  ['length', d.duration ? fmtTime(d.duration) : undefined],
+  ['tempo', d.bpm ? `${d.bpm} bpm` : undefined],
+  ['tags', d.tags],
+  ['generated', d.created ? fmtDate(d.created) : undefined],
+  ['machine', d.machine],
+  ['human', 'direction, words, selection'],
+];
+---
+
+<Base title={`${d.title} — archive`} description={`${d.title}: an unreleased Plausible Strangers song from the archive.`}>
+  <article class="track archive-song">
+    <p class="crumbs">
+      <a href="/library/">library</a> / archive <span class="stamp stamp--quiet">unreleased</span>
+    </p>
+
+    <div class="track-main">
+      <header class="track-head">
+        <div class="track-cover archive-art"><PixelArt seed={d.title} label={`pixel art for ${d.title}`} /></div>
+        <div>
+          <h1 class="title">{d.title}</h1>
+          <p class="meta">
+            {d.duration && fmtTime(d.duration)}{d.bpm && ` · ${d.bpm} bpm`}{d.instrumental && ' · instrumental'}{d.created && ` · ${fmtDate(d.created)}`}
+          </p>
+          <p class="track-actions">
+            {
+              d.suno ? (
+                <a class="suno-btn" href={d.suno}>
+                  <Icon name="play-solid" /> listen on suno <Icon name="arrow-up-right" />
+                </a>
+              ) : (
+                <span class="meta">no recording kept.</span>
+              )
+            }
+          </p>
+        </div>
+      </header>
+
+      {
+        (releasedVersions.length > 0 || archiveVersions.length > 0) && (
+          <section class="versions" aria-labelledby="versions-h">
+            <h2 id="versions-h" class="label">other versions</h2>
+            <ul class="plain versions-list">
+              {releasedVersions.map((v) => (
+                <li>
+                  <a href={v.url}>{v.title}</a> <span class="meta">on <a href={v.whereUrl}>{v.where}</a></span>
+                </li>
+              ))}
+              {archiveVersions.map((v) => (
+                <li>
+                  <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">archive</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <section class="lyrics" aria-labelledby="lyrics-h">
+        <h2 id="lyrics-h" class="label">{d.instrumental ? 'the score' : 'lyrics'}</h2>
+        {
+          d.lyricsHidden ? (
+            <p class="muted">This one is a remix of somebody else's song, so its words are theirs and not printed here.</p>
+          ) : hasWords ? (
+            stanzas.map((s) =>
+              s[0].direction ? (
+                <p class="direction">[{s[0].text}]</p>
+              ) : (
+                <p class="stanza">
+                  {s.map((l, i) => (
+                    <>
+                      {l.text}
+                      {i < s.length - 1 && <br />}
+                    </>
+                  ))}
+                </p>
+              ),
+            )
+          ) : (
+            <p class="muted">None. The machine was asked to keep quiet this time.</p>
+          )
+        }
+      </section>
+    </div>
+
+    <div class="track-side">
+      {
+        d.style && (
+          <section class="brief" aria-labelledby="brief-h">
+            <h2 id="brief-h" class="label">what we asked the machine for</h2>
+            <blockquote>
+              <p>{d.style}</p>
+            </blockquote>
+          </section>
+        )
+      }
+      {
+        d.notes && (
+          <section aria-labelledby="notes-h">
+            <h2 id="notes-h" class="label">notes</h2>
+            <p>{d.notes}</p>
+          </section>
+        )
+      }
+      <section aria-labelledby="details-h">
+        <h2 id="details-h" class="label">details</h2>
+        <dl class="details">
+          {
+            details
+              .filter(([, v]) => v)
+              .map(([k, v]) => (
+                <>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </>
+              ))
+          }
+          {d.suno && (
+            <>
+              <dt>elsewhere</dt>
+              <dd>
+                <a href={d.suno}>
+                  suno <Icon name="arrow-up-right" />
+                </a>
+              </dd>
+            </>
+          )}
+        </dl>
+      </section>
+    </div>
+
+    <nav class="pager" aria-label="other archive songs">
+      {newer ? <a href={archiveUrl(newer)} rel="prev">← {newer.data.title}</a> : <a href="/library/">← library</a>}
+      {older ? <a href={archiveUrl(older)} rel="next">{older.data.title} →</a> : <a href="/library/">library ↑</a>}
+    </nav>
+  </article>
+</Base>

@@ -8,7 +8,7 @@ import { iconSvg } from '../lib/icons';
 const ICONS = Object.fromEntries(
   [
     'play-solid', 'pause-solid', 'skip-next', 'skip-prev', 'home-simple', 'half-moon', 'sun-light',
-    'sine-wave', 'dice-five', 'album', 'music-note', 'quote', 'search',
+    'sine-wave', 'dice-five', 'album', 'music-note', 'quote', 'search', 'archive', 'book-stack',
   ].map((n) => [n, iconSvg(n)]),
 );
 ---
@@ -24,7 +24,7 @@ const ICONS = Object.fromEntries(
       <input
         class="palette-input"
         type="text"
-        placeholder="records, tracks, lyrics, or a command…"
+        placeholder="records, songs, lyrics, the archive, or a command…"
         autocomplete="off"
         autocapitalize="off"
         spellcheck="false"
@@ -47,6 +47,7 @@ const ICONS = Object.fromEntries(
 
 <script>
   import { navigate } from 'astro:transitions/client';
+  import Fuse, { type FuseResult, type IFuseOptions } from 'fuse.js';
 
   type Rec = { id: string; title: string; meta: string; url: string; cover?: string; playable: boolean };
   type Trk = {
@@ -58,11 +59,14 @@ const ICONS = Object.fromEntries(
     index: number;
     tags: string;
     lyrics: string[];
+    archive?: boolean;
   };
   type Index = { records: Rec[]; tracks: Trk[]; queues: Record<string, unknown[]> };
   type Result = {
-    kind: 'command' | 'record' | 'track' | 'lyric';
+    kind: 'command' | 'record' | 'track' | 'lyric' | 'archive';
     icon?: string;
+    titleHits?: readonly [number, number][];
+    snippetHits?: readonly [number, number][];
     title: string;
     meta?: string;
     snippet?: string;
@@ -90,11 +94,6 @@ const ICONS = Object.fromEntries(
   let lastFocus: Element | null = null;
 
   const dlg = () => document.querySelector<HTMLDialogElement>('dialog.palette');
-  const norm = (s: string) =>
-    s
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .toLowerCase();
 
   function load() {
     if (index) return Promise.resolve(index);
@@ -103,18 +102,6 @@ const ICONS = Object.fromEntries(
       .then((d) => (index = d))
       .catch(() => null);
     return loading;
-  }
-
-  // 0 = no match. Prefix > word start > anywhere > letters in order.
-  function score(hay: string, q: string) {
-    const h = norm(hay);
-    if (!q) return 1;
-    if (h.startsWith(q)) return 100 - h.length / 100;
-    if (h.includes(' ' + q) || h.includes('-' + q)) return 80;
-    if (h.includes(q)) return 60;
-    let i = 0;
-    for (const ch of h) if (ch === q[i]) i++;
-    return i === q.length && q.length > 2 ? 20 : 0;
   }
 
   const click = (sel: string) => document.querySelector<HTMLElement>(sel)?.click();
@@ -145,6 +132,7 @@ const ICONS = Object.fromEntries(
     const dark = document.documentElement.dataset.theme === 'dark';
     const list: Omit<Result, 'score'>[] = [
       { kind: 'command', icon: 'home-simple', title: 'home', meta: 'go to the first page', run: () => navigate('/') },
+      { kind: 'command', icon: 'book-stack', title: 'library', meta: 'everything, released or not', run: () => navigate('/library/') },
       {
         kind: 'command',
         icon: dark ? 'sun-light' : 'half-moon',
@@ -171,62 +159,147 @@ const ICONS = Object.fromEntries(
     return list.map((c) => ({ ...c, score: 0 }));
   }
 
+  // ---- fuzzy search (Fuse.js): forgiving about typos, accents and word order.
+  // One index per kind; results are merged by Fuse's score with a small
+  // boost per kind so records and commands win ties over lyric lines.
+  type Line = { line: string; t: Trk };
+  const base: IFuseOptions<unknown> = {
+    includeScore: true,
+    includeMatches: true,
+    ignoreDiacritics: true,
+    minMatchCharLength: 2,
+    threshold: 0.36,
+    // a word at the end of a title counts as much as one at the start
+    ignoreLocation: true,
+  };
+  let fuses: { records: Fuse<Rec>; tracks: Fuse<Trk>; lines: Fuse<Line> } | null = null;
+  function buildFuses() {
+    if (fuses || !index) return;
+    const lines: Line[] = index.tracks.flatMap((t) => t.lyrics.map((line) => ({ line, t })));
+    fuses = {
+      records: new Fuse(index.records, {
+        ...base,
+        keys: [
+          { name: 'title', weight: 3 },
+          { name: 'meta', weight: 0.4 },
+        ],
+      } as IFuseOptions<Rec>),
+      tracks: new Fuse(index.tracks, {
+        ...base,
+        keys: [
+          { name: 'title', weight: 3 },
+          { name: 'release', weight: 0.5 },
+          { name: 'tags', weight: 0.4 },
+        ],
+      } as IFuseOptions<Trk>),
+      // lyrics: a phrase can be anywhere in a line, and should match tighter
+      lines: new Fuse(lines, { ...base, keys: ['line'], threshold: 0.18, minMatchCharLength: 3 } as IFuseOptions<Line>),
+    };
+  }
+
+  const hitsFor = (r: FuseResult<unknown>, key: string) =>
+    (r.matches ?? []).find((m) => m.key === key)?.indices.filter(([a, b]) => b - a >= 1);
+  const rank = (r: FuseResult<unknown>, boost: number) => (1 - (r.score ?? 1)) * boost;
+
   function search(raw: string): Result[] {
-    const q = norm(raw.trim());
+    const q = raw.trim();
+    const cmds = commands();
+    if (!q) {
+      // nothing typed: everything you can do, then the records
+      const recs: Result[] = (index?.records ?? []).map((r) => ({
+        kind: 'record',
+        icon: 'album',
+        title: r.title,
+        meta: r.meta,
+        cover: r.cover,
+        score: 0,
+        run: () => navigate(r.url),
+        play: r.playable ? () => playQueue(r.id, 0) : undefined,
+      }));
+      return [...cmds, ...recs];
+    }
+
     const out: Result[] = [];
-    for (const c of commands()) {
-      const s = score(c.title, q);
-      if (s) out.push({ ...c, score: s + 5 });
+    const cmdFuse = new Fuse(cmds, {
+      ...base,
+      keys: [
+        { name: 'title', weight: 3 },
+        { name: 'meta', weight: 0.5 },
+      ],
+    } as IFuseOptions<Result>);
+    for (const r of cmdFuse.search(q)) out.push({ ...r.item, score: rank(r, 1.1), titleHits: hitsFor(r, 'title') });
+
+    buildFuses();
+    if (!fuses) return out;
+
+    for (const r of fuses.records.search(q)) {
+      const it = r.item;
+      out.push({
+        kind: 'record',
+        icon: 'album',
+        title: it.title,
+        meta: it.meta,
+        cover: it.cover,
+        score: rank(r, 1.15),
+        titleHits: hitsFor(r, 'title'),
+        run: () => navigate(it.url),
+        play: it.playable ? () => playQueue(it.id, 0) : undefined,
+      });
     }
-    if (!index) return out;
-    for (const r of index.records) {
-      const s = Math.max(score(r.title, q), score(r.meta, q) * 0.5);
-      if (s)
-        out.push({
-          kind: 'record',
-          icon: 'album',
-          title: r.title,
-          meta: r.meta,
-          cover: r.cover,
-          score: s + 10,
-          run: () => navigate(r.url),
-          play: r.playable ? () => playQueue(r.id, 0) : undefined,
-        });
+
+    const byTitle = new Set<Trk>();
+    for (const r of fuses.tracks.search(q, { limit: 25 })) {
+      const t = r.item;
+      byTitle.add(t);
+      out.push({
+        kind: t.archive ? 'archive' : 'track',
+        icon: t.archive ? 'archive' : 'music-note',
+        title: t.title,
+        meta: t.meta,
+        score: rank(r, 1),
+        titleHits: hitsFor(r, 'title'),
+        run: () => navigate(t.url),
+        play: t.index >= 0 ? () => playQueue(t.releaseId, t.index) : undefined,
+      });
     }
-    if (!q) return out; // empty: commands + records
-    for (const t of index.tracks) {
-      const play = t.index >= 0 ? () => playQueue(t.releaseId, t.index) : undefined;
-      const s = Math.max(score(t.title, q), score(t.tags, q) * 0.4);
-      if (s) {
-        out.push({ kind: 'track', icon: 'music-note', title: t.title, meta: t.meta, score: s, run: () => navigate(t.url), play });
-        continue;
-      }
-      if (q.length < 3) continue;
-      const line = t.lyrics.find((l) => norm(l).includes(q));
-      if (line)
+
+    if (q.length >= 3) {
+      const seen = new Set<Trk>();
+      for (const r of fuses.lines.search(q, { limit: 60 })) {
+        const { line, t } = r.item;
+        if (byTitle.has(t) || seen.has(t)) continue; // best line per track only
+        seen.add(t);
         out.push({
           kind: 'lyric',
           icon: 'quote',
           title: t.title,
           meta: t.release,
           snippet: line,
-          score: 15,
+          snippetHits: hitsFor(r, 'line'),
+          score: rank(r, 0.8),
           run: () => navigate(t.url),
-          play,
+          play: t.index >= 0 ? () => playQueue(t.releaseId, t.index) : undefined,
         });
+      }
     }
     return out.sort((a, b) => b.score - a.score).slice(0, 40);
   }
 
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-  function mark(text: string, q: string) {
-    const i = norm(text).indexOf(norm(q.trim()));
-    if (!q.trim() || i < 0) return esc(text);
-    const n = q.trim().length;
-    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + n)) + '</mark>' + esc(text.slice(i + n));
+  // wrap the character ranges Fuse matched in <mark>
+  function mark(text: string, hits?: readonly [number, number][]) {
+    if (!hits?.length) return esc(text);
+    let out = '';
+    let at = 0;
+    for (const [a, b] of [...hits].sort((x, y) => x[0] - y[0])) {
+      if (a < at) continue;
+      out += esc(text.slice(at, a)) + '<mark>' + esc(text.slice(a, b + 1)) + '</mark>';
+      at = b + 1;
+    }
+    return out + esc(text.slice(at));
   }
 
-  const LABEL = { command: 'do', record: 'record', track: 'track', lyric: 'lyrics' };
+  const LABEL = { command: 'do', record: 'record', track: 'track', lyric: 'lyrics', archive: 'archive' };
 
   function render() {
     const d = dlg();
@@ -246,8 +319,8 @@ const ICONS = Object.fromEntries(
         (r, i) => `<li id="pal-${i}" role="option" class="palette-item${i === active ? ' is-active' : ''}" aria-selected="${i === active}" data-i="${i}">
           ${r.cover ? `<img class="palette-art" src="${esc(r.cover)}" alt="" width="40" height="40">` : `<span class="palette-art palette-icon">${icon(r.icon)}</span>`}
           <span class="palette-text">
-            <span class="palette-title">${mark(r.title, q)}</span>
-            ${r.snippet ? `<span class="palette-snippet">“${mark(r.snippet, q)}”</span>` : ''}
+            <span class="palette-title">${mark(r.title, r.titleHits)}</span>
+            ${r.snippet ? `<span class="palette-snippet">“${mark(r.snippet, r.snippetHits)}”</span>` : ''}
             ${r.meta ? `<span class="palette-meta">${esc(r.meta)}</span>` : ''}
           </span>
           <span class="palette-kind">${LABEL[r.kind]}</span>

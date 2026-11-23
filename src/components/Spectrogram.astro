@@ -1,0 +1,48 @@
+---
+// A pixel spectrogram of the whole track that doubles as its progress bar:
+// the player moves a playhead across it (--p) and clicking jumps there.
+import { fmtTime, spectroLevels, type Analysis } from '../lib/catalog';
+
+interface Props {
+  analysis: Analysis;
+  id: string; // player id of this track
+  queue: string;
+  index: number;
+  duration: number;
+}
+const { analysis: a, id, queue, index, duration } = Astro.props;
+const kHz = (f: number) => (f >= 1000 ? `${Math.round(f / 1000)}k` : `${Math.round(f)}`);
+// gridline frequencies, as fractions up the log scale
+const ticks = [100, 1000, 5000].map((f) => ({ f, y: Math.log(f / a.fLo) / Math.log(a.fHi / a.fLo) }));
+---
+
+<div class="spectro-wrap">
+  <div
+    class="wave spectro"
+    data-wave={id}
+    data-queue={queue}
+    data-index={index}
+    data-duration={duration}
+    role="slider"
+    tabindex="0"
+    aria-label="spectrogram: click to jump to that moment"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="0"
+  >
+    <canvas class="spectro-canvas" data-spec={a.spec} data-cols={a.cols} data-bands={a.bands} data-levels={spectroLevels.join(',')} aria-hidden="true"></canvas>
+    {ticks.map((t) => <span class="spectro-tick" style={`bottom:${(t.y * 100).toFixed(1)}%`}>{kHz(t.f)}</span>)}
+    <span class="spectro-busy" data-busiest={a.busiest} style={`left:${((a.busiest / duration) * 100).toFixed(2)}%`} title={`the busiest moment, ${fmtTime(a.busiest)}`}></span>
+  </div>
+  <p class="spectro-legend">
+    <span>time →</span>
+    <span>pitch ↑ ({a.fLo} Hz – {kHz(a.fHi)} Hz)</span>
+    <span><i class="sw sw-1"></i><i class="sw sw-2"></i><i class="sw sw-3"></i><i class="sw sw-4"></i> quiet → loud</span>
+  </p>
+
+</div>
+
+<script>
+  import { initSpectros } from '../lib/spectro';
+  initSpectros();
+</script>

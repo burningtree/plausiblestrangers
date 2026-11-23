@@ -6,6 +6,8 @@ import PlayButton from '../../../components/PlayButton.astro';
 import Wave from '../../../components/Wave.astro';
 import Stamp from '../../../components/Stamp.astro';
 import Icon from '../../../components/Icon.astro';
+import Spectrogram from '../../../components/Spectrogram.astro';
+import SoundStats from '../../../components/SoundStats.astro';
 import {
   getCatalog,
   releaseUrl,
@@ -16,6 +18,12 @@ import {
   keyName,
   parseLyrics,
   timedLyrics,
+  downloadName,
+  blurStyle,
+  trackAnalysis,
+  getArchive,
+  archiveUrl,
+  songBase,
   playable,
   hasAudio,
   isUnfinished,
@@ -51,6 +59,9 @@ const hasWords = stanzas.length > 1 || (stanzas.length === 1 && !stanzas[0][0].d
 let lineNo = 0;
 const numbered = stanzas.map((s) => s.map((l) => ({ ...l, n: l.direction ? -1 : lineNo++ })));
 const timed = audible ? timedLyrics(track) : undefined;
+const analysis = audible ? trackAnalysis(track) : undefined;
+// unreleased versions of this song in the archive (same base title)
+const archiveVersions = (await getArchive()).filter((a) => songBase(a.data.title) === songBase(t.title));
 
 const details: [string, string | undefined][] = [
   ['record', `${r.title} (${r.catalog})`],
@@ -80,6 +91,8 @@ const details: [string, string | undefined][] = [
           <a href={releaseUrl(release.id)} class="track-cover">
             <img
               src={r.cover.replace(/\.webp$/, '-480.webp')}
+              class="blur"
+              style={blurStyle(r.cover)}
               alt={`Cover of ${r.title}`}
               width="480"
               height="480"
@@ -93,12 +106,45 @@ const details: [string, string | undefined][] = [
         <p class="meta">
           {fmtTime(t.duration)}{t.bpm && ` · ${t.bpm} bpm`}{t.key && ` · ${keyName(t.key)}`}{t.instrumental && ' · instrumental'}
         </p>
-        <p>{audible ? <PlayButton queue={release.id} index={qi} id={p.id} class="play--big" /> : <span class="meta">not audible yet. it exists, mostly.</span>}</p>
+        <p class="track-actions">
+          {audible ? (
+            <>
+              <PlayButton queue={release.id} index={qi} id={p.id} class="play--big" />
+              <a class="download-btn" href={t.audio} download={downloadName(track)} title="download (m4a)">
+                <Icon name="download" /> download
+              </a>
+            </>
+          ) : (
+            <span class="meta">not audible yet. it exists, mostly.</span>
+          )}
+        </p>
       </div>
     </header>
 
-    {audible && <Wave id={p.id} peaks={p.peaks} duration={t.duration} queue={release.id} index={qi} class="wave--big" />}
+    {
+      audible &&
+        (analysis ? (
+          <Spectrogram analysis={analysis} id={p.id} queue={release.id} index={qi} duration={t.duration} />
+        ) : (
+          <Wave id={p.id} peaks={p.peaks} duration={t.duration} queue={release.id} index={qi} class="wave--big" />
+        ))
+    }
     {audible && <noscript><audio controls preload="none" src={t.audio}></audio></noscript>}
+
+    {
+      archiveVersions.length > 0 && (
+        <section class="versions" aria-labelledby="versions-h">
+          <h2 id="versions-h" class="label">other versions, in the archive</h2>
+          <ul class="plain versions-list">
+            {archiveVersions.map((v) => (
+              <li>
+                <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">unreleased</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
 
     <section
       class:list={['lyrics', { 'lyrics--synced': timed }]}
@@ -151,6 +197,8 @@ const details: [string, string | undefined][] = [
       )
     }
 
+    {analysis && <SoundStats analysis={analysis} id={p.id} queue={release.id} index={qi} />}
+
     {
       t.notes && (
         <section aria-labelledby="notes-h">
@@ -177,7 +225,7 @@ const details: [string, string | undefined][] = [
           <>
             <dt>{t.audio ? 'file' : 'elsewhere'}</dt>
             <dd>
-              {t.audio && <a href={t.audio} download>{t.audio.split(".").pop()}</a>}
+              {t.audio && <a href={t.audio} download={downloadName(track)}>{t.audio.split(".").pop()}</a>}
               {t.audio && t.suno && ' · '}
               {t.suno && <a href={t.suno}>suno <Icon name="arrow-up-right" /></a>}
             </dd>

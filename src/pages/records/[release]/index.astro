@@ -16,6 +16,8 @@ import {
   fmtDate,
   playable,
   hasAudio,
+  downloadName,
+  blurStyle,
   isUnfinished,
   type Release,
 } from '../../../lib/catalog';
@@ -48,7 +50,7 @@ const d = release.data;
     {
       d.cover && (
         <figure class:list={['release-cover', { 'release-cover--playable': ready.length > 0 }]} data-play-art={ready.length > 0 ? '' : undefined}>
-          <img src={d.cover} alt={`Cover of ${d.title}`} width="1400" height="1400" transition:name={`cover-${release.id}`} />
+          <img src={d.cover} class="blur" style={blurStyle(d.cover)} alt={`Cover of ${d.title}`} width="1400" height="1400" transition:name={`cover-${release.id}`} />
           {ready.length > 0 && (
             <PlayButton
               queue={release.id}
@@ -96,6 +98,13 @@ const d = release.data;
                 {t.data.bpm && ` · ${t.data.bpm} bpm`}
               </span>
               <span class="tl-dur">{fmtTime(t.data.duration)}</span>
+              {qi >= 0 ? (
+                <a class="tl-dl" href={t.data.audio} download={downloadName(t)} title={`download ${t.data.title}`} aria-label={`download ${t.data.title}`}>
+                  <Icon name="download" />
+                </a>
+              ) : (
+                <span />
+              )}
             </li>
           );
         })

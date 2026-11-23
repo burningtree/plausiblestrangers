@@ -45,4 +45,25 @@ const tracks = defineCollection({
   }),
 });
 
-export const collections = { releases, tracks };
+// Songs that never made it onto a record (scripts/import-archive.mjs).
+// Info only: no audio is hosted, each links to the song on Suno.
+const archive = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/archive' }),
+  schema: z.object({
+    title: z.string(),
+    created: z.coerce.date().optional(),
+    duration: z.number().optional(),
+    bpm: z.number().optional(),
+    instrumental: z.boolean().default(false),
+    lyricsHidden: z.boolean().default(false),
+    remix: z.boolean().default(false),
+    tags: z.string().optional(),
+    style: z.string().optional(),
+    machine: z.string().optional(),
+    suno: z.string().url().optional(),
+    notes: z.string().optional(),
+    hidden: z.boolean().default(false),
+  }),
+});
+
+export const collections = { releases, tracks, archive };

@@ -1,9 +1,105 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import peaksData from '../data/peaks.json';
 import syncData from '../data/lyric-sync.json';
+import blurData from '../data/blurhash.json';
+import analysisData from '../data/analysis.json';
 
 export type Release = CollectionEntry<'releases'>;
 export type Track = CollectionEntry<'tracks'>;
+export type ArchiveSong = CollectionEntry<'archive'>;
+
+// Blurry placeholder (from scripts/blurhash.mjs) to sit behind an <img> while it loads.
+// Thumbnails (-480, -640) share their full-size image's placeholder.
+const blurs = blurData as Record<string, { hash: string; png: string }>;
+export const blurStyle = (src?: string) => {
+  const b = src && blurs[src.replace(/-(480|640)(\.\w+)$/, '$2')];
+  return b ? `background-image:url(${b.png})` : undefined;
+};
+
+// ---- sound analysis (scripts/analyse.mjs)
+export type Analysis = {
+  cols: number;
+  bands: number;
+  fLo: number;
+  fHi: number;
+  spec: string;
+  balance: Record<string, number>;
+  brightness: number;
+  width: number;
+  peak: number;
+  lufs: number | null;
+  lra: number | null;
+  busiest: number;
+};
+const analyses = analysisData as Record<string, Analysis>;
+export const trackAnalysis = (t: Track): Analysis | undefined => analyses[`${t.data.release}/${trackSlug(t)}`];
+
+// where a value sits among all our songs (each recording counted once): 0–100
+const uniqueAnalyses = [...new Map(Object.values(analyses).map((a) => [a.spec, a])).values()];
+export function percentile(metric: 'lufs' | 'lra' | 'brightness' | 'width', value: number | null) {
+  if (value == null) return undefined;
+  const vals = uniqueAnalyses.map((a) => a[metric]).filter((v): v is number => v != null);
+  const below = vals.filter((v) => v < value).length;
+  return Math.round((below / Math.max(1, vals.length - 1)) * 100);
+}
+
+// spectrogram colour steps, taken from all our songs together so pictures compare:
+// the quietest ~40% stay dark, then three steps of ink, the top ~5% in the accent
+export const spectroLevels = (() => {
+  const all: number[] = [];
+  for (const a of uniqueAnalyses) for (const ch of atob(a.spec)) all.push(ch.charCodeAt(0));
+  all.sort((x, y) => x - y);
+  const q = (p: number) => all[Math.floor(p * (all.length - 1))] ?? 0;
+  return [0.4, 0.62, 0.82, 0.95].map(q);
+})();
+
+// a small version of a spectrogram (averaged down) for lists like the library
+export const MINI = { cols: 128, bands: 14 };
+const miniCache = new Map<string, Uint8Array>();
+function miniBytes(a: Analysis) {
+  let m = miniCache.get(a.spec);
+  if (m) return m;
+  const src = Uint8Array.from(atob(a.spec), (c) => c.charCodeAt(0));
+  m = new Uint8Array(MINI.cols * MINI.bands);
+  for (let c = 0; c < MINI.cols; c++)
+    for (let b = 0; b < MINI.bands; b++) {
+      const c0 = Math.floor((c * a.cols) / MINI.cols), c1 = Math.floor(((c + 1) * a.cols) / MINI.cols);
+      const b0 = Math.floor((b * a.bands) / MINI.bands), b1 = Math.floor(((b + 1) * a.bands) / MINI.bands);
+      let sum = 0, n = 0;
+      for (let x = c0; x < c1; x++) for (let y = b0; y < b1; y++) (sum += src[x * a.bands + y]), n++;
+      m[c * MINI.bands + b] = Math.round(sum / Math.max(1, n));
+    }
+  miniCache.set(a.spec, m);
+  return m;
+}
+export const miniSpec = (a: Analysis) => btoa(String.fromCharCode(...miniBytes(a)));
+export const miniLevels = (() => {
+  const all = uniqueAnalyses.flatMap((a) => [...miniBytes(a)]).sort((x, y) => x - y);
+  const q = (p: number) => all[Math.floor(p * (all.length - 1))] ?? 0;
+  return [0.4, 0.62, 0.82, 0.95].map(q);
+})();
+
+export const archiveUrl = (a: ArchiveSong) => `/library/${a.id}/`;
+export async function getArchive() {
+  return (await getCollection('archive', (a) => !a.data.hidden)).sort(
+    (a, b) => (b.data.created?.getTime() ?? 0) - (a.data.created?.getTime() ?? 0),
+  );
+}
+
+// "R.U.R. - Original Version" and "R.U.R." are versions of the same song
+export const songBase = (title: string) =>
+  title
+    .split(/\s+[-–—]\s+/)[0]
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+
+export const splitTags = (tags?: string) =>
+  (tags ?? '')
+    .split(',')
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
 
 const peaks = peaksData as Record<string, number[]>;
 // [start, end, confidence] per sung line, made by scripts/sync_lyrics.py
@@ -17,6 +113,10 @@ export const trackSlug = (t: Track) => t.id.split('/').pop()!.replace(/^\d+-/, '
 export const releaseUrl = (slug: string) => `/records/${slug}/`;
 export const trackUrl = (t: Track) => `/records/${t.data.release}/${trackSlug(t)}/`;
 export const trackPeaks = (t: Track) => peaks[`${t.data.release}/${trackSlug(t)}`] ?? [];
+/** A friendly file name for downloads: "Plausible Strangers - R.U.R..m4a" */
+export const downloadName = (t: Track) =>
+  `Plausible Strangers - ${t.data.title.replace(/[\\/:*?"<>|]+/g, '-')}.${t.data.audio?.split('.').pop() ?? 'm4a'}`;
+
 export const trackSync = (t: Track) => lyricSync[`${t.data.release}/${trackSlug(t)}`];
 
 /** Sung lines with their times, for the visualiser. */

@@ -1,0 +1,47 @@
+---
+// A tiny mirrored pixel-art "identicon" made from a title — artwork for songs
+// that never got a cover. Same title, same picture, every time.
+interface Props {
+  seed: string;
+  class?: string;
+  label?: string;
+}
+const { seed, class: cls, label } = Astro.props;
+
+// FNV-1a → a small deterministic random generator
+let h = 2166136261;
+for (const ch of seed) {
+  h ^= ch.codePointAt(0)!;
+  h = Math.imul(h, 16777619);
+}
+const rand = () => {
+  h ^= h << 13;
+  h ^= h >>> 17;
+  h ^= h << 5;
+  return ((h >>> 0) % 1000) / 1000;
+};
+
+const N = 7; // 7×7, left half mirrored to the right
+const half = Math.ceil(N / 2);
+const density = 0.42 + rand() * 0.2;
+const cells: { x: number; y: number; hot: boolean }[] = [];
+for (let y = 0; y < N; y++)
+  for (let x = 0; x < half; x++) {
+    if (rand() < density) {
+      const hot = rand() < 0.14;
+      cells.push({ x, y, hot });
+      if (x !== N - 1 - x) cells.push({ x: N - 1 - x, y, hot });
+    }
+  }
+---
+
+<svg
+  class:list={['pixel-art', cls]}
+  viewBox={`-1 -1 ${N + 2} ${N + 2}`}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  shape-rendering="crispEdges"
+>
+  {cells.map((c) => <rect x={c.x + 0.08} y={c.y + 0.08} width="0.84" height="0.84" class={c.hot ? 'px-hot' : 'px'} />)}
+</svg>

@@ -2,6 +2,7 @@
 // Full-screen visualiser: press "v" (or the "visualise" button in the player).
 // The sound is turned into typed characters: a waterfall of the spectrum,
 // bass in the middle, highs at the edges, scrolling upwards like a printout.
+import Icon from './Icon.astro';
 ---
 
 <div id="viz" class="viz" transition:persist="viz" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="visualiser">
@@ -16,6 +17,21 @@
   </div>
   <p class="viz-lyric" aria-live="off"><span class="viz-lyric-on"></span><span class="viz-lyric-off"></span></p>
   <p class="viz-idle" hidden>silence. press <kbd>space</kbd>.</p>
+
+  <!-- the same buttons as the player bar (they share its click handling) -->
+  <div class="viz-controls" role="group" aria-label="playback">
+    <button type="button" data-player="prev" aria-label="previous track" title="previous (p)"><Icon name="skip-prev" /></button>
+    <button type="button" class="viz-toggle" data-player="toggle" aria-label="play / pause (space)" title="play / pause (space)">
+      <span class="when-paused"><Icon name="play-solid" /></span>
+      <span class="when-playing"><Icon name="pause-solid" /></span>
+    </button>
+    <button type="button" data-player="next" aria-label="next track" title="next (n)"><Icon name="skip-next" /></button>
+    <span class="viz-sep" aria-hidden="true"></span>
+    <button type="button" data-player="mute" aria-label="mute (m)" title="mute (m)">
+      <Icon name="sound-high" class="vol-high" /><Icon name="sound-low" class="vol-low" /><Icon name="sound-off" class="vol-off" />
+    </button>
+    <input class="viz-vol" type="range" min="0" max="1" step="0.01" value="1" aria-label="volume" />
+  </div>
 </div>
 
 <script>
@@ -233,6 +249,7 @@
     opener = document.activeElement;
     readColors();
     viz.hidden = false;
+    wake();
     document.documentElement.classList.add('viz-open');
     resize();
     fillText();
@@ -255,6 +272,37 @@
 
   const toggle = () => (viz.hidden ? open() : close());
 
+  // ---- volume, mirrored from the player (the player owns the real setting)
+  const vizVol = viz.querySelector<HTMLInputElement>('.viz-vol')!;
+  function showVol() {
+    const v = audio.muted ? 0 : audio.volume;
+    vizVol.value = String(v);
+    vizVol.style.setProperty('--v', `${v * 100}%`);
+    viz.dataset.vol = v === 0 ? 'off' : v < 0.5 ? 'low' : 'high';
+  }
+  vizVol.addEventListener('input', () => {
+    audio.volume = Number(vizVol.value);
+    audio.muted = audio.volume === 0;
+  });
+  audio.addEventListener('volumechange', showVol);
+  showVol();
+
+  // ---- controls fade out while it plays and nobody moves; back on any movement
+  let idle = 0;
+  function wake() {
+    viz.classList.add('ui-on');
+    clearTimeout(idle);
+    idle = window.setTimeout(() => {
+      // stay up while paused, or while the pointer / focus is on the controls
+      if (!audio.paused && !viz.querySelector('.viz-controls:hover, .viz-controls:focus-within')) viz.classList.remove('ui-on');
+    }, 2600);
+  }
+  viz.addEventListener('pointermove', wake);
+  viz.addEventListener('pointerdown', wake);
+  viz.addEventListener('keydown', wake);
+  audio.addEventListener('pause', () => viz.classList.add('ui-on'));
+  audio.addEventListener('play', wake);
+
   document.addEventListener('keydown', (e) => {
     if (document.querySelector('dialog[open]')) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -272,7 +320,10 @@
     if (t.closest('[data-viz-open]')) return open();
     if (t.closest('[data-viz-close]')) return close();
     // tapping the picture itself plays / pauses
-    if (t === canvas) audio.paused ? audio.play() : audio.pause();
+    // tapping the picture itself plays / pauses (everything else is a control)
+    if (t === canvas || t === viz || t.closest('.viz-bottom, .viz-lyric, .viz-idle')) {
+      audio.paused ? audio.play().catch(() => {}) : audio.pause();
+    }
   });
   audio.addEventListener('play', () => {
     actx?.resume();

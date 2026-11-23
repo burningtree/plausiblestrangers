@@ -4,7 +4,7 @@ import Queue from '../components/Queue.astro';
 import PlayButton from '../components/PlayButton.astro';
 import Stamp from '../components/Stamp.astro';
 import Icon from '../components/Icon.astro';
-import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
+import { blurStyle, getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
 import { site } from '../site';
 
 const { releases, tracksOf } = await getCatalog();
@@ -45,7 +45,10 @@ const groups = [
   </section>
 
   <section class="home-records" aria-labelledby="records">
-    <h2 id="records" class="label">records <span class="count">{records.length} records, {trackCount} tracks</span></h2>
+    <h2 id="records" class="label">
+      records <span class="count">{records.length} records, {trackCount} tracks</span>
+      <a class="label-link" href="/library/">the whole library, unreleased too →</a>
+    </h2>
     {
       groups.map((g) => (
         <div class="record-group">
@@ -59,6 +62,8 @@ const groups = [
                 {r.data.cover && (
                   <img
                     src={g.album ? r.data.cover : r.data.cover.replace(/\.webp$/, '-480.webp')}
+                    class="blur"
+                    style={blurStyle(r.data.cover)}
                     alt=""
                     width="480"
                     height="480"
