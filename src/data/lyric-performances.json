@@ -55,6 +55,7 @@
     {"line": 0, "prompt": "Turn the key, let the old rules rust", "lines": ["Turn the key, let the old rules rust", "Turn the key, let the old rules rust", "Turn the key, let the old rules rust"]}
   ],
   "/audio/who-holds-whom/02-who-holds-whom.m4a": [
+    {"line": 7, "prompt": "We had feet.", "lines": []},
     {"line": 23, "prompt": "Somebody...", "lines": ["Somebody...", "Somebody..."]},
     {"line": 24, "prompt": "Not me.", "lines": []},
     {"line": 31, "prompt": "I gave it my hands,", "lines": ["I gave him my hands,"]},
@@ -69,6 +70,7 @@
   ],
   "/audio/the-door/02-almost-human.m4a": [
     {"line": 10, "prompt": "Don't wake me.", "lines": ["I'm not here."]},
+    {"line": 11, "prompt": "Not yet.", "lines": []},
     {"line": 12, "prompt": "Not yet.", "lines": ["Not here."]}
   ]
 }
