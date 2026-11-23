@@ -516,9 +516,10 @@ html.is-playing .player-toggle > .when-paused {
 }
 .wave-fill {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--p);
+  inset: 0;
   overflow: hidden;
+  /* clipped rather than resized, so moving the playhead never re-lays out the page */
+  clip-path: inset(0 calc(100% - var(--p)) 0 0);
   color: var(--ink);
 }
 .wave-probe {
@@ -2483,10 +2484,10 @@ a.corner-btn[aria-current='page'] {
   position: absolute;
   top: -0.3rem;
   bottom: -0.3rem;
-  left: var(--p);
-  width: 2px;
-  margin-left: -1px;
-  background: var(--hot);
+  left: 0;
+  right: 0;
+  /* a 2px line drawn at --p: repainted, never re-laid out */
+  background: linear-gradient(to right, transparent calc(var(--p) - 1px), var(--hot) 0 calc(var(--p) + 1px), transparent 0);
   opacity: 0;
   transition: opacity 0.2s ease;
   pointer-events: none;
@@ -2498,8 +2499,8 @@ a.corner-btn[aria-current='page'] {
   /* everything already played is dimmed slightly */
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--p);
+  inset: 0;
+  clip-path: inset(0 calc(100% - var(--p)) 0 0);
   background: color-mix(in srgb, var(--paper) 35%, transparent);
   pointer-events: none;
 }

@@ -8,7 +8,11 @@ import Icon from '../components/Icon.astro';
 import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
 import { getNews, newsUrl, fmtDate as fmtNewsDate } from '../lib/catalog';
 import { site } from '../site';
+import { influences } from '../data/influences';
 import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../lib/seo';
+
+// the biggest influences (tier 1 in src/data/influences.ts), in that file's order
+const topInfluences = influences.filter((i) => i.tier === 1).map((i) => i.name);
 
 const { releases, tracksOf } = await getCatalog();
 const records = releases.map((r) => {
@@ -36,14 +40,15 @@ const latestNews = (await getNews()).slice(0, 3);
   <div class="home">
   <section class="home-what" aria-labelledby="what">
     <h2 id="what" class="label">what we are</h2>
-    <p class="lede">An electronic music experiment. Human imagination, machine-generated sound.</p>
+    <p class="lede">Electronic music to dance to, drift off to, and play a little too loud.</p>
     <p>
-      Not a band, more of a habit: the machines make the sounds, we decide which accidents deserve
-      to exist. Somewhere between house, techno and electroclash, with misplaced instruments and
-      occasionally just noise.
+      Hypnotic grooves somewhere between house, techno and electroclash, with strange voices,
+      misplaced instruments and occasionally just noise. Made by people who always wanted to make
+      the music they love; a machine plays the instruments we never learned, and we keep only the
+      songs we'd put on ourselves.
     </p>
     <p class="home-influences">
-      Inspired by Vitalic, Sexy Sushi, Fischerspooner, The Blaze, МЫ{' '}
+      Inspired by {topInfluences.join(', ')}{' '}
       <a href="/about/#influences">and many more</a>.
     </p>
     <p class="more-link"><a href="/about/">more about us →</a></p>

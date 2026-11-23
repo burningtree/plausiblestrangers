@@ -172,12 +172,19 @@ import Icon from './Icon.astro';
     for (const e of entries) drawWave(e.target as HTMLElement);
   });
 
+  // the waves on this page, looked up once per page instead of every frame
+  let waves: HTMLElement[] = [];
+  const waveP = new WeakMap<HTMLElement, string>();
+  const curEl = $<HTMLElement>('[data-t="cur"]');
+
   function setupWaves() {
+    resizer.disconnect();
+    waves = Array.from(document.querySelectorAll<HTMLElement>('.wave[data-wave]'));
+    waves.forEach((el) => resizer.observe(el));
     document.querySelectorAll<HTMLElement>('.wave[data-wave]').forEach((el) => {
       if (el.dataset.ready) return;
       el.dataset.ready = '1';
       drawWave(el, true);
-      resizer.observe(el);
     });
   }
 
@@ -188,13 +195,22 @@ import Icon from './Icon.astro';
     if (!t) return;
     const dur = audio.duration || t.duration;
     const p = dur ? Math.min(1, audio.currentTime / dur) : 0;
-    document.querySelectorAll<HTMLElement>('.wave[data-wave]').forEach((el) => {
+    // called every frame while playing: only touch the page when something
+    // visible changes (a tenth of a percent is about a pixel on a wide wave)
+    const pos = `${Math.round(p * 1000) / 10}%`;
+    const pct = String(Math.round(p * 100));
+    for (const el of waves) {
       const mine = el.dataset.wave === t.id;
-      el.style.setProperty('--p', mine ? `${p * 100}%` : '0%');
-      el.classList.toggle('is-mine', mine);
-      if (mine) el.setAttribute('aria-valuenow', String(Math.round(p * 100)));
-    });
-    $<HTMLElement>('[data-t="cur"]').textContent = fmt(audio.currentTime);
+      const want = mine ? pos : '0%';
+      if (waveP.get(el) !== want) {
+        waveP.set(el, want);
+        el.style.setProperty('--p', want);
+      }
+      if (el.classList.contains('is-mine') !== mine) el.classList.toggle('is-mine', mine);
+      if (mine && el.getAttribute('aria-valuenow') !== pct) el.setAttribute('aria-valuenow', pct);
+    }
+    const cur = fmt(audio.currentTime);
+    if (curEl.textContent !== cur) curEl.textContent = cur;
   }
 
   // ---- the line being sung in the player
@@ -496,7 +512,7 @@ import Icon from './Icon.astro';
     const phase = (time % beat) / beat;
     const kick = Math.pow(1 - phase, 3);
     const live: number[] | undefined = (window as any).__psViz?.bands?.(COLS);
-    const bands = new Float32Array(COLS);
+    const bands = bandsBuf;
     let energy: number;
     if (live) {
       live.forEach((v, c) => (bands[c] = v));
@@ -523,11 +539,15 @@ import Icon from './Icon.astro';
     });
   }
 
+  // reused every frame rather than allocated 30 times a second
+  const fresh = new Float32Array(N);
+  const freshHot = new Uint8Array(N);
+  const bandsBuf = new Float32Array(COLS);
   function drawMatrix(now: number) {
     if (now - lastDraw < 33) return; // ~30 fps is plenty for pixels
     lastDraw = now;
-    const fresh = new Float32Array(N);
-    const freshHot = new Uint8Array(N);
+    fresh.fill(0);
+    freshHot.fill(0);
     computeFrame(fresh, freshHot);
     for (let i = 0; i < N; i++) {
       glow[i] = Math.max(fresh[i], glow[i] * 0.72); // trails

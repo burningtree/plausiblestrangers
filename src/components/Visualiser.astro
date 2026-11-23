@@ -258,6 +258,7 @@ import Icon from './Icon.astro';
       if (!viz.classList.contains('is-on')) viz.hidden = true;
     }, 350);
     (opener as HTMLElement | null)?.focus?.({ preventScroll: true });
+    opener = null; // don't keep a page we may navigate away from
   }
 
   const toggle = () => (viz.hidden ? open() : close());
@@ -325,6 +326,13 @@ import Icon from './Icon.astro';
     actx?.resume();
     if (!viz.hidden) fillText();
   });
+  // paused for a while: let the audio engine sleep instead of processing silence
+  let sleep = 0;
+  audio.addEventListener('pause', () => {
+    clearTimeout(sleep);
+    sleep = window.setTimeout(() => audio.paused && actx?.state === 'running' && actx.suspend(), 3000);
+  });
+  audio.addEventListener('play', () => clearTimeout(sleep));
   audio.addEventListener('loadedmetadata', () => !viz.hidden && fillText());
   window.addEventListener('resize', () => !viz.hidden && resize());
   // theme switched while open

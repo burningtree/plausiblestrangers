@@ -2,7 +2,7 @@
 export const site = {
   name: 'plausible strangers.',
   description:
-    'An electronic music experiment. Human imagination, machine-generated sound. House, techno, electroclash, misplaced instruments and occasional noise.',
+    'Electronic music to dance to, drift off to, and play a little too loud. Hypnotic house, techno and electroclash, with strange voices, misplaced instruments and occasional noise. Human-directed, machine-made.',
   // Shown under "elsewhere / contact". Add more as they exist.
   links: [
     { label: 'suno', href: 'https://suno.com/@plausiblestrangers' },
