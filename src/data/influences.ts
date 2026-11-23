@@ -25,14 +25,14 @@ export const influences: Influence[] = [
   { name: 'МЫ', tier: 1, slug: 'my', also: 'My' },
 
   // the rest of the core top 15
-  { name: 'MIDI Lidi', tier: 2, note: 'DIY experimentation, playful electronics, unconventional composition' },
+  { name: 'MIDI Lidi', tier: 1, note: 'DIY experimentation, playful electronics, unconventional composition' },
   { name: 'Simian Mobile Disco', tier: 2, note: 'Mechanical grooves, analog synthesis, evolving arrangements' },
   { name: 'Teenage Bad Girl', tier: 2, note: 'Aggressive French electro, distorted bass, controlled chaos' },
   { name: 'Aphex Twin', tier: 2, note: 'Glitch, fractured rhythms, radical sonic experimentation' },
   { name: 'Justice', tier: 2, note: 'Distortion, dramatic dynamics, orchestral electronic power' },
   { name: 'Boys Noize', tier: 2, note: 'Industrial club energy, aggressive synthesis' },
   { name: 'Mr. Oizo', tier: 2, note: 'Absurd minimalism, strange grooves, unpredictable structures' },
-  { name: 'Forest Swords', tier: 2, note: 'Ritualistic rhythms, eerie textures, experimental atmosphere' },
+  { name: 'Forest Swords', tier: 1, note: 'Ritualistic rhythms, eerie textures, experimental atmosphere' },
   { name: 'Air', tier: 2, note: 'Melodic elegance, dreamy analog electronics' },
   { name: 'Ladytron', tier: 2, note: 'Cold synthpop, robotic vocals, dark melodies' },
   { name: 'SomethingALaMode', tier: 2, note: 'Classical strings colliding with electronic dance music' },
@@ -55,7 +55,7 @@ export const influences: Influence[] = [
 
   // strong influences
   { name: 'ADULT.', tier: 3 },
-  { name: 'Miss Kittin', tier: 3 },
+  { name: 'Miss Kittin', tier: 2 },
   { name: 'Vive La Fête', tier: 3 },
   { name: 'Kap Bambino', tier: 3 },
   { name: 'Tiga', tier: 3 },
@@ -75,7 +75,7 @@ export const influences: Influence[] = [
   { name: 'The Subs', tier: 3 },
   { name: 'Les Petits Pilous', tier: 3 },
   { name: 'Étienne de Crécy', tier: 3 },
-  { name: 'Ventolin', tier: 3 },
+  { name: 'Ventolin', tier: 2 },
   { name: 'Monikino Kino', tier: 3 },
   { name: 'DVA', tier: 3 },
   { name: 'Slagsmålsklubben', tier: 3 },

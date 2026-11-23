@@ -9,6 +9,7 @@ import { influences, slug, type Influence } from '../data/influences';
 import spotifyData from '../data/influences-spotify.json';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../lib/seo';
 
 // a photo per influence if one has been dropped into public/art/influences/
 const photoFor = (i: Influence) => {
@@ -58,6 +59,18 @@ const songs = released + archive.length;
   title="about"
   description="What Plausible Strangers is, how the songs happen, who we listen to, and why we don't hide the machines."
   image="/art/about/plausible-strangers.jpg"
+  imageAlt="Two figures seen from behind, holding hands in a grey fog, under the words PLAUSIBLE STRANGERS"
+  type="profile"
+  jsonLd={graph(
+    {
+      '@type': 'AboutPage',
+      url: abs('/about/'),
+      name: 'About Plausible Strangers',
+      mainEntity: { '@id': band()['@id'] },
+    },
+    band({ foundingDate: '2026' }),
+    breadcrumbs([['plausible strangers.', '/'], ['about', '/about/']]),
+  )}
 >
   <article class="about">
     <p class="crumbs"><a href="/">home</a> / about</p>

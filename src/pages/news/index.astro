@@ -3,11 +3,25 @@
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
 import { getNews, newsUrl, fmtDate } from '../../lib/catalog';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../lib/seo';
 
 const posts = await getNews();
 ---
 
-<Base title="news" description="News from Plausible Strangers: new records, unfinished ones, and whatever else happens.">
+<Base
+  title="news"
+  description="News from Plausible Strangers: new records, unfinished ones, and whatever else happens."
+  jsonLd={graph(
+    {
+      '@type': 'Blog',
+      name: 'plausible strangers. news',
+      url: abs('/news/'),
+      publisher: bandRef,
+      blogPost: posts.map((p) => ({ '@type': 'BlogPosting', headline: p.data.title, url: abs(newsUrl(p)), datePublished: p.data.date.toISOString() })),
+    },
+    breadcrumbs([['plausible strangers.', '/'], ['news', '/news/']]),
+  )}
+>
   <section class="news" aria-labelledby="news-h">
     <p class="crumbs"><a href="/">home</a> / news</p>
     <h1 id="news-h" class="title">news</h1>

@@ -19,6 +19,7 @@ import {
   fmtDate,
   type ArchiveSong,
 } from '../../lib/catalog';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../lib/seo';
 
 export const getStaticPaths = (async () => {
   const songs = await getArchive();
@@ -53,7 +54,25 @@ const details: [string, string | undefined][] = [
 ];
 ---
 
-<Base title={`${d.title} — archive`} description={`${d.title}: an unreleased Plausible Strangers song from the archive.`}>
+<Base
+  title={`${d.title} — archive`}
+  description={`${d.title}: an unreleased Plausible Strangers song from the archive${d.bpm ? `, ${d.bpm} bpm` : ''}. Lyrics, the prompt, and a link to listen.`}
+  type="music.song"
+  jsonLd={graph(
+    {
+      '@type': 'MusicRecording',
+      name: d.title,
+      url: abs(archiveUrl(song)),
+      byArtist: bandRef,
+      duration: d.duration ? isoDuration(d.duration) : undefined,
+      dateCreated: d.created?.toISOString().slice(0, 10),
+      genre: d.tags,
+      creativeWorkStatus: 'Unreleased',
+      sameAs: d.suno ? [d.suno] : undefined,
+    },
+    breadcrumbs([['plausible strangers.', '/'], ['library', '/library/'], [d.title, archiveUrl(song)]]),
+  )}
+>
   <Queue archiveSong={song} />
   <article class="track archive-song">
     <p class="crumbs">

@@ -8,6 +8,7 @@ import Icon from '../components/Icon.astro';
 import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
 import { getNews, newsUrl, fmtDate as fmtNewsDate } from '../lib/catalog';
 import { site } from '../site';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../lib/seo';
 
 const { releases, tracksOf } = await getCatalog();
 const records = releases.map((r) => {
@@ -23,7 +24,15 @@ const groups = [
 const latestNews = (await getNews()).slice(0, 3);
 ---
 
-<Base home>
+<Base
+  home
+  jsonLd={graph(
+    website(),
+    band({
+      album: records.map(({ r }) => ({ '@type': 'MusicAlbum', name: r.data.title, url: abs(releaseUrl(r.id)) })),
+    }),
+  )}
+>
   <div class="home">
   <section class="home-what" aria-labelledby="what">
     <h2 id="what" class="label">what we are</h2>
@@ -34,7 +43,7 @@ const latestNews = (await getNews()).slice(0, 3);
       occasionally just noise.
     </p>
     <p class="home-influences">
-      Inspired by Vitalic, Sexy Sushi, Fischerspooner, The Blaze, МЫ
+      Inspired by Vitalic, Sexy Sushi, Fischerspooner, The Blaze, МЫ{' '}
       <a href="/about/#influences">and many more</a>.
     </p>
     <p class="more-link"><a href="/about/">more about us →</a></p>

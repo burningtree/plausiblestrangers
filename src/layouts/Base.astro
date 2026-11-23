@@ -11,12 +11,42 @@ import '../styles/global.css';
 interface Props {
   title?: string;
   description?: string;
+  /** share image (a .jpg works everywhere); defaults to the band picture */
   image?: string;
+  imageAlt?: string;
   home?: boolean;
+  /** Open Graph type: website, article, music.album, music.song, profile */
+  type?: string;
+  /** ISO date for articles */
+  published?: Date;
+  /** schema.org structured data for this page (see lib/seo.ts) */
+  jsonLd?: unknown;
+  /** keep this page out of search results (e.g. 404) */
+  noindex?: boolean;
 }
-const { title, description = site.description, image, home = false } = Astro.props;
-const fullTitle = title ? `${title} — plausible strangers` : 'plausible strangers.';
-const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
+const {
+  title,
+  description = site.description,
+  image,
+  imageAlt,
+  home = false,
+  type = 'website',
+  published,
+  jsonLd,
+  noindex = false,
+} = Astro.props;
+const fullTitle = home
+  ? 'Plausible Strangers — human-directed, machine-generated electronic music'
+  : title
+    ? `${title} — plausible strangers`
+    : 'plausible strangers.';
+const SITE = Astro.site ?? new URL('https://plausiblestrangers.com');
+const canonical = new URL(Astro.url.pathname, SITE).href;
+const DEFAULT_IMAGE = '/art/about/plausible-strangers.jpg';
+const imageUrl = new URL(image ?? DEFAULT_IMAGE, SITE).href;
+const imageAltText = imageAlt ?? (image ? `Artwork for ${title ?? 'Plausible Strangers'}` : 'Two figures in the fog under the words PLAUSIBLE STRANGERS');
+// JSON-LD is embedded as a script; escape "<" so text can't close the tag
+const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
 ---
 
 <!doctype html>
@@ -26,11 +56,29 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).href : image;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <meta name="author" content="Plausible Strangers" />
+    <meta name="theme-color" content="#f7f6f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)" />
+
+    <meta property="og:site_name" content="plausible strangers." />
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonical} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
-    {imageUrl && <meta property="og:image" content={imageUrl} />}
-    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:alt" content={imageAltText} />
+    {published && <meta property="article:published_time" content={published.toISOString()} />}
+
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content={site.twitter} />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={imageAltText} />
+    {ld && <script type="application/ld+json" set:html={ld} />}
     {site.links.map((l) => <link rel="me" href={l.href} />)}
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

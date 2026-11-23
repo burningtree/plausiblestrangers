@@ -18,6 +18,7 @@ import {
   blurStyle,
   type NewsPost,
 } from '../../lib/catalog';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../lib/seo';
 
 export const getStaticPaths = (async () => {
   const posts = await getNews();
@@ -41,7 +42,28 @@ const records = post.data.records
 const firstCover = records[0]?.r.data.cover?.replace(/\.webp$/, '.jpg');
 ---
 
-<Base title={post.data.title} description={post.data.summary} image={firstCover}>
+<Base
+  title={post.data.title}
+  description={post.data.summary}
+  image={firstCover}
+  type="article"
+  published={post.data.date}
+  jsonLd={graph(
+    {
+      '@type': 'BlogPosting',
+      headline: post.data.title,
+      description: post.data.summary,
+      datePublished: post.data.date.toISOString(),
+      url: abs(newsUrl(post)),
+      mainEntityOfPage: abs(newsUrl(post)),
+      image: abs(firstCover ?? '/art/about/plausible-strangers.jpg'),
+      author: bandRef,
+      publisher: bandRef,
+      inLanguage: 'en',
+    },
+    breadcrumbs([['plausible strangers.', '/'], ['news', '/news/'], [post.data.title, newsUrl(post)]]),
+  )}
+>
   <article class="news-post">
     <p class="crumbs"><a href="/news/">news</a> / {fmtDate(post.data.date)}</p>
     <header>

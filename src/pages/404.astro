@@ -1,0 +1,15 @@
+---
+// GitHub Pages serves this for any address that doesn't exist.
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="not found" description="This page doesn't exist. Maybe it never did." noindex>
+  <section class="not-found">
+    <p class="crumbs"><a href="/">home</a> / 404</p>
+    <h1 class="title">Nothing here.</h1>
+    <p class="lede">This page doesn't exist. Maybe the machine made it up, maybe we deleted it.</p>
+    <p class="more-link">
+      <a href="/">home</a> · <a href="/library/">the library</a> · <a href="/news/">news</a>
+    </p>
+  </section>
+</Base>

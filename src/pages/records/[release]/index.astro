@@ -22,6 +22,7 @@ import {
   isUnfinished,
   type Release,
 } from '../../../lib/catalog';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../../lib/seo';
 
 export const getStaticPaths = (async () => {
   const { releases } = await getCatalog();
@@ -47,7 +48,44 @@ const hasNotes = Boolean(release.body?.trim());
 const d = release.data;
 ---
 
-<Base title={d.title} image={d.cover?.replace(/\.webp$/, '.jpg')} description={`${d.title} — ${d.kind} by Plausible Strangers. ${tracks.length} tracks.`}>
+<Base
+  title={d.title}
+  image={d.cover?.replace(/\.webp$/, '.jpg')}
+  imageAlt={`Cover of ${d.title} by Plausible Strangers`}
+  description={`${d.title} — ${d.kind} by Plausible Strangers. ${tracks.length} tracks, ${Math.round(total / 60)} minutes.`}
+  type="music.album"
+  jsonLd={graph(
+    {
+      '@type': 'MusicAlbum',
+      '@id': abs(releaseUrl(release.id)) + '#album',
+      name: d.title,
+      url: abs(releaseUrl(release.id)),
+      byArtist: bandRef,
+      image: d.cover ? abs(d.cover.replace(/\.webp$/, '.jpg')) : undefined,
+      datePublished: d.date?.toISOString().slice(0, 10),
+      albumProductionType: 'https://schema.org/StudioAlbum',
+      albumReleaseType: d.kind.toLowerCase() === 'ep' ? 'https://schema.org/EPRelease' : 'https://schema.org/AlbumRelease',
+      creativeWorkStatus: unfinished ? 'Unfinished' : 'Published',
+      numTracks: tracks.length,
+      duration: isoDuration(total),
+      track: {
+        '@type': 'ItemList',
+        numberOfItems: tracks.length,
+        itemListElement: tracks.map((t) => ({
+          '@type': 'ListItem',
+          position: t.data.number,
+          item: {
+            '@type': 'MusicRecording',
+            name: t.data.title,
+            url: abs(trackUrl(t)),
+            duration: isoDuration(t.data.duration),
+          },
+        })),
+      },
+    },
+    breadcrumbs([['plausible strangers.', '/'], ['records', '/#records'], [d.title, releaseUrl(release.id)]]),
+  )}
+>
   <Queue release={release} tracks={tracks} />
 
   <article class="release">

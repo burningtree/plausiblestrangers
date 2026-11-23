@@ -11,6 +11,7 @@ import Icon from '../../../components/Icon.astro';
 import Spectrogram from '../../../components/Spectrogram.astro';
 import SoundStats from '../../../components/SoundStats.astro';
 import {
+  parseLyrics,
   getCatalog,
   releaseUrl,
   trackUrl,
@@ -29,6 +30,7 @@ import {
   type Release,
   type Track,
 } from '../../../lib/catalog';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../../lib/seo';
 
 export const getStaticPaths = (async () => {
   const { releases, tracksOf } = await getCatalog();
@@ -52,6 +54,14 @@ const unfinished = isUnfinished(release);
 const prev = tracks[index - 1];
 const next = tracks[index + 1];
 const analysis = audible ? trackAnalysis(track) : undefined;
+// sung lines only (no [directions]), for search engines
+const lyricText = t.instrumental
+  ? undefined
+  : parseLyrics(track.body)
+      .flat()
+      .filter((l) => !l.direction)
+      .map((l) => l.text)
+      .join('\n') || undefined;
 // unreleased versions of this song in the archive (same base title)
 const archiveVersions = (await getArchive()).filter((a) => songBase(a.data.title) === songBase(t.title));
 
@@ -68,7 +78,43 @@ const details: [string, string | undefined][] = [
 ];
 ---
 
-<Base title={`${t.title} — ${r.title}`} image={r.cover?.replace(/\.webp$/, '.jpg')} description={`${t.title}, track ${t.number} of ${r.title} by Plausible Strangers.`}>
+<Base
+  title={`${t.title} — ${r.title}`}
+  image={r.cover?.replace(/\.webp$/, '.jpg')}
+  imageAlt={`Cover of ${r.title} by Plausible Strangers`}
+  description={`${t.title}, track ${t.number} of ${r.title} by Plausible Strangers${t.bpm ? `, ${t.bpm} bpm` : ''}${t.instrumental ? ', instrumental' : ''}. Lyrics, the prompt behind it, and how it sounds.`}
+  type="music.song"
+  jsonLd={graph(
+    {
+      '@type': 'MusicRecording',
+      '@id': abs(trackUrl(track)) + '#recording',
+      name: t.title,
+      url: abs(trackUrl(track)),
+      byArtist: bandRef,
+      duration: isoDuration(t.duration),
+      datePublished: t.created?.toISOString().slice(0, 10),
+      genre: t.tags,
+      image: r.cover ? abs(r.cover.replace(/\.webp$/, '.jpg')) : undefined,
+      inAlbum: { '@type': 'MusicAlbum', name: r.title, url: abs(releaseUrl(release.id)), '@id': abs(releaseUrl(release.id)) + '#album' },
+      audio: t.audio
+        ? { '@type': 'AudioObject', contentUrl: abs(t.audio), encodingFormat: 'audio/mp4', duration: isoDuration(t.duration) }
+        : undefined,
+      recordingOf: lyricText
+        ? {
+            '@type': 'MusicComposition',
+            name: t.title,
+            lyrics: { '@type': 'CreativeWork', text: lyricText, inLanguage: 'en' },
+          }
+        : undefined,
+      sameAs: t.suno ? [t.suno] : undefined,
+    },
+    breadcrumbs([
+      ['plausible strangers.', '/'],
+      [r.title, releaseUrl(release.id)],
+      [t.title, trackUrl(track)],
+    ]),
+  )}
+>
   <Queue release={release} tracks={tracks} />
 
   <article class="track">

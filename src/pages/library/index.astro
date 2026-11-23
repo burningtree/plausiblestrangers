@@ -25,6 +25,7 @@ import {
   miniLevels,
   MINI,
 } from '../../lib/catalog';
+import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../lib/seo';
 
 type Row = {
   type: 'song' | 'record';
@@ -124,7 +125,20 @@ const short = (d?: Date) =>
   d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }).toLowerCase() : '—';
 ---
 
-<Base title="library" description={`Everything Plausible Strangers has made: ${counts.records} records and ${counts.songs} songs, released or not.`}>
+<Base
+  title="library"
+  description={`Everything Plausible Strangers has made: ${counts.records} records and ${counts.songs} songs, released or not, with lyrics and the prompts behind them.`}
+  jsonLd={graph(
+    {
+      '@type': 'CollectionPage',
+      name: 'Plausible Strangers — library',
+      url: abs('/library/'),
+      about: bandRef,
+      numberOfItems: counts.songs,
+    },
+    breadcrumbs([['plausible strangers.', '/'], ['library', '/library/']]),
+  )}
+>
   {releases.map((r) => <Queue release={r} tracks={tracksOf(r.id)} />)}
   {archive.filter((song) => song.data.audio).map((song) => <Queue archiveSong={song} />)}
 
