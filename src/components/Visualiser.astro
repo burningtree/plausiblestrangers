@@ -12,8 +12,21 @@ import Icon from './Icon.astro';
     <button type="button" class="viz-close" data-viz-close>close <kbd>v</kbd></button>
   </div>
   <div class="viz-bottom">
-    <p class="viz-title"></p>
-    <p class="viz-meta"><span class="viz-release"></span> <span class="viz-time"></span></p>
+    <!-- the record, standing at an angle; nods a little with the bass -->
+    <div class="viz-album" hidden aria-hidden="true">
+      <div class="viz-album-box">
+        <img class="viz-album-front" alt="" decoding="async" />
+        <span class="viz-album-spine"></span>
+      </div>
+    </div>
+    <div class="viz-words">
+      <p class="viz-title"></p>
+      <p class="viz-meta">
+        <span class="viz-version" hidden></span>
+        <span class="viz-release"></span> <span class="viz-time"></span>
+      </p>
+      <div class="wave wave--viz" data-wave="" role="slider" tabindex="0" aria-label="seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    </div>
   </div>
   <p class="viz-lyric" aria-live="off"><span class="viz-lyric-line"></span></p>
   <p class="viz-idle" hidden>silence. press <kbd>space</kbd>.</p>
@@ -138,8 +151,11 @@ import Icon from './Icon.astro';
   }
 
   // column → level, mirrored: bass in the middle, highs towards both edges
+  let lvBuf = new Float32Array(0);
   function levels(): Float32Array {
-    const out = new Float32Array(cols);
+    if (lvBuf.length !== cols) lvBuf = new Float32Array(cols);
+    const out = lvBuf;
+    out.fill(0);
     if (!analyser || !actx) return out;
     analyser.getByteFrequencyData(bins);
     const nyq = actx.sampleRate / 2;
@@ -209,20 +225,40 @@ import Icon from './Icon.astro';
     if (t - last < ROW_MS) return;
     last = t;
     printRow();
-    const title = $<HTMLElement>('.viz-title');
-    title.style.transform = `scale(${1 + bass * 0.035})`;
-    title.style.letterSpacing = `${-0.03 + bass * 0.03}em`;
-    const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-    $<HTMLElement>('.viz-time').textContent =
-      audio.src && isFinite(audio.duration) ? `${fmt(audio.currentTime)} / ${fmt(audio.duration)}` : '';
-    $<HTMLElement>('.viz-idle').hidden = !audio.paused;
+    // transforms only (no letter-spacing): they move on the GPU without re-laying out the text
+    titleEl.style.transform = `scale(${(1 + bass * 0.035).toFixed(3)})`;
+    albumBox.style.transform = `rotateY(${(-24 + bass * 7).toFixed(2)}deg) rotateX(${(4 - bass * 3).toFixed(2)}deg) translateZ(${(bass * 18).toFixed(1)}px)`;
+    const time = audio.src && isFinite(audio.duration) ? `${fmt(audio.currentTime)} / ${fmt(audio.duration)}` : '';
+    if (timeEl.textContent !== time) timeEl.textContent = time;
+    if (idleEl.hidden !== !audio.paused) idleEl.hidden = !audio.paused;
   }
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  const titleEl = $<HTMLElement>('.viz-title');
+  const timeEl = $<HTMLElement>('.viz-time');
+  const idleEl = $<HTMLElement>('.viz-idle');
+  const album = $<HTMLElement>('.viz-album');
+  const albumBox = $<HTMLElement>('.viz-album-box');
+  const albumImg = $<HTMLImageElement>('.viz-album-front');
+  const versionEl = $<HTMLElement>('.viz-version');
 
   function fillText() {
     const title = document.querySelector('#player .player-title')?.textContent || '';
     const release = document.querySelector('#player .player-release')?.textContent || '';
-    $<HTMLElement>('.viz-title').textContent = title || 'nothing yet';
+    // "Who Holds Whom - Instrumental": the version goes small, under the name
+    const m = title.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+    const name = m ? m[1] : title || 'nothing yet';
+    titleEl.textContent = name;
+    // longer names get smaller type (see .viz-title in global.css)
+    titleEl.style.setProperty('--len', String(Math.max(8, name.length)));
+    versionEl.textContent = m ? m[2].toLowerCase() : '';
+    versionEl.hidden = !m;
     $<HTMLElement>('.viz-release').textContent = release;
+    const cover: string | undefined = (window as any).__ps?.current?.()?.cover;
+    if (cover) {
+      const src = new URL(cover, location.href).href;
+      if (albumImg.src !== src) albumImg.src = src;
+    }
+    album.hidden = !cover;
   }
 
   function open() {
@@ -247,12 +283,18 @@ import Icon from './Icon.astro';
       viz.classList.add('is-on');
       raf = requestAnimationFrame(frame);
     });
+    // once it covers the screen, stop painting the page underneath
+    clearTimeout(cover);
+    cover = window.setTimeout(() => viz.classList.contains('is-on') && document.documentElement.classList.add('viz-covers'), 400);
   }
+  let cover = 0;
 
   function close() {
     if (viz.hidden) return;
     viz.classList.remove('is-on');
-    document.documentElement.classList.remove('viz-open');
+    clearTimeout(cover);
+    document.documentElement.classList.remove('viz-open', 'viz-covers');
+    (window as any).__ps?.refresh?.();
     cancelAnimationFrame(raf);
     setTimeout(() => {
       if (!viz.classList.contains('is-on')) viz.hidden = true;
@@ -308,6 +350,7 @@ import Icon from './Icon.astro';
   });
   document.addEventListener('click', (e) => {
     const t = e.target as Element;
+    if (t.closest('.wave')) return; // seeking, handled by the player
     if (t.closest('[data-viz-open]')) return open();
     if (t.closest('[data-viz-close]')) return close();
     // tapping the picture itself plays / pauses
@@ -343,6 +386,6 @@ import Icon from './Icon.astro';
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   // navigation swaps <html> classes — keep the scroll lock if still open
   document.addEventListener('astro:after-swap', () => {
-    if (!viz.hidden) document.documentElement.classList.add('viz-open');
+    if (!viz.hidden) document.documentElement.classList.add('viz-open', 'viz-covers');
   });
 </script>

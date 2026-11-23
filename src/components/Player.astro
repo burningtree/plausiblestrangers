@@ -67,6 +67,8 @@ import Icon from './Icon.astro';
   };
 
   const STORE = 'ps:player';
+  // the visualiser's seek bar (it lives outside the player, but works like its wave)
+  const vizWave = Array.from(document.querySelectorAll<HTMLElement>('.wave--viz'));
   const BLOCKS = ['▁', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
   const player = document.getElementById('player') as HTMLElement;
@@ -111,11 +113,13 @@ import Icon from './Icon.astro';
     $<HTMLAnchorElement>('.player-title').href = t.url;
     $<HTMLElement>('.player-release').textContent = t.release.toLowerCase();
     $<HTMLElement>('[data-t="dur"]').textContent = fmt(t.duration);
-    const pw = $<HTMLElement>('.wave--player');
-    pw.dataset.wave = t.id;
-    pw.dataset.peaks = JSON.stringify(t.peaks);
-    pw.dataset.duration = String(t.duration);
-    drawWave(pw, true);
+    // the player bar's wave, and the visualiser's seek bar
+    for (const pw of [$<HTMLElement>('.wave--player'), ...vizWave]) {
+      pw.dataset.wave = t.id;
+      pw.dataset.peaks = JSON.stringify(t.peaks);
+      pw.dataset.duration = String(t.duration);
+      drawWave(pw, true);
+    }
     if (autoplay) audio.play().catch(() => {});
     mediaSession(t);
     sync();
@@ -197,10 +201,16 @@ import Icon from './Icon.astro';
     const p = dur ? Math.min(1, audio.currentTime / dur) : 0;
     // called every frame while playing: only touch the page when something
     // visible changes (a tenth of a percent is about a pixel on a wide wave)
+    updateWaves(waves, t.id, p);
+    const cur = fmt(audio.currentTime);
+    if (curEl.textContent !== cur) curEl.textContent = cur;
+  }
+
+  function updateWaves(list: HTMLElement[], id: string, p: number) {
     const pos = `${Math.round(p * 1000) / 10}%`;
     const pct = String(Math.round(p * 100));
-    for (const el of waves) {
-      const mine = el.dataset.wave === t.id;
+    for (const el of list) {
+      const mine = el.dataset.wave === id;
       const want = mine ? pos : '0%';
       if (waveP.get(el) !== want) {
         waveP.set(el, want);
@@ -209,8 +219,6 @@ import Icon from './Icon.astro';
       if (el.classList.contains('is-mine') !== mine) el.classList.toggle('is-mine', mine);
       if (mine && el.getAttribute('aria-valuenow') !== pct) el.setAttribute('aria-valuenow', pct);
     }
-    const cur = fmt(audio.currentTime);
-    if (curEl.textContent !== cur) curEl.textContent = cur;
   }
 
   // ---- the line being sung in the player
@@ -314,7 +322,15 @@ import Icon from './Icon.astro';
   addEventListener('touchmove', () => (userScrolled = Date.now()), { passive: true });
 
   // the visualiser (and anything else) can ask what's playing
-  (window as any).__ps = { current, time: () => audio.currentTime, playing: () => !audio.paused };
+  (window as any).__ps = {
+    current,
+    time: () => audio.currentTime,
+    playing: () => !audio.paused,
+    // the visualiser closed: catch up on what was skipped underneath it
+    refresh: () => {
+      if (!raf) raf = requestAnimationFrame(loop);
+    },
+  };
 
   // ---- a tiny LED matrix: columns rise with the music, peaks hang then fall.
   // Real spectrum if the visualiser has tapped the audio; otherwise it is
@@ -618,10 +634,19 @@ import Icon from './Icon.astro';
   }
 
   function loop(now = performance.now()) {
-    progress();
-    drawMatrix(now);
+    // under the full-screen visualiser nothing here is visible: skip the drawing
+    const covered = document.documentElement.classList.contains('viz-covers');
+    if (!covered) {
+      progress();
+      drawMatrix(now);
+    } else {
+      // only the visualiser's own seek bar is on screen
+      const t = current();
+      const dur = audio.duration || t?.duration;
+      if (t && dur) updateWaves(vizWave, t.id, Math.min(1, audio.currentTime / dur));
+    }
     // keep running briefly after pausing so the pixels fall back down
-    raf = audio.paused && matrixQuiet() ? 0 : requestAnimationFrame(loop);
+    raf = audio.paused && (covered || matrixQuiet()) ? 0 : requestAnimationFrame(loop);
   }
 
   // a button is "mine" if it plays this exact track, or (record-level buttons)

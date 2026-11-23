@@ -1098,12 +1098,86 @@ html.viz-open {
 }
 .viz-bottom {
   bottom: clamp(1.5rem, 5vw, 3.5rem);
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(1rem, 2.5vw, 2.5rem);
+}
+.viz-words {
+  flex: 1;
+  min-width: 0;
+  /* the title sizes itself to the room left beside the cover */
+  container-type: inline-size;
+}
+/* the record sleeve, standing in 3D */
+.viz-album {
+  flex: none;
+  width: clamp(5.5rem, 4rem + 9vw, 13rem);
+  aspect-ratio: 1;
+  perspective: 900px;
+  margin-bottom: 0.4rem;
+}
+.viz-album[hidden] {
+  display: none;
+}
+.viz-album-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateY(-24deg) rotateX(4deg);
+  transition: transform 0.12s linear;
+  will-change: transform;
+}
+.viz-album-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: 0 1.5rem 3rem -1rem #000c;
+}
+/* the sleeve's thickness, on its right edge */
+.viz-album-spine {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(to right, #2a2724, #0d0c0b);
+  transform-origin: right center;
+  transform: rotateY(-90deg);
+}
+/* seek bar: the track's waveform in type, like the player's */
+.wave--viz {
+  pointer-events: auto;
+  margin-top: 0.7rem;
+  font-size: 0.95rem;
+  height: 1.2em;
+  width: min(42rem, 100%);
+  background: var(--paper);
+  color: var(--faint);
+  cursor: pointer;
+}
+.wave--viz .wave-fill {
+  color: var(--hot);
+}
+.wave--viz:focus-visible {
+  outline: 1px solid var(--hot);
+  outline-offset: 3px;
+}
+.viz-version {
+  color: var(--ink);
+  font-style: italic;
+  font-family: var(--serif);
+  font-size: 1.05rem;
 }
 .viz-title {
+  --len: 10;
   display: inline-block;
   margin: 0 0 0.6rem;
   font-family: var(--serif);
-  font-size: clamp(2.6rem, 1rem + 7vw, 7.5rem);
+  /* about two lines at most: the longer the name, the smaller the type */
+  font-size: clamp(1.8rem, min(1rem + 7vw, 100cqi * 2 / var(--len)), 7.5rem);
   line-height: 0.95;
   letter-spacing: -0.03em;
   transform-origin: left bottom;
@@ -1123,6 +1197,7 @@ html.viz-open {
 }
 .viz-time {
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .viz-idle {
   position: absolute;
@@ -1137,9 +1212,14 @@ html.viz-open {
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .viz-title {
+  .viz-title,
+  .viz-album-box {
     transform: none !important;
   }
+}
+/* the visualiser covers everything: don't paint the page underneath */
+html.viz-covers body > :not(.viz) {
+  visibility: hidden;
 }
 
 /* ---- gallery: prints on a table ---- */
