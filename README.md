@@ -25,6 +25,19 @@ given to the machine, optional `notes`), and the body is the lyrics as plain tex
 Lines in `[brackets]` are shown as stage directions. Records can be hidden with
 `hidden: true`.
 
+Extra images (concept art, outtakes) go in `public/art/<record>/` and are listed
+under `gallery:` in the record's markdown, each with `src`, `alt` (a description
+for people who can't see it) and an optional `caption`. Put a 640px version next
+to each image with `-640` in the name for the thumbnail, e.g.:
+
+```
+magick photo.jpg -resize 1600x1600 -quality 82 public/art/my-record/01.webp
+magick photo.jpg -resize 640x640 -quality 76 public/art/my-record/01-640.webp
+```
+
+Records can also be marked `status: "unfinished"`: they get a stamp and sort
+after the released ones. Tracks without `audio:` show their words but no player.
+
 ## Adding a new record
 
 Put it in the music folder like the others (`006-NEW-THING-EP/01-track.wav`,

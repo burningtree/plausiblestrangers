@@ -1,0 +1,367 @@
+---
+// Command palette: ⌘K / ctrl+K or "/". Finds records, tracks and lines of lyrics,
+// and runs a few commands. enter opens, shift+enter plays.
+import Icon from './Icon.astro';
+import { iconSvg } from '../lib/icons';
+
+// icons the palette draws in the browser, rendered once here
+const ICONS = Object.fromEntries(
+  [
+    'play-solid', 'pause-solid', 'skip-next', 'skip-prev', 'home-simple', 'half-moon', 'sun-light',
+    'sine-wave', 'dice-five', 'album', 'music-note', 'quote', 'search',
+  ].map((n) => [n, iconSvg(n)]),
+);
+---
+
+<button type="button" class="palette-open" data-palette-open aria-label="search (⌘K)" title="search  ⌘K">
+  <Icon name="search" /> search <kbd class="palette-kbd">⌘K</kbd>
+</button>
+
+<dialog class="palette" aria-label="search and commands">
+  <div class="palette-box">
+    <label class="palette-field">
+      <span class="palette-prompt"><Icon name="search" /></span>
+      <input
+        class="palette-input"
+        type="text"
+        placeholder="records, tracks, lyrics, or a command…"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        role="combobox"
+        aria-expanded="true"
+        aria-controls="palette-list"
+        aria-autocomplete="list"
+      />
+    </label>
+    <ul id="palette-list" class="palette-list" role="listbox" aria-label="results"></ul>
+    <p class="palette-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
+      <span><kbd>enter</kbd> open</span>
+      <span><kbd>shift</kbd>+<kbd>enter</kbd> play</span>
+      <span><kbd>esc</kbd> close</span>
+    </p>
+  </div>
+  <script type="application/json" class="palette-icons" set:html={JSON.stringify(ICONS)} />
+</dialog>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+
+  type Rec = { id: string; title: string; meta: string; url: string; cover?: string; playable: boolean };
+  type Trk = {
+    title: string;
+    release: string;
+    releaseId: string;
+    meta: string;
+    url: string;
+    index: number;
+    tags: string;
+    lyrics: string[];
+  };
+  type Index = { records: Rec[]; tracks: Trk[]; queues: Record<string, unknown[]> };
+  type Result = {
+    kind: 'command' | 'record' | 'track' | 'lyric';
+    icon?: string;
+    title: string;
+    meta?: string;
+    snippet?: string;
+    cover?: string;
+    run: () => void;
+    play?: () => void;
+    score: number;
+  };
+
+  let icons: Record<string, string> = {};
+  const icon = (n?: string) => {
+    if (!n) return '';
+    if (!icons[n]) {
+      try {
+        icons = JSON.parse(document.querySelector('.palette-icons')?.textContent || '{}');
+      } catch {}
+    }
+    return icons[n] ?? '';
+  };
+
+  let index: Index | null = null;
+  let loading: Promise<Index | null> | null = null;
+  let results: Result[] = [];
+  let active = 0;
+  let lastFocus: Element | null = null;
+
+  const dlg = () => document.querySelector<HTMLDialogElement>('dialog.palette');
+  const norm = (s: string) =>
+    s
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase();
+
+  function load() {
+    if (index) return Promise.resolve(index);
+    loading ??= fetch('/search.json')
+      .then((r) => r.json())
+      .then((d) => (index = d))
+      .catch(() => null);
+    return loading;
+  }
+
+  // 0 = no match. Prefix > word start > anywhere > letters in order.
+  function score(hay: string, q: string) {
+    const h = norm(hay);
+    if (!q) return 1;
+    if (h.startsWith(q)) return 100 - h.length / 100;
+    if (h.includes(' ' + q) || h.includes('-' + q)) return 80;
+    if (h.includes(q)) return 60;
+    let i = 0;
+    for (const ch of h) if (ch === q[i]) i++;
+    return i === q.length && q.length > 2 ? 20 : 0;
+  }
+
+  const click = (sel: string) => document.querySelector<HTMLElement>(sel)?.click();
+  const playQueue = (releaseId: string, i: number) => {
+    const q = index?.queues[releaseId];
+    if (q?.[i]) window.dispatchEvent(new CustomEvent('ps:play', { detail: { queue: q, index: i } }));
+  };
+
+  // a random playable track — never the one already playing
+  async function playRandom() {
+    await load();
+    const now = (document.getElementById('ps-audio') as HTMLAudioElement | null)?.getAttribute('src');
+    const seen = new Set<string>();
+    const pool = (index?.tracks ?? []).filter((t) => {
+      if (t.index < 0) return false;
+      const src = (index!.queues[t.releaseId][t.index] as { src: string }).src;
+      if (src === now || seen.has(src)) return false; // skip current + duplicates
+      seen.add(src);
+      return true;
+    });
+    const t = pool[Math.floor(Math.random() * pool.length)];
+    if (t) playQueue(t.releaseId, t.index);
+  }
+
+  function commands(): Result[] {
+    const audio = document.getElementById('ps-audio') as HTMLAudioElement | null;
+    const hasTrack = !!audio?.getAttribute('src');
+    const dark = document.documentElement.dataset.theme === 'dark';
+    const list: Omit<Result, 'score'>[] = [
+      { kind: 'command', icon: 'home-simple', title: 'home', meta: 'go to the first page', run: () => navigate('/') },
+      {
+        kind: 'command',
+        icon: dark ? 'sun-light' : 'half-moon',
+        title: dark ? 'switch to light' : 'switch to dark',
+        meta: 'theme',
+        run: () => click('[data-theme-switch]'),
+      },
+      { kind: 'command', icon: 'sine-wave', title: 'visualise', meta: 'v', run: () => click('[data-viz-open]') },
+      {
+        kind: 'command',
+        icon: 'dice-five',
+        title: 'surprise me',
+        meta: 'play a random track',
+        run: playRandom,
+      },
+    ];
+    if (hasTrack) {
+      list.unshift(
+        { kind: 'command', icon: audio!.paused ? 'play-solid' : 'pause-solid', title: audio!.paused ? 'play' : 'pause', meta: 'space', run: () => click('[data-player="toggle"]') },
+        { kind: 'command', icon: 'skip-next', title: 'next track', meta: 'n', run: () => click('[data-player="next"]') },
+        { kind: 'command', icon: 'skip-prev', title: 'previous track', meta: 'p', run: () => click('[data-player="prev"]') },
+      );
+    }
+    return list.map((c) => ({ ...c, score: 0 }));
+  }
+
+  function search(raw: string): Result[] {
+    const q = norm(raw.trim());
+    const out: Result[] = [];
+    for (const c of commands()) {
+      const s = score(c.title, q);
+      if (s) out.push({ ...c, score: s + 5 });
+    }
+    if (!index) return out;
+    for (const r of index.records) {
+      const s = Math.max(score(r.title, q), score(r.meta, q) * 0.5);
+      if (s)
+        out.push({
+          kind: 'record',
+          icon: 'album',
+          title: r.title,
+          meta: r.meta,
+          cover: r.cover,
+          score: s + 10,
+          run: () => navigate(r.url),
+          play: r.playable ? () => playQueue(r.id, 0) : undefined,
+        });
+    }
+    if (!q) return out; // empty: commands + records
+    for (const t of index.tracks) {
+      const play = t.index >= 0 ? () => playQueue(t.releaseId, t.index) : undefined;
+      const s = Math.max(score(t.title, q), score(t.tags, q) * 0.4);
+      if (s) {
+        out.push({ kind: 'track', icon: 'music-note', title: t.title, meta: t.meta, score: s, run: () => navigate(t.url), play });
+        continue;
+      }
+      if (q.length < 3) continue;
+      const line = t.lyrics.find((l) => norm(l).includes(q));
+      if (line)
+        out.push({
+          kind: 'lyric',
+          icon: 'quote',
+          title: t.title,
+          meta: t.release,
+          snippet: line,
+          score: 15,
+          run: () => navigate(t.url),
+          play,
+        });
+    }
+    return out.sort((a, b) => b.score - a.score).slice(0, 40);
+  }
+
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  function mark(text: string, q: string) {
+    const i = norm(text).indexOf(norm(q.trim()));
+    if (!q.trim() || i < 0) return esc(text);
+    const n = q.trim().length;
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + n)) + '</mark>' + esc(text.slice(i + n));
+  }
+
+  const LABEL = { command: 'do', record: 'record', track: 'track', lyric: 'lyrics' };
+
+  function render() {
+    const d = dlg();
+    if (!d) return;
+    const input = d.querySelector<HTMLInputElement>('.palette-input')!;
+    const list = d.querySelector<HTMLUListElement>('.palette-list')!;
+    const q = input.value;
+    results = search(q);
+    active = Math.min(active, Math.max(0, results.length - 1));
+    if (!results.length) {
+      list.innerHTML = `<li class="palette-empty">${index ? 'nothing. the machines are confused too.' : 'loading…'}</li>`;
+      input.removeAttribute('aria-activedescendant');
+      return;
+    }
+    list.innerHTML = results
+      .map(
+        (r, i) => `<li id="pal-${i}" role="option" class="palette-item${i === active ? ' is-active' : ''}" aria-selected="${i === active}" data-i="${i}">
+          ${r.cover ? `<img class="palette-art" src="${esc(r.cover)}" alt="" width="40" height="40">` : `<span class="palette-art palette-icon">${icon(r.icon)}</span>`}
+          <span class="palette-text">
+            <span class="palette-title">${mark(r.title, q)}</span>
+            ${r.snippet ? `<span class="palette-snippet">“${mark(r.snippet, q)}”</span>` : ''}
+            ${r.meta ? `<span class="palette-meta">${esc(r.meta)}</span>` : ''}
+          </span>
+          <span class="palette-kind">${LABEL[r.kind]}</span>
+          ${r.play ? `<span class="palette-play" data-play-i="${i}" title="play (shift+enter)">${icon('play-solid')}</span>` : '<span></span>'}
+        </li>`,
+      )
+      .join('');
+    input.setAttribute('aria-activedescendant', `pal-${active}`);
+  }
+
+  function move(d: number) {
+    if (!results.length) return;
+    active = (active + d + results.length) % results.length;
+    const list = dlg()!.querySelector('.palette-list')!;
+    list.querySelectorAll('.palette-item').forEach((el, i) => {
+      el.classList.toggle('is-active', i === active);
+      el.setAttribute('aria-selected', String(i === active));
+    });
+    list.querySelector(`#pal-${active}`)?.scrollIntoView({ block: 'nearest' });
+    dlg()!.querySelector('.palette-input')!.setAttribute('aria-activedescendant', `pal-${active}`);
+  }
+
+  function choose(i: number, play = false) {
+    const r = results[i];
+    if (!r) return;
+    close();
+    if (play && r.play) r.play();
+    else r.run();
+  }
+
+  function open() {
+    const d = dlg();
+    if (!d || d.open) return;
+    if (document.querySelector('dialog[open]')) return;
+    lastFocus = document.activeElement;
+    const input = d.querySelector<HTMLInputElement>('.palette-input')!;
+    input.value = '';
+    active = 0;
+    d.showModal();
+    input.focus();
+    render();
+    load().then(render);
+  }
+
+  function close() {
+    const d = dlg();
+    if (d?.open) d.close();
+    (lastFocus as HTMLElement | null)?.focus?.({ preventScroll: true });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const d = dlg();
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      d?.open ? close() : open();
+      return;
+    }
+    if (d?.open) {
+      if (e.key === 'ArrowDown') (e.preventDefault(), move(1));
+      else if (e.key === 'ArrowUp') (e.preventDefault(), move(-1));
+      else if (e.key === 'Enter') (e.preventDefault(), choose(active, e.shiftKey));
+      return;
+    }
+    const t = e.target instanceof Element ? e.target : document.body;
+    if (e.key === '/' && !t.closest('input, textarea, select, [contenteditable]') && !document.querySelector('dialog[open], .viz:not([hidden])')) {
+      e.preventDefault();
+      open();
+    }
+  });
+
+  document.addEventListener('input', (e) => {
+    if ((e.target as Element).classList?.contains('palette-input')) {
+      active = 0;
+      render();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as Element;
+    if (t.closest('[data-palette-open]')) return open();
+    const rnd = t.closest<HTMLElement>('[data-random]');
+    if (rnd) {
+      rnd.classList.remove('is-rolling');
+      void rnd.offsetWidth; // restart the little roll
+      rnd.classList.add('is-rolling');
+      playRandom();
+      return;
+    }
+    const d = dlg();
+    if (!d?.open) return;
+    if (t === d) return close();
+    const p = t.closest<HTMLElement>('[data-play-i]');
+    if (p) return choose(Number(p.dataset.playI), true);
+    const item = t.closest<HTMLElement>('.palette-item');
+    if (item) choose(Number(item.dataset.i));
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    const item = (e.target as Element).closest?.<HTMLElement>('.palette-item');
+    if (!item || !dlg()?.open) return;
+    const i = Number(item.dataset.i);
+    if (i !== active) move(i - active);
+  });
+
+  // ⌘K on Apple keyboards, ctrl K everywhere else
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  const fixKbd = () => {
+    if (!isMac) document.querySelectorAll('.palette-kbd').forEach((k) => (k.textContent = 'ctrl K'));
+  };
+  document.addEventListener('astro:page-load', fixKbd);
+  fixKbd();
+
+  // warm the index when the pointer heads for the button
+  document.addEventListener('pointerover', (e) => {
+    if ((e.target as Element).closest?.('[data-palette-open], [data-random]')) load();
+  });
+</script>

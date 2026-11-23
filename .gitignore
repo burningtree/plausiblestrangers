@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# lyric sync working files (separated vocals, raw transcripts)
+.cache/

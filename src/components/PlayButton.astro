@@ -1,4 +1,5 @@
 ---
+import Icon from './Icon.astro';
 // A text button that plays track `index` of a record's queue (see Queue.astro).
 interface Props {
   queue: string;
@@ -6,9 +7,11 @@ interface Props {
   id: string;
   label?: string;
   iconOnly?: boolean;
+  /** set for record-level buttons: any track of this record counts as "mine" (pause/resume, not restart) */
+  record?: string;
   class?: string;
 }
-const { queue, index, id, label = 'play', iconOnly = false, class: className } = Astro.props;
+const { queue, index, id, label = 'play', iconOnly = false, record, class: className } = Astro.props;
 ---
 
 <button
@@ -18,9 +21,10 @@ const { queue, index, id, label = 'play', iconOnly = false, class: className } =
   data-queue={queue}
   data-index={index}
   data-id={id}
+  data-record={record}
   aria-pressed="false"
   aria-label={label}
 >
-  <span class="when-paused"><span aria-hidden="true">▶&#xFE0E;</span>{!iconOnly && ` ${label}`}</span>
-  <span class="when-playing"><span aria-hidden="true">❚❚</span>{!iconOnly && ' pause'}</span>
+  <span class="when-paused"><Icon name="play-solid" />{!iconOnly && <span class="play-label">{label}</span>}</span>
+  <span class="when-playing"><Icon name="pause-solid" />{!iconOnly && <span class="play-label">pause</span>}</span>
 </button>

@@ -14,5 +14,8 @@
   },
   "dependencies": {
     "astro": "^7.4.13"
+  },
+  "devDependencies": {
+    "@iconify-json/iconoir": "^1.2.12"
   }
 }

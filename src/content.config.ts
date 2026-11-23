@@ -15,6 +15,11 @@ const releases = defineCollection({
     // 'unfinished' records show up with a stamp, after the released ones
     status: z.enum(['released', 'unfinished']).default('released'),
     hidden: z.boolean().default(false),
+    // extra images shown on the record page (concept art, outtakes…).
+    // src is the full image; a "-640" version next to it is used as the thumbnail if present.
+    gallery: z
+      .array(z.object({ src: z.string(), alt: z.string(), caption: z.string().optional() }))
+      .default([]),
   }),
 });
 

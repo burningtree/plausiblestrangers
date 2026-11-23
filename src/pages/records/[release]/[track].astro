@@ -5,6 +5,7 @@ import Queue from '../../../components/Queue.astro';
 import PlayButton from '../../../components/PlayButton.astro';
 import Wave from '../../../components/Wave.astro';
 import Stamp from '../../../components/Stamp.astro';
+import Icon from '../../../components/Icon.astro';
 import {
   getCatalog,
   releaseUrl,
@@ -14,6 +15,7 @@ import {
   fmtDate,
   keyName,
   parseLyrics,
+  timedLyrics,
   playable,
   hasAudio,
   isUnfinished,
@@ -45,6 +47,10 @@ const next = tracks[index + 1];
 const stanzas = parseLyrics(track.body);
 // a lone [Instrumental] isn't worth showing
 const hasWords = stanzas.length > 1 || (stanzas.length === 1 && !stanzas[0][0].direction);
+// number the sung lines in order, so the player can light them up as they're sung
+let lineNo = 0;
+const numbered = stanzas.map((s) => s.map((l) => ({ ...l, n: l.direction ? -1 : lineNo++ })));
+const timed = audible ? timedLyrics(track) : undefined;
 
 const details: [string, string | undefined][] = [
   ['record', `${r.title} (${r.catalog})`],
@@ -94,18 +100,23 @@ const details: [string, string | undefined][] = [
     {audible && <Wave id={p.id} peaks={p.peaks} duration={t.duration} queue={release.id} index={qi} class="wave--big" />}
     {audible && <noscript><audio controls preload="none" src={t.audio}></audio></noscript>}
 
-    <section class="lyrics" aria-labelledby="lyrics-h">
+    <section
+      class:list={['lyrics', { 'lyrics--synced': timed }]}
+      aria-labelledby="lyrics-h"
+      data-track={timed ? p.id : undefined}
+      data-sync={timed ? JSON.stringify(timed.map((l) => [l.t, l.e])) : undefined}
+    >
       <h2 id="lyrics-h" class="label">{t.instrumental ? 'the score' : 'lyrics'}</h2>
       {
         hasWords ? (
-          stanzas.map((s) =>
+          numbered.map((s) =>
             s[0].direction ? (
               <p class="direction">[{s[0].text}]</p>
             ) : (
               <p class="stanza">
                 {s.map((l, i) => (
                   <>
-                    {l.text}
+                    <span class="ly" data-li={l.n}>{l.text}</span>
                     {i < s.length - 1 && <br />}
                   </>
                 ))}
@@ -121,6 +132,7 @@ const details: [string, string | undefined][] = [
           {t.instrumental
             ? 'No words, just instructions: how it should unfold. Sometimes it listened.'
             : 'Lines in [brackets] are instructions to the machine. Sometimes it listened.'}
+          {timed && ' The lines light up as they are sung, timed by another machine that listened. Click one to jump there.'}
         </p>
       )}
     </section>
@@ -167,7 +179,7 @@ const details: [string, string | undefined][] = [
             <dd>
               {t.audio && <a href={t.audio} download>{t.audio.split(".").pop()}</a>}
               {t.audio && t.suno && ' · '}
-              {t.suno && <a href={t.suno}>suno ↗</a>}
+              {t.suno && <a href={t.suno}>suno <Icon name="arrow-up-right" /></a>}
             </dd>
           </>
         )}

@@ -1,10 +1,13 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import peaksData from '../data/peaks.json';
+import syncData from '../data/lyric-sync.json';
 
 export type Release = CollectionEntry<'releases'>;
 export type Track = CollectionEntry<'tracks'>;
 
 const peaks = peaksData as Record<string, number[]>;
+// [start, end, confidence] per sung line, made by scripts/sync_lyrics.py
+const lyricSync = syncData as Record<string, [number, number, number][]>;
 
 export const isAlbum = (r: Release) => r.data.kind.toLowerCase() === 'album';
 export const isUnfinished = (r: Release) => r.data.status === 'unfinished';
@@ -14,6 +17,19 @@ export const trackSlug = (t: Track) => t.id.split('/').pop()!.replace(/^\d+-/, '
 export const releaseUrl = (slug: string) => `/records/${slug}/`;
 export const trackUrl = (t: Track) => `/records/${t.data.release}/${trackSlug(t)}/`;
 export const trackPeaks = (t: Track) => peaks[`${t.data.release}/${trackSlug(t)}`] ?? [];
+export const trackSync = (t: Track) => lyricSync[`${t.data.release}/${trackSlug(t)}`];
+
+/** Sung lines with their times, for the visualiser. */
+export function timedLyrics(t: Track) {
+  const sync = trackSync(t);
+  if (!sync || t.data.instrumental) return undefined;
+  const lines = parseLyrics(t.body)
+    .flat()
+    .filter((l) => !l.direction)
+    .map((l) => l.text);
+  if (lines.length !== sync.length) return undefined; // lyrics edited since syncing
+  return lines.map((text, i) => ({ text, t: sync[i][0], e: sync[i][1] }));
+}
 
 export async function getCatalog() {
   // albums first, then EPs and singles; finished before unfinished; newest first
@@ -91,4 +107,6 @@ export const playable = (t: Track, r: Release) => ({
   cover: r.data.cover?.replace(/\.webp$/, '-480.webp'),
   duration: t.data.duration,
   peaks: trackPeaks(t),
+  lyrics: timedLyrics(t),
+  bpm: t.data.bpm,
 });

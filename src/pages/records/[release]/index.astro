@@ -4,6 +4,8 @@ import { render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import Queue from '../../../components/Queue.astro';
 import Stamp from '../../../components/Stamp.astro';
+import Gallery from '../../../components/Gallery.astro';
+import Icon from '../../../components/Icon.astro';
 import PlayButton from '../../../components/PlayButton.astro';
 import {
   getCatalog,
@@ -45,8 +47,19 @@ const d = release.data;
 
     {
       d.cover && (
-        <figure class="release-cover">
+        <figure class:list={['release-cover', { 'release-cover--playable': ready.length > 0 }]} data-play-art={ready.length > 0 ? '' : undefined}>
           <img src={d.cover} alt={`Cover of ${d.title}`} width="1400" height="1400" transition:name={`cover-${release.id}`} />
+          {ready.length > 0 && (
+            <PlayButton
+              queue={release.id}
+              index={0}
+              id={playable(ready[0], release).id}
+              record={release.id}
+              label={`play ${d.title}`}
+              iconOnly
+              class="cover-play cover-play--release"
+            />
+          )}
         </figure>
       )
     }
@@ -58,7 +71,7 @@ const d = release.data;
         {d.kind} · {tracks.length} tracks · {fmtTotal(total)} · {unfinished ? `in progress, ${ready.length} of ${tracks.length} audible so far` : fmtDate(d.date)}
       </p>
       {ready.length > 0 && (
-        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} label={unfinished ? 'play what exists' : 'play the record'} class="play--big" /></p>
+        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} class="play--big" /></p>
       )}
     </header>
 
@@ -98,12 +111,20 @@ const d = release.data;
       )
     }
 
-    {d.suno && <p class="elsewhere"><a href={d.suno}>also on suno ↗</a></p>}
+    {d.suno && <p class="elsewhere"><a href={d.suno}>also on suno <Icon name="arrow-up-right" /></a></p>}
 
+    </div>
+
+  </article>
+
+  <div class="release-after">
+    <Gallery images={d.gallery} />
+
+    <div class="release-foot">
     <nav class="pager" aria-label="other records">
       {newer ? <a href={releaseUrl(newer.id)} rel="prev">← {newer.data.title}</a> : <span />}
       {older ? <a href={releaseUrl(older.id)} rel="next">{older.data.title} →</a> : <span />}
     </nav>
     </div>
-  </article>
+  </div>
 </Base>

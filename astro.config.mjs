@@ -3,8 +3,9 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  // Set this to the real domain so social previews get absolute image URLs.
-  site: 'https://plausiblestrangers.example',
+  // The real domain: used for absolute URLs in social previews.
+  // (GitHub Pages serves it via public/CNAME.)
+  site: 'https://plausiblestrangers.com',
   devToolbar: { enabled: false },
   prefetch: { prefetchAll: true },
 });

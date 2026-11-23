@@ -1,4 +1,5 @@
 ---
+import Icon from './Icon.astro';
 // The one player. It survives page changes (transition:persist), so music keeps
 // playing while you wander around. Anything with [data-play] starts a track;
 // anything with .wave[data-wave] shows progress and can be clicked to seek.
@@ -8,17 +9,31 @@
   <audio id="ps-audio" preload="metadata"></audio>
   <div class="player-row">
     <button class="player-toggle" data-player="toggle" aria-label="play">
-      <span class="when-paused" aria-hidden="true">▶&#xFE0E;</span>
-      <span class="when-playing" aria-hidden="true">❚❚</span>
+      <span class="when-paused"><Icon name="play-solid" /></span>
+      <span class="when-playing"><Icon name="pause-solid" /></span>
+    </button>
+    <button type="button" class="player-matrix-btn" data-player="pattern" aria-label="pixel pattern: auto (click to change)" title="pattern: auto">
+      <canvas class="player-matrix" width="100" height="30" aria-hidden="true"></canvas>
     </button>
     <p class="player-now">
       <a class="player-title" href="/"></a>
       <span class="player-release"></span>
+      <span class="player-lyric" aria-hidden="true"></span>
     </p>
     <span class="player-time" aria-live="off"><span data-t="cur">0:00</span> / <span data-t="dur">0:00</span></span>
+    <span class="player-volume">
+      <button type="button" data-player="mute" aria-label="mute (m)" title="mute (m)">
+        <Icon name="sound-high" class="vol-high" /><Icon name="sound-low" class="vol-low" /><Icon name="sound-off" class="vol-off" />
+      </button>
+      <input class="player-vol" type="range" min="0" max="1" step="0.01" value="1" aria-label="volume" />
+    </span>
     <span class="player-skip">
-      <button data-player="prev" aria-label="previous track">prev</button>
-      <button data-player="next" aria-label="next track">next</button>
+      <button type="button" data-player="cast" hidden aria-label="play on another device" title="cast">
+        <Icon name="chromecast" class="cast-idle" /><Icon name="chromecast-active" class="cast-on" /><Icon name="airplay" class="cast-airplay" />
+      </button>
+      <button type="button" data-viz-open aria-label="open visualiser (v)" title="visualise (v)"><Icon name="sine-wave" /><span class="pbtn-label">viz</span></button>
+      <button data-player="prev" aria-label="previous track" title="previous (p)"><Icon name="skip-prev" /></button>
+      <button data-player="next" aria-label="next track" title="next (n)"><Icon name="skip-next" /></button>
     </span>
   </div>
   <div class="wave wave--player" data-wave="" role="slider" tabindex="0" aria-label="seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
@@ -34,6 +49,8 @@
     cover?: string;
     duration: number;
     peaks: number[];
+    lyrics?: { text: string; t: number; e: number }[];
+    bpm?: number;
   };
 
   const STORE = 'ps:player';
@@ -162,12 +179,396 @@
       if (mine) el.setAttribute('aria-valuenow', String(Math.round(p * 100)));
     });
     $<HTMLElement>('[data-t="cur"]').textContent = fmt(audio.currentTime);
+    syncLyrics();
+    barLyric(t);
   }
 
-  function loop() {
-    progress();
-    raf = audio.paused ? 0 : requestAnimationFrame(loop);
+  // ---- the line being sung, small, inside the bar (needs synced lyrics)
+  let barLine = -2;
+  function barLyric(t: Item) {
+    const el = $<HTMLElement>('.player-lyric');
+    const lines = t.lyrics;
+    let k = -1;
+    if (lines?.length) {
+      const now = audio.currentTime;
+      for (let i = 0; i < lines.length; i++) if (lines[i].t <= now + 0.1) k = i;
+      // keep it up a moment after it ends, then make room again
+      if (k >= 0 && now > lines[k].e + 2) k = -1;
+    }
+    if (k === barLine) return;
+    barLine = k;
+    player.classList.toggle('has-lyric', k >= 0);
+    if (k >= 0) {
+      el.textContent = lines![k].text;
+      el.classList.remove('is-new');
+      void el.offsetWidth;
+      el.classList.add('is-new');
+    }
   }
+
+  // ---- synced lyrics on the track page: light up the line being sung
+  let lyricEl: HTMLElement | null = null;
+  let lyricTimes: [number, number][] = [];
+  let lyricLines: HTMLElement[] = [];
+  let lyricNow = -2;
+  let userScrolled = 0;
+
+  function bindLyrics() {
+    lyricEl = document.querySelector<HTMLElement>('.lyrics[data-sync]');
+    lyricNow = -2;
+    if (!lyricEl) return;
+    try {
+      lyricTimes = JSON.parse(lyricEl.dataset.sync || '[]');
+    } catch {
+      lyricTimes = [];
+    }
+    lyricLines = [];
+    lyricEl.querySelectorAll<HTMLElement>('[data-li]').forEach((el) => {
+      const n = Number(el.dataset.li);
+      if (n >= 0) lyricLines[n] = el;
+    });
+  }
+
+  function lyricAt(time: number, times: [number, number][]) {
+    let k = -1;
+    for (let i = 0; i < times.length; i++) if (times[i][0] <= time + 0.15) k = i;
+    return k;
+  }
+
+  function syncLyrics() {
+    if (!lyricEl) return;
+    const mine = current()?.id === lyricEl.dataset.track;
+    lyricEl.classList.toggle('is-live', mine && !audio.paused);
+    const k = mine ? lyricAt(audio.currentTime, lyricTimes) : -1;
+    if (k === lyricNow) return;
+    lyricLines[lyricNow]?.classList.remove('is-now');
+    lyricNow = k;
+    const el = lyricLines[k];
+    if (!el) return;
+    el.classList.add('is-now');
+    lyricLines.forEach((l, i) => l.classList.toggle('is-past', i < k));
+    // follow along, unless the listener has been scrolling around themselves
+    if (!audio.paused && Date.now() - userScrolled > 4000) {
+      const r = el.getBoundingClientRect();
+      const playerH = player.offsetHeight || 0;
+      if (r.top < 80 || r.bottom > innerHeight - playerH - 60) {
+        el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      }
+    }
+  }
+  addEventListener('wheel', () => (userScrolled = Date.now()), { passive: true });
+  addEventListener('touchmove', () => (userScrolled = Date.now()), { passive: true });
+
+  // the visualiser (and anything else) can ask what's playing
+  (window as any).__ps = { current, time: () => audio.currentTime, playing: () => !audio.paused };
+
+  // ---- a tiny LED matrix: columns rise with the music, peaks hang then fall.
+  // Real spectrum if the visualiser has tapped the audio; otherwise it is
+  // driven by the loudness curve (peaks) and the track's tempo.
+  const matrix = $<HTMLCanvasElement>('.player-matrix');
+  const mctx = matrix.getContext('2d')!;
+  const COLS = 20;
+  const ROWS = 6;
+  let mColors = { on: '#fff', hot: '#f00', off: '#444' };
+  let lastDraw = 0;
+
+  function readMatrixColors() {
+    const cs = getComputedStyle(player);
+    mColors = {
+      on: cs.getPropertyValue('--ink').trim(),
+      hot: cs.getPropertyValue('--hot').trim(),
+      off: cs.getPropertyValue('--faint').trim(),
+    };
+  }
+  new MutationObserver(readMatrixColors).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readMatrixColors);
+
+  // ---- pattern engine. Each frame a pattern lights pixels (0–1, some "hot");
+  // pixels then fade, leaving short trails. In "auto" a new pattern is picked
+  // every 4 bars, from a pool that depends on how loud that part of the track is.
+  const N = COLS * ROWS;
+  const glow = new Float32Array(N); // what's on screen, fading
+  const hotMask = new Uint8Array(N);
+  const history = new Float32Array(COLS); // for the scroller
+  let lastScrollStep = -1;
+  const shape = Array.from({ length: COLS }, (_, c) => 1 - (c / COLS) * 0.45 + Math.sin(c * 1.7) * 0.08);
+  const hash = (n: number) => {
+    const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  const at = (c: number, r: number) => r * COLS + c; // r = 0 is the bottom row
+
+  type Ctx = {
+    time: number; // seconds into the track
+    energy: number; // 0–1 loudness right now
+    kick: number; // 1 on the beat, decaying to 0
+    beatNo: number;
+    sixteenth: number;
+    bands: Float32Array; // per column, 0–1
+    out: Float32Array;
+    hot: Uint8Array;
+  };
+  const set = (x: Ctx, c: number, r: number, v: number, hot = false) => {
+    if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
+    const i = at(c, r);
+    if (v > x.out[i]) x.out[i] = v;
+    if (hot) x.hot[i] = 1;
+  };
+  const bar = (x: Ctx, c: number, h: number) => {
+    const lit = Math.round(Math.min(1, h) * ROWS);
+    for (let r = 0; r < lit; r++) set(x, c, r, 1, r >= ROWS - 2);
+  };
+
+  const PATTERNS: Record<string, (x: Ctx) => void> = {
+    // classic meter, with headroom to hit the top when it's loud
+    spectrum(x) {
+      for (let c = 0; c < COLS; c++) bar(x, c, x.bands[c] * 1.35);
+    },
+    // bass in the middle, spreading out to both sides
+    mirror(x) {
+      const half = COLS / 2;
+      for (let i = 0; i < half; i++) {
+        const h = x.bands[i * 2] * 1.4;
+        bar(x, Math.floor(half - 1 - i), h);
+        bar(x, Math.ceil(half + i), h);
+      }
+    },
+    // loudness history, scrolling left a step every 16th note
+    scroll(x) {
+      if (x.sixteenth !== lastScrollStep) {
+        lastScrollStep = x.sixteenth;
+        history.copyWithin(0, 1);
+        history[COLS - 1] = Math.min(1, x.energy * (0.75 + x.kick * 0.5));
+      }
+      for (let c = 0; c < COLS; c++) {
+        const h = Math.round(history[c] * ROWS);
+        if (h > 0) set(x, c, h - 1, 1, h >= ROWS - 1); // just the line, oscilloscope style
+        for (let r = 0; r < h - 1; r++) set(x, c, r, 0.35);
+      }
+    },
+    // pixels flicker on at random, more of them when it's louder
+    sparkle(x) {
+      const p = 0.08 + x.energy * 0.55 + x.kick * 0.15;
+      for (let i = 0; i < N; i++) {
+        if (hash(x.sixteenth * 97 + i * 13.7) < p * 0.5) {
+          x.out[i] = 1;
+          if (hash(i + x.sixteenth) < 0.12) x.hot[i] = 1;
+        }
+      }
+    },
+    // a sine wave rolling across at the track's tempo
+    wave(x) {
+      const speed = (x.time / (60 / Math.max(60, current()?.bpm || 124))) * Math.PI * 0.5;
+      const amp = 0.35 + x.energy * 0.65;
+      for (let c = 0; c < COLS; c++) {
+        const y = ((Math.sin(c * 0.55 - speed) + 1) / 2) * amp * (ROWS - 1);
+        const r = Math.round(y);
+        set(x, c, r, 1, x.kick > 0.85 && r >= ROWS - 2);
+        if (x.energy > 0.6) set(x, c, r - 1, 0.5);
+      }
+    },
+    // the grid fills up from the bottom with the loudness; downbeats flood it all
+    flood(x) {
+      const level = x.energy * 0.85 + x.kick * 0.3;
+      for (let c = 0; c < COLS; c++) {
+        const ripple = Math.sin(c * 0.9 + x.time * 6) * 0.08;
+        bar(x, c, level + ripple);
+      }
+      if (x.energy > 0.55) flashOnDownbeat(x);
+    },
+    // a ring bursting out of the centre on every beat
+    burst(x) {
+      const cx = (COLS - 1) / 2;
+      const cy = (ROWS - 1) / 2;
+      const radius = (1 - x.kick) * (COLS / 2 + 2);
+      for (let c = 0; c < COLS; c++)
+        for (let r = 0; r < ROWS; r++) {
+          const d = Math.hypot((c - cx) / 1.6, r - cy) * 2;
+          if (Math.abs(d - radius) < 1.1) set(x, c, r, 1, x.energy > 0.7);
+          else if (d < x.energy * 3) set(x, c, r, 0.6);
+        }
+      if (x.energy > 0.75) flashOnDownbeat(x);
+    },
+  };
+  // every pixel at once on the first beat of each bar, held for ~3 frames
+  // (checked by beat number, so it can't slip between two redraws)
+  let flashBeat = -1;
+  let flashFrames = 0;
+  function flashOnDownbeat(x: Ctx) {
+    if (x.beatNo % 4 === 0 && x.beatNo !== flashBeat) {
+      flashBeat = x.beatNo;
+      flashFrames = 3;
+    }
+    if (flashFrames > 0) {
+      flashFrames--;
+      flash(x);
+    }
+  }
+  function flash(x: Ctx) {
+    for (let i = 0; i < N; i++) {
+      x.out[i] = 1;
+      if (i >= at(0, ROWS - 2)) x.hot[i] = 1;
+    }
+  }
+
+  const POOLS = {
+    quiet: ['sparkle', 'wave', 'scroll'],
+    mid: ['spectrum', 'scroll', 'mirror', 'wave'],
+    loud: ['flood', 'burst', 'mirror', 'spectrum'],
+  };
+  const MODES = ['auto', ...Object.keys(PATTERNS)];
+  let mode = 'auto';
+  try {
+    const m = localStorage.getItem('ps:pattern');
+    if (m && MODES.includes(m)) mode = m;
+  } catch {}
+
+  // the loudness curve around a moment (peaks are ~1.3 s apart)
+  function envAt(t: Item, time: number) {
+    const dur = audio.duration || t.duration;
+    const x = Math.max(0, (time / dur) * (t.peaks.length - 1));
+    const i = Math.floor(x);
+    const a = t.peaks[i] ?? 0;
+    const b = t.peaks[i + 1] ?? a;
+    return a + (b - a) * (x - i);
+  }
+
+  function pickPattern(t: Item, time: number, beat: number) {
+    if (mode !== 'auto') return mode;
+    const len = beat * 16; // 4 bars
+    const section = Math.floor(time / len);
+    // how loud is this whole section?
+    let sum = 0;
+    for (let k = 0; k < 4; k++) sum += envAt(t, section * len + (k + 0.5) * (len / 4));
+    const e = sum / 4;
+    const pool = e > 0.72 ? POOLS.loud : e > 0.42 ? POOLS.mid : POOLS.quiet;
+    return pool[Math.floor(hash(section * 7.3 + t.duration) * pool.length)];
+  }
+
+  let pattern = 'spectrum';
+  function computeFrame(out: Float32Array, hot: Uint8Array) {
+    const t = current();
+    if (!t || audio.paused) return;
+    const time = audio.currentTime;
+    const beat = 60 / (t.bpm || 124);
+    const phase = (time % beat) / beat;
+    const kick = Math.pow(1 - phase, 3);
+    const live: number[] | undefined = (window as any).__psViz?.bands?.(COLS);
+    const bands = new Float32Array(COLS);
+    let energy: number;
+    if (live) {
+      live.forEach((v, c) => (bands[c] = v));
+      energy = Math.min(1, live.reduce((a, b) => a + b, 0) / COLS / 0.55);
+    } else {
+      energy = envAt(t, time);
+      const step = Math.floor(time / (beat / 4));
+      for (let c = 0; c < COLS; c++) {
+        const jitter = 0.55 + 0.45 * hash(step * 31 + c);
+        const low = c < COLS * 0.3 ? kick * 0.6 : kick * 0.15;
+        bands[c] = Math.min(1, energy * shape[c] * (jitter * 0.8 + low));
+      }
+    }
+    pattern = pickPattern(t, time, beat);
+    PATTERNS[pattern]({
+      time,
+      energy,
+      kick,
+      beatNo: Math.floor(time / beat),
+      sixteenth: Math.floor(time / (beat / 4)),
+      bands,
+      out,
+      hot,
+    });
+  }
+
+  function drawMatrix(now: number) {
+    if (now - lastDraw < 33) return; // ~30 fps is plenty for pixels
+    lastDraw = now;
+    const fresh = new Float32Array(N);
+    const freshHot = new Uint8Array(N);
+    computeFrame(fresh, freshHot);
+    for (let i = 0; i < N; i++) {
+      glow[i] = Math.max(fresh[i], glow[i] * 0.72); // trails
+      if (fresh[i] > 0) hotMask[i] = freshHot[i];
+      else if (glow[i] < 0.2) hotMask[i] = 0;
+    }
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    if (matrix.width !== Math.round(matrix.clientWidth * dpr)) {
+      matrix.width = Math.round(matrix.clientWidth * dpr);
+      matrix.height = Math.round(matrix.clientHeight * dpr);
+    }
+    const cw = matrix.width / COLS;
+    const rh = matrix.height / ROWS;
+    const px = Math.max(1, Math.floor(Math.min(cw, rh) * 0.72));
+    mctx.clearRect(0, 0, matrix.width, matrix.height);
+    for (let c = 0; c < COLS; c++)
+      for (let r = 0; r < ROWS; r++) {
+        const i = at(c, r);
+        const x = Math.round(c * cw + (cw - px) / 2);
+        const y = Math.round(matrix.height - (r + 1) * rh + (rh - px) / 2);
+        mctx.globalAlpha = 1;
+        mctx.fillStyle = mColors.off;
+        mctx.fillRect(x, y, px, px);
+        if (glow[i] > 0.12) {
+          mctx.globalAlpha = Math.min(1, glow[i]);
+          mctx.fillStyle = hotMask[i] ? mColors.hot : mColors.on;
+          mctx.fillRect(x, y, px, px);
+        }
+      }
+    mctx.globalAlpha = 1;
+  }
+  const matrixQuiet = () => glow.every((g) => g < 0.05);
+
+  // click the matrix: auto → each pattern → auto …
+  let labelTimer = 0;
+  function cycleMode() {
+    mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+    try {
+      localStorage.setItem('ps:pattern', mode);
+    } catch {}
+    const btn = $<HTMLButtonElement>('.player-matrix-btn');
+    btn.setAttribute('aria-label', `pixel pattern: ${mode} (click to change)`);
+    btn.title = `pattern: ${mode}`;
+    const rel = $<HTMLElement>('.player-release');
+    rel.textContent = `pattern: ${mode}`;
+    rel.classList.add('is-note');
+    clearTimeout(labelTimer);
+    labelTimer = window.setTimeout(() => {
+      rel.classList.remove('is-note');
+      rel.textContent = current()?.release.toLowerCase() ?? '';
+    }, 1400);
+    if (audio.paused) {
+      // show a still of the pattern so the click visibly does something
+      const fresh = new Float32Array(N);
+      const hot = new Uint8Array(N);
+      const t = current();
+      if (t) {
+        const wasPaused = audio.paused;
+        PATTERNS[mode === 'auto' ? 'spectrum' : mode]({
+          time: audio.currentTime, energy: 0.8, kick: 1, beatNo: 0, sixteenth: Math.floor(Math.random() * 999),
+          bands: Float32Array.from(shape.map((v) => v * 0.8)), out: fresh, hot,
+        });
+        for (let i = 0; i < N; i++) { glow[i] = fresh[i]; hotMask[i] = hot[i]; }
+        lastDraw = 0;
+        if (wasPaused && !raf) raf = requestAnimationFrame(loop);
+      }
+    }
+  }
+
+  function loop(now = performance.now()) {
+    progress();
+    drawMatrix(now);
+    // keep running briefly after pausing so the pixels fall back down
+    raf = audio.paused && matrixQuiet() ? 0 : requestAnimationFrame(loop);
+  }
+
+  // a button is "mine" if it plays this exact track, or (record-level buttons)
+  // any track of the record that's on now
+  const owns = (b: HTMLElement, t?: Item) =>
+    !!t && (b.dataset.id === t.id || (!!b.dataset.record && t.id.startsWith(b.dataset.record + '/')));
 
   // ---- reflect state on whatever page we are on
   function sync() {
@@ -176,12 +577,15 @@
     document.documentElement.classList.toggle('is-playing', playing);
     document.documentElement.classList.toggle('has-player', !!t);
     document.querySelectorAll<HTMLElement>('[data-play]').forEach((b) => {
-      const mine = !!t && b.dataset.id === t.id;
+      const mine = owns(b, t);
       b.classList.toggle('is-playing', mine && playing);
       b.setAttribute('aria-pressed', String(mine && playing));
     });
     document.querySelectorAll<HTMLElement>('[data-row]').forEach((r) => {
       r.classList.toggle('is-current', !!t && r.dataset.row === t.id);
+    });
+    document.querySelectorAll<HTMLElement>('[data-record-row]').forEach((r) => {
+      r.classList.toggle('is-current', !!t && t.id.startsWith(r.dataset.recordRow + '/'));
     });
     $<HTMLButtonElement>('.player-toggle').setAttribute('aria-label', playing ? 'pause' : 'play');
     $<HTMLButtonElement>('[data-player="prev"]').disabled = index <= 0 && audio.currentTime < 4;
@@ -264,10 +668,90 @@
     }
   });
 
+  // ---- volume (remembered). iOS ignores volume set by pages, so there
+  // the slider is hidden and the hardware buttons do the job.
+  const volInput = $<HTMLInputElement>('.player-vol');
+  const VOL = 'ps:volume';
+  const canSetVolume = (() => {
+    const probe = new Audio();
+    probe.volume = 0.5;
+    return probe.volume === 0.5;
+  })();
+  if (!canSetVolume) player.classList.add('no-volume');
+
+  function showVolume() {
+    const v = audio.muted ? 0 : audio.volume;
+    player.dataset.vol = v === 0 ? 'off' : v < 0.5 ? 'low' : 'high';
+    volInput.value = String(v);
+    volInput.style.setProperty('--v', `${v * 100}%`);
+    const btn = $<HTMLButtonElement>('[data-player="mute"]');
+    btn.setAttribute('aria-label', audio.muted ? 'unmute (m)' : 'mute (m)');
+    btn.title = audio.muted ? 'unmute (m)' : 'mute (m)';
+  }
+  function saveVolume() {
+    try {
+      localStorage.setItem(VOL, JSON.stringify({ v: audio.volume, m: audio.muted }));
+    } catch {}
+  }
+  function toggleMute() {
+    if (audio.muted || audio.volume === 0) {
+      audio.muted = false;
+      if (audio.volume === 0) audio.volume = 0.6;
+    } else audio.muted = true;
+  }
+  try {
+    const sv = JSON.parse(localStorage.getItem(VOL) || 'null');
+    if (sv && canSetVolume) {
+      audio.volume = Math.min(1, Math.max(0, Number(sv.v) || 0));
+      audio.muted = !!sv.m;
+    }
+  } catch {}
+  volInput.addEventListener('input', () => {
+    audio.volume = Number(volInput.value);
+    audio.muted = audio.volume === 0;
+  });
+  audio.addEventListener('volumechange', () => {
+    showVolume();
+    saveVolume();
+  });
+  showVolume();
+
+  // ---- cast: Chromecast etc. via the Remote Playback API (Chrome),
+  // AirPlay via Safari's own picker. The button only shows when a device is there.
+  const castBtn = $<HTMLButtonElement>('[data-player="cast"]');
+  const remote = (audio as any).remote as
+    | { watchAvailability(cb: (a: boolean) => void): Promise<number>; prompt(): Promise<void>; state: string; addEventListener: (t: string, f: () => void) => void }
+    | undefined;
+  const airplay = 'WebKitPlaybackTargetAvailabilityEvent' in window;
+  function castPrompt() {
+    if (airplay) (audio as any).webkitShowPlaybackTargetPicker?.();
+    else remote?.prompt().catch(() => {});
+  }
+  if (airplay) {
+    player.classList.add('cast-is-airplay');
+    castBtn.title = 'airplay';
+    audio.addEventListener('webkitplaybacktargetavailabilitychanged', (e: any) => {
+      castBtn.hidden = e.availability !== 'available';
+    });
+    audio.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', () => {
+      player.classList.toggle('is-casting', !!(audio as any).webkitCurrentPlaybackTargetIsWireless);
+    });
+  } else if (remote) {
+    remote
+      .watchAvailability((available) => (castBtn.hidden = !available))
+      // some browsers can't watch in the background (e.g. Android): just offer it
+      .catch(() => (castBtn.hidden = false));
+    const castState = () => player.classList.toggle('is-casting', remote.state !== 'disconnected');
+    remote.addEventListener('connect', castState);
+    remote.addEventListener('connecting', castState);
+    remote.addEventListener('disconnect', castState);
+  }
+
   // ---- keyboard: space / k = play-pause, ← → = 10s, n / p = next / previous
   document.addEventListener('keydown', (e) => {
+    if (document.querySelector('dialog[open]')) return;
     if (e.metaKey || e.ctrlKey || e.altKey || !current()) return;
-    const el = e.target as HTMLElement;
+    const el = (e.target instanceof Element ? e.target : document.body) as HTMLElement;
     if (el.closest('input, textarea, select, [contenteditable], .wave')) return;
     const onControl = !!el.closest('button, a');
     if ((e.key === ' ' && !onControl) || e.key === 'k') {
@@ -278,7 +762,8 @@
       const d = e.key === 'ArrowRight' ? 10 : -10;
       audio.currentTime = Math.max(0, Math.min((audio.duration || 0) - 0.5, audio.currentTime + d));
       progress();
-    } else if (e.key === 'n') step(1);
+    } else if (e.key === 'm') toggleMute();
+    else if (e.key === 'n') step(1);
     else if (e.key === 'p') step(-1);
   });
 
@@ -288,10 +773,34 @@
     const play = target.closest<HTMLElement>('[data-play]');
     if (play) {
       e.preventDefault();
-      if (current()?.id === play.dataset.id) return toggle();
+      if (owns(play, current())) return toggle();
       const q = readQueue(play.dataset.queue);
       const i = Number(play.dataset.index || 0);
       if (q) load(q, i);
+      return;
+    }
+    // album artwork that doubles as a play button
+    const art = target.closest<HTMLElement>('[data-play-art]');
+    if (art) {
+      art.querySelector<HTMLElement>('[data-play]')?.click();
+      return;
+    }
+    // a synced lyric line: jump there (starting the track if needed)
+    const line = target.closest<HTMLElement>('.lyrics[data-sync] [data-li]');
+    if (line && lyricEl) {
+      const n = Number(line.dataset.li);
+      const t0 = Math.max(0, (lyricTimes[n]?.[0] ?? 0) - 0.3);
+      if (current()?.id === lyricEl.dataset.track) {
+        audio.currentTime = t0;
+        if (audio.paused) audio.play().catch(() => {});
+        progress();
+      } else {
+        const btn = document.querySelector<HTMLElement>(`[data-play][data-id="${CSS.escape(lyricEl.dataset.track || '')}"]`);
+        const q = readQueue(btn?.dataset.queue);
+        const i = Number(btn?.dataset.index);
+        if (q?.[i]) load(q, i, { time: t0 });
+      }
+      userScrolled = 0;
       return;
     }
     // a tracklist row plays its track, unless you clicked the title link
@@ -306,6 +815,9 @@
     if (action === 'toggle') toggle();
     if (action === 'prev') step(-1);
     if (action === 'next') step(1);
+    if (action === 'pattern') cycleMode();
+    if (action === 'mute') toggleMute();
+    if (action === 'cast') castPrompt();
   });
 
   // ---- audio events
@@ -350,12 +862,29 @@
     $<HTMLElement>('.player-release').textContent = 'this file refuses to play.';
   });
 
+  // other parts of the site (the command palette) can hand over a whole queue
+  window.addEventListener('ps:play', (e) => {
+    const { queue: q, index: i = 0 } = (e as CustomEvent<{ queue: Item[]; index?: number }>).detail ?? {};
+    if (!q?.[i]) return;
+    if (current()?.id === q[i].id) return toggle();
+    load(q, i);
+  });
+
   document.addEventListener('astro:page-load', () => {
+    bindLyrics();
     setupWaves();
     sync();
   });
 
+  readMatrixColors();
+  {
+    const btn = $<HTMLButtonElement>('.player-matrix-btn');
+    btn.setAttribute('aria-label', `pixel pattern: ${mode} (click to change)`);
+    btn.title = `pattern: ${mode}`;
+  }
+  bindLyrics();
   setupWaves();
   restore();
+  requestAnimationFrame(() => drawMatrix(performance.now() + 100));
   sync();
 </script>

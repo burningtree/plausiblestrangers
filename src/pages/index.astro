@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import Queue from '../components/Queue.astro';
 import PlayButton from '../components/PlayButton.astro';
 import Stamp from '../components/Stamp.astro';
+import Icon from '../components/Icon.astro';
 import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
 import { site } from '../site';
 
@@ -52,7 +53,7 @@ const groups = [
     <ol class:list={['records', { 'records--albums': g.album }]}>
       {
         g.items.map(({ r, tracks, ready, total }) => (
-          <li class:list={['record', { 'record--unfinished': isUnfinished(r) }]} data-row={ready[0] && playable(ready[0], r).id}>
+          <li class:list={['record', { 'record--unfinished': isUnfinished(r) }]} data-record-row={r.id}>
             <div class="record-art">
               <a href={releaseUrl(r.id)} class="record-cover" tabindex="-1" aria-hidden="true">
                 {r.data.cover && (
@@ -72,6 +73,7 @@ const groups = [
                   index={0}
                   id={playable(ready[0], r).id}
                   label={`play ${r.data.title}`}
+                  record={r.id}
                   iconOnly
                   class="cover-play"
                 />
@@ -88,7 +90,7 @@ const groups = [
               </p>
               {ready.length > 0 && (
                 <p class="record-actions">
-                  <PlayButton queue={r.id} index={0} id={playable(ready[0], r).id} label={isUnfinished(r) ? 'play what exists' : 'play'} />
+                  <PlayButton queue={r.id} index={0} id={playable(ready[0], r).id} record={r.id} label={isUnfinished(r) ? 'play what exists' : 'play'} />
                 </p>
               )}
             </div>
@@ -119,7 +121,7 @@ const groups = [
         site.links.map((l) => (
           <li>
             <a href={l.href} rel="me">
-              {l.label} ↗
+              {l.label} <Icon name="arrow-up-right" />
             </a>
           </li>
         ))

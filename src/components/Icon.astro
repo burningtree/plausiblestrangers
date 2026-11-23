@@ -1,0 +1,11 @@
+---
+// <Icon name="play" /> — an Iconoir icon, sized to the text (1em), coloured by currentColor.
+import { iconSvg } from '../lib/icons';
+interface Props {
+  name: string;
+  class?: string;
+}
+const { name, class: cls } = Astro.props;
+---
+
+<Fragment set:html={iconSvg(name, cls ? `icon ${cls}` : 'icon')} />
