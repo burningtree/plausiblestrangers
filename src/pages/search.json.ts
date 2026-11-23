@@ -7,7 +7,8 @@ import {
   hasAudio,
   isUnfinished,
   playable,
-  parseLyrics,
+  performedLyrics,
+  hasReviewedPerformance,
   fmtTime,
   fmtDate,
   getArchive,
@@ -35,17 +36,17 @@ export const GET: APIRoute = async () => {
     });
     for (const t of all) {
       // only sung/spoken lines are searchable, not the [directions]
-      const lines = parseLyrics(t.body)
-        .flat()
-        .filter((l) => !l.direction)
-        .map((l) => l.text);
+      const index = ready.indexOf(t);
+      const lines = hasReviewedPerformance(t.data.audio)
+        ? queues[r.id][index]?.lyrics?.map((line) => line.text) ?? []
+        : performedLyrics(t.body, t.data.audio).flat().map((line) => line.text);
       tracks.push({
         title: t.data.title,
         release: r.data.title,
         releaseId: r.id,
         meta: `${r.data.title} · ${String(t.data.number).padStart(2, '0')} · ${fmtTime(t.data.duration)}`,
         url: trackUrl(t),
-        index: ready.indexOf(t),
+        index,
         tags: t.data.tags ?? '',
         lyrics: lines,
       });
@@ -65,10 +66,9 @@ export const GET: APIRoute = async () => {
       tags: a.data.tags ?? '',
       lyrics: a.data.lyricsHidden
         ? []
-        : parseLyrics(a.body)
-            .flat()
-            .filter((l) => !l.direction)
-            .map((l) => l.text),
+        : hasReviewedPerformance(a.data.audio)
+          ? recording?.lyrics?.map((line) => line.text) ?? []
+          : performedLyrics(a.body, a.data.audio).flat().map((line) => line.text),
       archive: true,
     });
   }

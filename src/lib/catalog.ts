@@ -1,8 +1,10 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import peaksData from '../data/peaks.json';
 import syncData from '../data/lyric-sync.json';
+import performanceData from '../data/lyric-performances.json';
 import blurData from '../data/blurhash.json';
 import analysisData from '../data/analysis.json';
+import { hasCompleteWordTiming, type StoredLine, type TimedLyric, type TimedWord } from './lyric-timing';
 
 export type Release = CollectionEntry<'releases'>;
 export type Track = CollectionEntry<'tracks'>;
@@ -103,7 +105,7 @@ export const splitTags = (tags?: string) =>
 
 const peaks = peaksData as Record<string, number[]>;
 // [start, end, confidence] per sung line, made by scripts/sync_lyrics.py
-const lyricSync = syncData as Record<string, [number, number, number][]>;
+const lyricSync = syncData as unknown as Partial<Record<string, StoredLine[]>>;
 
 export const isAlbum = (r: Release) => r.data.kind.toLowerCase() === 'album';
 export const isUnfinished = (r: Release) => r.data.status === 'unfinished';
@@ -117,18 +119,35 @@ export const trackPeaks = (t: Track) => peaks[`${t.data.release}/${trackSlug(t)}
 export const downloadName = (t: Track) =>
   `Plausible Strangers - ${t.data.title.replace(/[\\/:*?"<>|]+/g, '-')}.${t.data.audio?.split('.').pop() ?? 'm4a'}`;
 
-export const trackSync = (t: Track) => lyricSync[`${t.data.release}/${trackSlug(t)}`];
+function lyricsFor(key: string, body: string | undefined, duration: number, audio?: string): TimedLyric[] | undefined {
+  const sync = lyricSync[key];
+  if (!sync) return;
+  const lines = performedLyrics(body, audio).flat();
+  if (lines.length !== sync.length) return;
+  const cues: TimedLyric[] = [];
+  let previousEnd = 0;
+  for (const [index, { text }] of lines.entries()) {
+    const stored = sync[index];
+    if (!stored || stored[0] !== text) continue;
+    const words: TimedWord[] = [];
+    let right = 0;
+    for (const [from, to, start, end] of stored[1]) {
+      const e = Math.min(duration, end);
+      if (!Number.isInteger(from) || !Number.isInteger(to) || from < right || to <= from || to > text.length
+        || !Number.isFinite(start) || !Number.isFinite(e) || start < previousEnd || e <= start) continue;
+      words.push({ index: from, end: to, t: start, e });
+      right = to;
+      previousEnd = e;
+    }
+    if (words.length && hasCompleteWordTiming(text, words)) {
+      cues.push({ index, text, t: words[0].t, e: words[words.length - 1].e, words });
+    }
+  }
+  return cues.length ? cues : undefined;
+}
 
-/** Sung lines with their times, for the visualiser. */
 export function timedLyrics(t: Track) {
-  const sync = trackSync(t);
-  if (!sync || t.data.instrumental) return undefined;
-  const lines = parseLyrics(t.body)
-    .flat()
-    .filter((l) => !l.direction)
-    .map((l) => l.text);
-  if (lines.length !== sync.length) return undefined; // lyrics edited since syncing
-  return lines.map((text, i) => ({ text, t: sync[i][0], e: sync[i][1] }));
+  if (!t.data.instrumental) return lyricsFor(`${t.data.release}/${trackSlug(t)}`, t.body, t.data.duration, t.data.audio);
 }
 
 export async function getCatalog() {
@@ -197,6 +216,22 @@ export function parseLyrics(body = ''): LyricLine[][] {
   return stanzas;
 }
 
+type PerformanceEdit = { line: number; prompt: string; lines: string[] };
+const performanceEdits: Partial<Record<string, PerformanceEdit[]>> = performanceData;
+
+export const hasReviewedPerformance = (audio?: string) => !!(audio && performanceEdits[audio]);
+
+export function performedLyrics(body?: string, audio?: string): LyricLine[][] {
+  const edits = new Map((audio ? performanceEdits[audio] ?? [] : []).map((edit) => [edit.line, edit]));
+  let index = 0;
+  return parseLyrics(body).filter(([line]) => !line.direction).map((stanza) =>
+    stanza.flatMap((line) => {
+      const edit = edits.get(index++);
+      return edit?.prompt === line.text ? edit.lines.map((text) => ({ text, direction: false })) : [line];
+    }),
+  ).filter((stanza) => stanza.length > 0);
+}
+
 // What the player needs to know about a track.
 export const playable = (t: Track, r: Release) => ({
   id: `${t.data.release}/${trackSlug(t)}`,
@@ -216,5 +251,6 @@ export function playableArchive(song: ArchiveSong) {
   if (!audio) return undefined;
 
   const id = `archive/${song.id}`;
-  return { id, title, release: 'archive', src: audio, url: archiveUrl(song), duration: duration ?? 0, peaks: peaks[id] ?? [], bpm };
+  const lyrics = !song.data.instrumental && !song.data.lyricsHidden ? lyricsFor(id, song.body, duration ?? Infinity, audio) : undefined;
+  return { id, title, release: 'archive', src: audio, url: archiveUrl(song), duration: duration ?? 0, peaks: peaks[id] ?? [], bpm, lyrics };
 }

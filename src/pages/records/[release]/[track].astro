@@ -1,4 +1,5 @@
 ---
+import Lyrics from '../../../components/Lyrics.astro';
 import type { GetStaticPaths } from 'astro';
 import Base from '../../../layouts/Base.astro';
 import Queue from '../../../components/Queue.astro';
@@ -17,8 +18,6 @@ import {
   fmtTime,
   fmtDate,
   keyName,
-  parseLyrics,
-  timedLyrics,
   downloadName,
   trackAnalysis,
   getArchive,
@@ -52,13 +51,6 @@ const p = playable(track, release);
 const unfinished = isUnfinished(release);
 const prev = tracks[index - 1];
 const next = tracks[index + 1];
-const stanzas = parseLyrics(track.body);
-// a lone [Instrumental] isn't worth showing
-const hasWords = stanzas.length > 1 || (stanzas.length === 1 && !stanzas[0][0].direction);
-// number the sung lines in order, so the player can light them up as they're sung
-let lineNo = 0;
-const numbered = stanzas.map((s) => s.map((l) => ({ ...l, n: l.direction ? -1 : lineNo++ })));
-const timed = audible ? timedLyrics(track) : undefined;
 const analysis = audible ? trackAnalysis(track) : undefined;
 // unreleased versions of this song in the archive (same base title)
 const archiveVersions = (await getArchive()).filter((a) => songBase(a.data.title) === songBase(t.title));
@@ -138,42 +130,7 @@ const details: [string, string | undefined][] = [
       )
     }
 
-    <section
-      class:list={['lyrics', { 'lyrics--synced': timed }]}
-      aria-labelledby="lyrics-h"
-      data-track={timed ? p.id : undefined}
-      data-sync={timed ? JSON.stringify(timed.map((l) => [l.t, l.e])) : undefined}
-    >
-      <h2 id="lyrics-h" class="label">{t.instrumental ? 'the score' : 'lyrics'}</h2>
-      {
-        hasWords ? (
-          numbered.map((s) =>
-            s[0].direction ? (
-              <p class="direction">[{s[0].text}]</p>
-            ) : (
-              <p class="stanza">
-                {s.map((l, i) => (
-                  <>
-                    <span class="ly" data-li={l.n}>{l.text}</span>
-                    {i < s.length - 1 && <br />}
-                  </>
-                ))}
-              </p>
-            ),
-          )
-        ) : (
-          <p class="muted">None. The machine was asked to keep quiet this time.</p>
-        )
-      }
-      {hasWords && (
-        <p class="aside">
-          {t.instrumental
-            ? 'No words, just instructions: how it should unfold. Sometimes it listened.'
-            : 'Lines in [brackets] are instructions to the machine. Sometimes it listened.'}
-          {timed && ' The lines light up as they are sung, timed by another machine that listened. Click one to jump there.'}
-        </p>
-      )}
-    </section>
+    <Lyrics body={track.body} audio={t.audio} instrumental={t.instrumental} trackId={p.id} timed={audible ? p.lyrics : undefined} />
 
     </div>
 

@@ -1,5 +1,8 @@
 ---
 import { blurStyle, type Release } from '../lib/catalog';
+import Icon from './Icon.astro';
+import PlayButton from './PlayButton.astro';
+import type { PrintedTrack } from '../lib/back-cover-tracks';
 
 interface Props {
   cover: string;
@@ -13,10 +16,11 @@ interface Props {
   lazy?: boolean;
   transitionName?: string;
   trackTitles?: string[];
+  printedTracks?: PrintedTrack[];
 }
 
-const { cover, backCover, vinylLabel, title, catalog, release, href, compact = false, lazy = false, transitionName, trackTitles } = Astro.props;
-const Surface = href ? 'a' : 'button';
+const { cover, backCover, vinylLabel, title, catalog, release, href, compact = false, lazy = false, transitionName, trackTitles, printedTracks } = Astro.props;
+const Surface = href ? 'a' : 'div';
 const size = compact ? 480 : 1400;
 const separateLabelWords = release === 'make-room' || release === 'the-door';
 const thumbnail = cover.replace(/\.webp$/, '-480.webp');
@@ -35,13 +39,16 @@ const labelStyle = vinylLabel && {
   <Surface
     class="surface"
     href={href}
-    type={href ? undefined : 'button'}
-    aria-label={href ? `Open ${title}` : `Flip the vinyl sleeve for ${title}`}
-    aria-description="Drag to rotate, or use the arrow keys. Press Home to reset."
+    role={href ? undefined : 'group'}
+    tabindex={href ? undefined : 0}
+    aria-label={href ? `Open ${title}` : `3D vinyl sleeve for ${title}`}
+    aria-description={href
+      ? 'Drag to rotate, or use the arrow keys. Press Home to reset.'
+      : 'Drag or use the arrow keys to rotate. Press Enter to flip or Home to reset.'}
     draggable="false"
   >
-    <span class="sleeve" style={edgeArtwork} aria-hidden="true">
-      <span class="record-disc">
+    <span class="sleeve" style={edgeArtwork} aria-hidden={href ? "true" : undefined}>
+      <span class="record-disc" aria-hidden="true">
         <span class="disc-rotation">
           {[false, true].map((reverse) => (
             <span class:list={['disc-face', { 'disc-face--reverse': reverse }]}>
@@ -74,7 +81,7 @@ const labelStyle = vinylLabel && {
         {backCover ? (
           <img class="back-art" src={backCover} width="1400" height="1400" alt="" loading="lazy" decoding="async" draggable="false" />
         ) : (
-          <>
+          <span class="unprinted-back" aria-hidden="true">
             <span class="back-heading">
               <span>plausible strangers.</span>
               <strong>{title}</strong>
@@ -88,7 +95,16 @@ const labelStyle = vinylLabel && {
               </span>
             )}
             <span class="back-catalog">{catalog}</span>
-          </>
+          </span>
+        )}
+        {!href && backCover && !!printedTracks?.length && (
+          <span class="cover-tracklist" inert role="group" aria-label="Play tracks from the back cover">
+            {printedTracks.map((track) => (
+              <span class="cover-track" style={track.style}>
+                <PlayButton queue={release} id={track.id} index={track.index} label={`play ${track.title}`} iconOnly />
+              </span>
+            ))}
+          </span>
         )}
       </span>
       <span class="edge edge--spine"></span>
@@ -97,13 +113,82 @@ const labelStyle = vinylLabel && {
       <span class="edge edge--bottom"></span>
     </span>
   </Surface>
+  {!href && (
+    <>
+      <button type="button" class="cover-view-button cover-expand" aria-label="Expand 3D cover" title="Expand 3D cover" aria-haspopup="dialog">
+        <Icon name="expand" />
+      </button>
+      <div class="cover-dialog" popover="manual" role="dialog" aria-label={`3D cover of ${title}`}>
+        <div class="cover-stage"></div>
+        <div class="cover-start"><slot name="expanded-controls" /></div>
+        <button type="button" class="cover-view-button cover-close" aria-label="Close expanded cover" title="Close expanded cover" autofocus>
+          <Icon name="xmark" />
+        </button>
+      </div>
+    </>
+  )}
 </vinyl-cover>
 
 <style>
   vinyl-cover {
     display: block;
+    position: relative;
     container-type: inline-size;
   }
+
+  .cover-view-button {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--faint);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink);
+    font: 1.15rem / 1 var(--mono);
+    cursor: pointer;
+  }
+
+  .cover-view-button:hover { border-color: currentColor; }
+  .cover-view-button:focus-visible { outline: 1px solid var(--mute); outline-offset: 3px; }
+
+  .cover-expand { position: absolute; z-index: 1; top: 0; right: 0; }
+
+  .cover-dialog {
+    position: fixed;
+    inset: 0 0 var(--cover-player-height, 0px);
+    margin: 0;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .cover-dialog:popover-open { display: grid; place-items: center; }
+  .cover-dialog::backdrop { pointer-events: none; }
+
+  .cover-stage {
+    width: min(100% - 1.5rem, 100dvh - var(--cover-player-height, 0px) - 3rem, 78rem);
+    container-type: inline-size;
+  }
+
+  .cover-close {
+    position: absolute;
+    inset: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) auto auto;
+  }
+
+  .cover-start {
+    position: absolute;
+    inset: auto auto max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
+
+  :global(html.has-player) .cover-start { display: none; }
 
   .surface {
     display: block;
@@ -206,6 +291,37 @@ const labelStyle = vinylLabel && {
     color: #29231c;
     text-align: left;
     transform: rotateY(180deg) translateZ(var(--half-depth));
+  }
+
+  .unprinted-back { display: contents; }
+
+  .cover-tracklist { position: absolute; inset: 0; }
+  .cover-track { position: absolute; }
+
+  .cover-track :global(.play) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    pointer-events: auto;
+  }
+
+  .cover-tracklist[inert] .cover-track :global(.play) { pointer-events: none; }
+  .cover-track :global(.play > span) { display: none; }
+  .cover-track :global(.play:hover) {
+    background: #fff2;
+    box-shadow: inset 0 -1px #fff7;
+  }
+  .cover-track :global(.play:focus-visible) { outline-offset: 0; }
+  .cover-track :global(.play.is-playing) {
+    background: color-mix(in srgb, var(--hot) 12%, transparent);
+    box-shadow: inset 2px 0 var(--hot);
   }
 
   .back-heading {
@@ -627,10 +743,50 @@ const labelStyle = vinylLabel && {
 
   class VinylCover extends HTMLElement {
     connectedCallback() {
-      const surface = this.querySelector<HTMLAnchorElement | HTMLButtonElement>('.surface');
+      const surface = this.querySelector<HTMLElement>('.surface');
       if (!surface || surface.dataset.ready !== undefined) return;
       surface.dataset.ready = '';
 
+      const dialog = this.querySelector<HTMLElement>('.cover-dialog');
+      const stage = dialog?.querySelector('.cover-stage');
+      const close = dialog?.querySelector<HTMLButtonElement>('.cover-close');
+      const expand = this.querySelector<HTMLButtonElement>('.cover-expand');
+      if (dialog && stage && expand) {
+        const player = document.getElementById('player');
+        const reservePlayer = () => dialog.style.setProperty('--cover-player-height', `${player?.offsetHeight ?? 0}px`);
+        const resize = new ResizeObserver(reservePlayer);
+        let handlers: AbortController | undefined;
+        const collapse = (restoreFocus = true) => {
+          if (!dialog.matches(':popover-open')) return;
+          dialog.hidePopover();
+          this.prepend(surface);
+          resize.disconnect();
+          handlers?.abort();
+          if (restoreFocus) expand.focus();
+        };
+        expand.addEventListener('click', () => {
+          if (dialog.matches(':popover-open')) return;
+          stage.append(surface);
+          reservePlayer();
+          dialog.showPopover();
+          if (player) resize.observe(player);
+          handlers = new AbortController();
+          const { signal } = handlers;
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !event.defaultPrevented) {
+              event.preventDefault();
+              collapse();
+            }
+          }, { signal });
+          document.addEventListener('click', (event) => {
+            if ((event.target as Element).closest('[data-viz-open]')) collapse(false);
+          }, { capture: true, signal });
+          document.addEventListener('astro:before-swap', () => collapse(false), { once: true, signal });
+        });
+        close?.addEventListener('click', () => collapse());
+      }
+
+      const tracklist = surface.querySelector<HTMLElement>('.cover-tracklist');
       let tilt = frontTilt;
       let turn = frontTurn;
       let drag: { id: number; x: number; y: number; tilt: number; turn: number } | undefined;
@@ -639,18 +795,26 @@ const labelStyle = vinylLabel && {
       const rotate = (nextTilt: number, nextTurn: number) => {
         tilt = Math.max(-30, Math.min(30, nextTilt));
         turn = nextTurn;
-        const facing = Math.abs(Math.cos(turn * Math.PI / 180));
+        const facing = Math.cos(turn * Math.PI / 180);
+        if (tracklist) tracklist.inert = facing >= -0.2;
+        const light = Math.abs(facing);
         surface.style.setProperty('--tilt', `${tilt}deg`);
         surface.style.setProperty('--turn', `${turn}deg`);
-        surface.style.setProperty('--sheen', String(0.28 + (1 - facing) * 0.6));
-        surface.style.setProperty('--shadow-width', String(0.25 + facing * 0.65));
+        surface.style.setProperty('--sheen', String(0.28 + (1 - light) * 0.6));
+        surface.style.setProperty('--shadow-width', String(0.25 + light * 0.65));
+      };
+
+      const flip = () => {
+        const face = Math.round(turn / 180) * 180;
+        rotate(frontTilt, face + 180 + frontTurn);
       };
 
       surface.addEventListener('pointerdown', (event) => {
         if (event.button !== 0 || !event.isPrimary) return;
         moved = false;
         drag = { id: event.pointerId, x: event.clientX, y: event.clientY, tilt, turn };
-        surface.setPointerCapture(event.pointerId);
+        const control = (event.target as Element).closest('.cover-track button');
+        (control ?? surface).setPointerCapture(event.pointerId);
       });
 
       surface.addEventListener('pointermove', (event) => {
@@ -682,14 +846,17 @@ const labelStyle = vinylLabel && {
           moved = false;
           return;
         }
-        if (surface instanceof HTMLButtonElement) {
-          const face = Math.round(turn / 180) * 180;
-          rotate(frontTilt, face + 180 + frontTurn);
-        }
+        if (!(surface instanceof HTMLAnchorElement) && !(event.target as Element).closest('.cover-track button')) flip();
       });
 
       surface.addEventListener('keydown', (event) => {
+        if (event.target !== surface) return;
         switch (event.key) {
+          case 'Enter':
+          case ' ':
+            if (surface instanceof HTMLAnchorElement) return;
+            flip();
+            break;
           case 'ArrowLeft': rotate(tilt, turn - 15); break;
           case 'ArrowRight': rotate(tilt, turn + 15); break;
           case 'ArrowUp': rotate(tilt - 10, turn); break;

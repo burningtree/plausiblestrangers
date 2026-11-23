@@ -1,0 +1,15 @@
+{
+  "/audio/the-door/01-the-door.m4a": [
+    {"line": 6, "prompt": "One point—", "lines": ["One point—", "One point—"]},
+    {"line": 13, "prompt": "together.", "lines": ["together.", "together."]},
+    {"line": 14, "prompt": "A: Inside.", "lines": ["Inside."]},
+    {"line": 15, "prompt": "B: Outside.", "lines": ["Outside."]},
+    {"line": 16, "prompt": "A: Inside.", "lines": ["Inside."]},
+    {"line": 17, "prompt": "B: Other side.", "lines": ["Other side."]},
+    {"line": 18, "prompt": "A: Who moves?", "lines": ["Who moves the floor"]},
+    {"line": 19, "prompt": "B: The floor.", "lines": []},
+    {"line": 20, "prompt": "A: Who stays?", "lines": ["Who stays?"]},
+    {"line": 21, "prompt": "B: The door.", "lines": ["The door."]},
+    {"line": 24, "prompt": "The do-o-o-or.", "lines": ["The door.", "The door."]}
+  ]
+}

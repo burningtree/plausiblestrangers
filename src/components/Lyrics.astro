@@ -1,0 +1,105 @@
+---
+import { parseLyrics, performedLyrics } from '../lib/catalog';
+import { lyricSegments, type TimedLyric } from '../lib/lyric-timing';
+
+interface Props {
+  body?: string;
+  audio?: string;
+  instrumental: boolean;
+  hiddenLyrics?: boolean;
+  trackId?: string;
+  timed?: TimedLyric[];
+}
+
+const { body, audio, instrumental, hiddenLyrics = false, trackId, timed } = Astro.props;
+const prompt = parseLyrics(body);
+const performance = instrumental ? prompt : performedLyrics(body, audio);
+const completeOnly = !instrumental && !!audio;
+const hasPrompt = !instrumental && prompt.length > 0 && !hiddenLyrics;
+const audibleCues = timed?.length && trackId && !hiddenLyrics;
+const cuesByLine = new Map(timed?.map((line) => [line.index, line]));
+let index = 0;
+const stanzas = performance.map((stanza) => stanza.map((line) => {
+  const n = line.direction ? -1 : index++;
+  return { ...line, index: n, cue: cuesByLine.get(n) };
+}).filter((line) => !completeOnly || line.cue)).filter((stanza) => stanza.length);
+const partialPerformance = completeOnly && (timed?.length ?? 0) < index;
+---
+
+<section
+  class:list={['lyrics', { 'lyrics--synced': audibleCues }]}
+  aria-labelledby="lyrics-h"
+  data-track={audibleCues ? trackId : undefined}
+>
+  <div class="lyrics-head">
+    <h2 id="lyrics-h" class="label">{instrumental ? 'the score' : 'lyrics'}</h2>
+    {hasPrompt && (
+      <button type="button" class="lyrics-view-toggle" aria-expanded="false" aria-controls="lyrics-prompt" data-lyrics-view>
+        prompt lyrics
+      </button>
+    )}
+  </div>
+
+  <div id="lyrics-copy" class="lyrics-copy">
+    {audibleCues && (
+      <span class="lyric-gap" aria-hidden="true" hidden></span>
+    )}
+    {hiddenLyrics ? (
+      <p class="muted">This one is a remix of somebody else's song, so its words are theirs and not printed here.</p>
+    ) : (
+      <>
+        {!stanzas.length && !partialPerformance && <p class="muted">{instrumental ? 'No score available.' : 'No lyrics.'}</p>}
+        {stanzas.map((stanza) =>
+          stanza[0].direction ? (
+            <p class="direction">[{stanza[0].text}]</p>
+          ) : (
+            <p class="stanza">
+              {stanza.map((line, i) => (
+                <>
+                  <span class="ly" data-li={line.cue ? line.index : undefined} data-ly-at={line.cue?.t}>
+                    {line.cue ? lyricSegments(line.text, line.cue.words).map((segment) =>
+                      segment.index === undefined ? segment.text :
+                        <span data-word={segment.index} data-word-at={segment.at}>{segment.text}</span>
+                    ) : line.text}
+                  </span>
+                  {i < stanza.length - 1 && <br />}
+                </>
+              ))}
+            </p>
+          ),
+        )}
+        {partialPerformance && <p class="aside">Performed lyrics are still being timed. The full original text is in Prompt lyrics.</p>}
+      </>
+    )}
+  </div>
+
+  {hasPrompt && (
+    <div id="lyrics-prompt" class="lyrics-prompt" hidden>
+      {prompt.map((stanza) => stanza[0].direction ? (
+        <p class="direction">[{stanza[0].text}]</p>
+      ) : (
+        <p class="stanza">{stanza.map((line, i) => (
+          <>{line.text}{i < stanza.length - 1 && <br />}</>
+        ))}</p>
+      ))}
+    </div>
+  )}
+</section>
+
+<script>
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest<HTMLButtonElement>('[data-lyrics-view]');
+    const lyrics = button?.closest('.lyrics');
+    if (!button || !lyrics) return;
+
+    const prompt = lyrics.querySelector<HTMLElement>('.lyrics-prompt');
+    const copy = lyrics.querySelector<HTMLElement>('.lyrics-copy');
+    if (!prompt || !copy) return;
+    const showPrompt = prompt.hidden;
+    prompt.hidden = !showPrompt;
+    copy.hidden = showPrompt;
+    button.setAttribute('aria-expanded', String(showPrompt));
+    button.textContent = showPrompt ? 'performed lyrics' : 'prompt lyrics';
+  });
+</script>

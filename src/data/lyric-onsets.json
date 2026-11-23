@@ -1,0 +1,8 @@
+{
+  "/audio/the-door/01-the-door.m4a": [
+    { "line": 0, "text": "I borrowed your gravity.", "offset": 0, "start": 37.17 },
+    { "line": 1, "text": "You borrowed my shape.", "offset": 0, "start": 40.93 },
+    { "line": 2, "text": "Neither of us", "offset": 0, "start": 44.88 },
+    { "line": 3, "text": "kept the receipt.", "offset": 0, "start": 51.64 }
+  ]
+}

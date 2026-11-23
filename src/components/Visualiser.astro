@@ -15,7 +15,7 @@ import Icon from './Icon.astro';
     <p class="viz-title"></p>
     <p class="viz-meta"><span class="viz-release"></span> <span class="viz-time"></span></p>
   </div>
-  <p class="viz-lyric" aria-live="off"><span class="viz-lyric-on"></span><span class="viz-lyric-off"></span></p>
+  <p class="viz-lyric" aria-live="off"><span class="viz-lyric-line"></span></p>
   <p class="viz-idle" hidden>silence. press <kbd>space</kbd>.</p>
 
   <!-- the same buttons as the player bar (they share its click handling) -->
@@ -35,6 +35,8 @@ import Icon from './Icon.astro';
 </div>
 
 <script>
+  import { activeLyric, highlightLyricWord, renderLyricLine, type TimedLyric } from '../lib/lyric-timing';
+
   const RAMP = [' ', ' ', '·', '.', ':', '-', '=', '+', '*', '░', '▒', '▓', '█'];
   const ROW_MS = 55; // how often a new line is printed
 
@@ -184,37 +186,21 @@ import Icon from './Icon.astro';
     bass = b;
   }
 
-  // the line being sung, typed out as it is sung
-  type Line = { text: string; t: number; e: number };
-  let shownLine = -2;
+  // Follow the matched word timestamps directly on the media clock.
+  let shownLine: TimedLyric | undefined;
+  const lyric = $<HTMLElement>('.viz-lyric');
+  const lyricText = $<HTMLElement>('.viz-lyric-line');
   function lyricFrame() {
     const ps = (window as any).__ps;
-    const lines: Line[] | undefined = ps?.current?.()?.lyrics;
-    const el = $<HTMLElement>('.viz-lyric');
-    if (!lines?.length) {
-      el.classList.remove('is-on');
-      shownLine = -2;
-      return;
-    }
+    const lines: TimedLyric[] = ps?.current?.()?.lyrics ?? [];
     const now = audio.currentTime;
-    let k = -1;
-    for (let i = 0; i < lines.length; i++) if (lines[i].t <= now + 0.1) k = i;
-    const line = lines[k];
-    // keep a line up a little after it ends, unless the next one is close
-    const visible = !!line && now < line.e + 1.6 && !(lines[k + 1] && lines[k + 1].t - now < 0.05);
-    el.classList.toggle('is-on', visible);
-    if (!line) return;
-    if (k !== shownLine) {
-      shownLine = k;
-      el.classList.remove('is-new');
-      void el.offsetWidth;
-      el.classList.add('is-new');
+    const line = activeLyric(lines, now);
+    if (line !== shownLine) {
+      shownLine = line;
+      lyric.classList.toggle('is-on', !!line);
+      if (line) renderLyricLine(lyricText, line);
     }
-    const dur = Math.max(0.6, (line.e - line.t) * 0.85);
-    const p = Math.min(1, Math.max(0, (now - line.t) / dur));
-    const n = Math.ceil(line.text.length * p);
-    $<HTMLElement>('.viz-lyric-on').textContent = line.text.slice(0, n);
-    $<HTMLElement>('.viz-lyric-off').textContent = line.text.slice(n);
+    if (line) highlightLyricWord(lyricText, activeLyric(line.words, now));
   }
 
   function frame(t: number) {

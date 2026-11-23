@@ -1,5 +1,6 @@
 ---
 // One unreleased song from the archive.
+import Lyrics from '../../components/Lyrics.astro';
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
@@ -14,7 +15,6 @@ import {
   trackUrl,
   releaseUrl,
   songBase,
-  parseLyrics,
   fmtTime,
   fmtDate,
   type ArchiveSong,
@@ -41,9 +41,6 @@ const releasedVersions = releases.flatMap((r) =>
     .map((t) => ({ title: t.data.title, url: trackUrl(t), where: r.data.title, whereUrl: releaseUrl(r.id) })),
 );
 const archiveVersions = (await getArchive()).filter((a) => a.id !== song.id && songBase(a.data.title) === base);
-
-const stanzas = parseLyrics(song.body);
-const hasWords = stanzas.length > 1 || (stanzas.length === 1 && !stanzas[0][0].direction);
 
 const details: [string, string | undefined][] = [
   ['status', 'unreleased · archive'],
@@ -113,31 +110,7 @@ const details: [string, string | undefined][] = [
         )
       }
 
-      <section class="lyrics" aria-labelledby="lyrics-h">
-        <h2 id="lyrics-h" class="label">{d.instrumental ? 'the score' : 'lyrics'}</h2>
-        {
-          d.lyricsHidden ? (
-            <p class="muted">This one is a remix of somebody else's song, so its words are theirs and not printed here.</p>
-          ) : hasWords ? (
-            stanzas.map((s) =>
-              s[0].direction ? (
-                <p class="direction">[{s[0].text}]</p>
-              ) : (
-                <p class="stanza">
-                  {s.map((l, i) => (
-                    <>
-                      {l.text}
-                      {i < s.length - 1 && <br />}
-                    </>
-                  ))}
-                </p>
-              ),
-            )
-          ) : (
-            <p class="muted">None. The machine was asked to keep quiet this time.</p>
-          )
-        }
-      </section>
+      <Lyrics body={song.body} audio={d.audio} instrumental={d.instrumental} hiddenLyrics={d.lyricsHidden} trackId={recording?.id} timed={recording?.lyrics} />
     </div>
 
     <div class="track-side">

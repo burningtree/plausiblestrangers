@@ -40,6 +40,10 @@ import Icon from './Icon.astro';
 </aside>
 
 <script>
+  import {
+    activeLyric, highlightLyricWord, lyricGap, renderLyricLine, type TimedLyric,
+  } from '../lib/lyric-timing';
+
   type Item = {
     id: string;
     title: string;
@@ -49,7 +53,7 @@ import Icon from './Icon.astro';
     cover?: string;
     duration: number;
     peaks: number[];
-    lyrics?: { text: string; t: number; e: number }[];
+    lyrics?: TimedLyric[];
     bpm?: number;
   };
 
@@ -170,6 +174,8 @@ import Icon from './Icon.astro';
 
   function progress() {
     const t = current();
+    syncLyrics(t);
+    barLyric(t);
     if (!t) return;
     const dur = audio.duration || t.duration;
     const p = dur ? Math.min(1, audio.currentTime / dur) : 0;
@@ -180,82 +186,104 @@ import Icon from './Icon.astro';
       if (mine) el.setAttribute('aria-valuenow', String(Math.round(p * 100)));
     });
     $<HTMLElement>('[data-t="cur"]').textContent = fmt(audio.currentTime);
-    syncLyrics();
-    barLyric(t);
   }
 
-  // ---- the line being sung, small, inside the bar (needs synced lyrics)
-  let barLine = -2;
-  function barLyric(t: Item) {
-    const el = $<HTMLElement>('.player-lyric');
-    const lines = t.lyrics;
-    let k = -1;
-    if (lines?.length) {
-      const now = audio.currentTime;
-      for (let i = 0; i < lines.length; i++) if (lines[i].t <= now + 0.1) k = i;
-      // keep it up a moment after it ends, then make room again
-      if (k >= 0 && now > lines[k].e + 2) k = -1;
+  // ---- the line being sung in the player
+  let barLine: TimedLyric | undefined;
+  const barText = $<HTMLElement>('.player-lyric');
+  function barLyric(t?: Item) {
+    const now = audio.currentTime;
+    const line = activeLyric(t?.lyrics ?? [], now);
+    if (line !== barLine) {
+      barLine = line;
+      player.classList.toggle('has-lyric', !!line);
+      if (line) {
+        renderLyricLine(barText, line);
+        barText.classList.remove('is-new');
+        void barText.offsetWidth;
+        barText.classList.add('is-new');
+      }
     }
-    if (k === barLine) return;
-    barLine = k;
-    player.classList.toggle('has-lyric', k >= 0);
-    if (k >= 0) {
-      el.textContent = lines![k].text;
-      el.classList.remove('is-new');
-      void el.offsetWidth;
-      el.classList.add('is-new');
-    }
+    if (line) highlightLyricWord(barText, activeLyric(line.words, now));
   }
 
-  // ---- synced lyrics on the track page: light up the line being sung
+  // ---- the track page follows the active word or the gap between timed lines
   let lyricEl: HTMLElement | null = null;
-  let lyricTimes: [number, number][] = [];
-  let lyricLines: HTMLElement[] = [];
-  let lyricNow = -2;
+  let lyricCopy: HTMLElement | null = null;
+  let gapEl: HTMLElement | null = null;
+  let lyricLines = new Map<number, HTMLElement>();
+  let lyricNow: HTMLElement | undefined;
+  let gapAfter: number | undefined;
   let userScrolled = 0;
 
   function bindLyrics() {
-    lyricEl = document.querySelector<HTMLElement>('.lyrics[data-sync]');
-    lyricNow = -2;
-    if (!lyricEl) return;
-    try {
-      lyricTimes = JSON.parse(lyricEl.dataset.sync || '[]');
-    } catch {
-      lyricTimes = [];
+    lyricEl = document.querySelector<HTMLElement>('.lyrics[data-track]');
+    lyricCopy = lyricEl?.querySelector('.lyrics-copy') ?? null;
+    gapEl = lyricEl?.querySelector('.lyric-gap') ?? null;
+    lyricNow = undefined;
+    gapAfter = undefined;
+    lyricLines = new Map(
+      Array.from(lyricEl?.querySelectorAll<HTMLElement>('[data-li]') ?? [],
+        (el) => [Number(el.dataset.li), el]),
+    );
+  }
+
+  function followLyric(el: HTMLElement) {
+    if (audio.paused || lyricCopy?.hidden || Date.now() - userScrolled <= 4000) return;
+    const bounds = el.getBoundingClientRect();
+    if (bounds.top < 80 || bounds.bottom > innerHeight - player.offsetHeight - 60) {
+      const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+      el.scrollIntoView({ block: 'center', behavior });
     }
-    lyricLines = [];
-    lyricEl.querySelectorAll<HTMLElement>('[data-li]').forEach((el) => {
-      const n = Number(el.dataset.li);
-      if (n >= 0) lyricLines[n] = el;
-    });
   }
 
-  function lyricAt(time: number, times: [number, number][]) {
-    let k = -1;
-    for (let i = 0; i < times.length; i++) if (times[i][0] <= time + 0.15) k = i;
-    return k;
-  }
-
-  function syncLyrics() {
+  function syncLyrics(item?: Item) {
     if (!lyricEl) return;
-    const mine = current()?.id === lyricEl.dataset.track;
-    lyricEl.classList.toggle('is-live', mine && !audio.paused);
-    const k = mine ? lyricAt(audio.currentTime, lyricTimes) : -1;
-    if (k === lyricNow) return;
-    lyricLines[lyricNow]?.classList.remove('is-now');
-    lyricNow = k;
-    const el = lyricLines[k];
-    if (!el) return;
-    el.classList.add('is-now');
-    lyricLines.forEach((l, i) => l.classList.toggle('is-past', i < k));
-    // follow along, unless the listener has been scrolling around themselves
-    if (!audio.paused && Date.now() - userScrolled > 4000) {
-      const r = el.getBoundingClientRect();
-      const playerH = player.offsetHeight || 0;
-      if (r.top < 80 || r.bottom > innerHeight - playerH - 60) {
-        el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const mine = item?.id === lyricEl.dataset.track;
+    const now = audio.currentTime;
+    const cues = mine ? item?.lyrics ?? [] : [];
+    const cue = activeLyric(cues, now);
+    const active = cue ? lyricLines.get(cue.index) : undefined;
+    const changed = active !== lyricNow;
+    lyricEl.classList.toggle('is-current-track', mine);
+    if (changed) {
+      if (lyricNow) {
+        lyricNow.classList.remove('is-now');
+        highlightLyricWord(lyricNow);
+      }
+      lyricNow = active;
+      if (active && cue) {
+        active.classList.add('is-now');
+        lyricLines.forEach((line, i) => line.classList.toggle('is-past', i < cue.index));
       }
     }
+    if (active && cue) highlightLyricWord(active, activeLyric(cue.words, now));
+
+    if (!gapEl || !lyricCopy) return;
+    const gap = !cue && cues.length ? lyricGap(cues, now, audio.duration || item?.duration || 0) : undefined;
+    if (!gap) {
+      if (!gapEl.hidden) {
+        gapEl.hidden = true;
+        gapEl.textContent = '';
+      }
+      gapAfter = undefined;
+      if (active && changed) followLyric(active);
+      return;
+    }
+
+    const after = gap.previous?.index ?? -1;
+    if (gapAfter !== after) {
+      gapAfter = after;
+      const anchor = lyricLines.get(gap.next?.index ?? after);
+      (anchor ?? lyricCopy).prepend(gapEl);
+      lyricLines.forEach((line, i) => line.classList.toggle('is-past', i <= after));
+      gapEl.hidden = false;
+      followLyric(anchor ?? gapEl);
+    }
+    gapEl.classList.toggle('is-counting', !audio.paused);
+    const seconds = (Math.ceil((gap.end - now) * 10) / 10).toFixed(1);
+    const text = gap.next ? `−${seconds}s` : `${seconds}s left`;
+    if (gapEl.textContent !== text) gapEl.textContent = text;
   }
   addEventListener('wheel', () => (userScrolled = Date.now()), { passive: true });
   addEventListener('touchmove', () => (userScrolled = Date.now()), { passive: true });
@@ -606,14 +634,25 @@ import Icon from './Icon.astro';
     if (!force && now - lastSave < 4000) return;
     lastSave = now;
     try {
-      localStorage.setItem(STORE, JSON.stringify({ queue, index, time: audio.currentTime || pendingSeek }));
+      const item = current();
+      if (item) localStorage.setItem(STORE, JSON.stringify({ id: item.id, time: audio.currentTime || pendingSeek }));
     } catch {}
   }
 
-  function restore() {
+  async function restore() {
     try {
-      const s = JSON.parse(localStorage.getItem(STORE) || 'null');
-      if (s?.queue?.[s.index]) load(s.queue, s.index, { autoplay: false, time: s.time || 0 });
+      const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+      const id = saved?.id ?? saved?.queue?.[saved.index]?.id;
+      if (typeof id !== 'string') return;
+      const key = id.startsWith('archive/') ? id : id.split('/')[0];
+      let fresh = readQueue(key);
+      if (!fresh) {
+        const response = await fetch('/search.json', { cache: 'no-cache' });
+        if (!response.ok) return;
+        fresh = (await response.json()).queues[key];
+      }
+      const i = fresh?.findIndex((item) => item.id === id) ?? -1;
+      if (!current() && fresh && i >= 0) load(fresh, i, { autoplay: false, time: saved.time || 0 });
     } catch {}
   }
 
@@ -756,7 +795,7 @@ import Icon from './Icon.astro';
 
   // ---- keyboard: space / k = play-pause, ← → = 10s, n / p = next / previous
   document.addEventListener('keydown', (e) => {
-    if (document.querySelector('dialog[open]')) return;
+    if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
     if (e.metaKey || e.ctrlKey || e.altKey || !current()) return;
     const el = (e.target instanceof Element ? e.target : document.body) as HTMLElement;
     if (el.closest('input, textarea, select, [contenteditable], .wave')) return;
@@ -802,10 +841,12 @@ import Icon from './Icon.astro';
       return;
     }
     // a synced lyric line: jump there (starting the track if needed)
-    const line = target.closest<HTMLElement>('.lyrics[data-sync] [data-li]');
+    const line = target.closest<HTMLElement>('.lyrics[data-track] [data-li]');
     if (line && lyricEl) {
-      const n = Number(line.dataset.li);
-      const t0 = Math.max(0, (lyricTimes[n]?.[0] ?? 0) - 0.3);
+      const word = target.closest<HTMLElement>('[data-word-at]');
+      const start = Number(word?.dataset.wordAt ?? line.dataset.lyAt);
+      if (!Number.isFinite(start)) return;
+      const t0 = Math.max(0, start - 0.15);
       if (current()?.id === lyricEl.dataset.track) {
         audio.currentTime = t0;
         if (audio.paused) audio.play().catch(() => {});
@@ -852,6 +893,7 @@ import Icon from './Icon.astro';
     sync();
     save(true);
   });
+  audio.addEventListener('seeked', progress);
   audio.addEventListener('timeupdate', () => save());
   audio.addEventListener('ended', () => {
     if (queue[index + 1]) load(queue, index + 1);

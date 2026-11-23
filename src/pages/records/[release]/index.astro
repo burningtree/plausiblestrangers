@@ -8,6 +8,7 @@ import Gallery from '../../../components/Gallery.astro';
 import Icon from '../../../components/Icon.astro';
 import PlayButton from '../../../components/PlayButton.astro';
 import VinylCover from '../../../components/VinylCover.astro';
+import { printedTrackStyle } from '../../../lib/back-cover-tracks';
 import {
   getCatalog,
   releaseUrl,
@@ -34,6 +35,11 @@ const { release, newer, older } = Astro.props as { release: Release; newer?: Rel
 const { tracksOf } = await getCatalog();
 const tracks = tracksOf(release.id);
 const ready = tracks.filter(hasAudio);
+const printedTracks = tracks.flatMap((track, position) => {
+  const index = ready.indexOf(track);
+  const style = printedTrackStyle(release.id, position);
+  return index >= 0 && style ? [{ id: playable(track, release).id, index, title: track.data.title, style }] : [];
+});
 const unfinished = isUnfinished(release);
 const total = tracks.reduce((s, t) => s + t.data.duration, 0);
 const { Content } = await render(release);
@@ -58,9 +64,25 @@ const d = release.data;
             catalog={d.catalog}
             release={release.id}
             trackTitles={tracks.map((track) => track.data.title)}
+            printedTracks={printedTracks}
             transitionName={`cover-${release.id}`}
-          />
-          <figcaption class="release-cover-hint">drag to rotate</figcaption>
+          >
+            {ready.length > 0 && (
+              <PlayButton
+                slot="expanded-controls"
+                queue={release.id}
+                index={0}
+                id={playable(ready[0], release).id}
+                record={release.id}
+                label={`play or pause ${d.title}`}
+                iconOnly
+                class="play--icon"
+              />
+            )}
+          </VinylCover>
+          <figcaption class="release-cover-hint">
+            {d.backCover && printedTracks.length ? 'drag to rotate · select a title on the back to play' : 'drag to rotate'}
+          </figcaption>
         </figure>
       )
     }

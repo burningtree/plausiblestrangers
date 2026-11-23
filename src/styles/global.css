@@ -1677,35 +1677,93 @@ a .icon {
   transform: none;
 }
 
-/* ---- synced lyrics: the line being sung lights up ---- */
+/* ---- synced lyrics and the position between timed lines ---- */
 
-.lyrics--synced .ly {
-  cursor: pointer;
-  border-radius: 2px;
-  transition: color 0.35s ease, background-color 0.35s ease, opacity 0.35s ease;
+.lyrics-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: 1.25rem;
 }
-.lyrics--synced .ly:hover {
+
+.lyrics-view-toggle {
+  color: var(--mute);
+  font: 0.75rem / 1.4 var(--mono);
   text-decoration: underline;
-  text-decoration-style: dotted;
-  text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
 }
-.lyrics--synced.is-live .ly {
-  color: var(--mute);
-}
-.lyrics--synced.is-live .ly.is-past {
-  opacity: 0.6;
-}
-.lyrics--synced .ly.is-now {
-  color: var(--ink);
-  opacity: 1;
-  background: linear-gradient(transparent 62%, color-mix(in srgb, var(--hot) 32%, transparent) 62%);
-}
-.lyrics--synced.is-live .ly.is-now {
-  color: var(--ink);
+
+.lyrics-view-toggle:hover { color: var(--ink); }
+
+.lyrics-copy[hidden],
+.lyrics-prompt[hidden],
+.lyric-gap[hidden] { display: none; }
+
+.lyrics--synced .ly[data-li] { cursor: pointer; }
+.lyrics--synced .ly[data-li]:hover {
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
 }
 
-/* visualiser: the current line typed across the middle */
+.lyrics--synced.is-current-track .ly.is-past { color: var(--mute); }
+.lyrics--synced .ly.is-now { color: var(--ink); }
+
+.lyrics .is-word-now {
+  background: linear-gradient(transparent 63%, color-mix(in srgb, var(--hot) 40%, transparent) 63%);
+}
+
+.lyrics--synced .ly[data-li] { position: relative; }
+
+.lyric-gap {
+  position: absolute;
+  inset-inline-end: calc(100% + 0.6rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: 0.65rem / 1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--mute);
+  pointer-events: none;
+  text-decoration: none;
+}
+
+.lyric-gap::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--hot);
+  animation: lyric-countdown-pulse 1s ease-in-out infinite alternate paused;
+}
+
+.lyric-gap.is-counting::before { animation-play-state: running; }
+
+@keyframes lyric-countdown-pulse {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyric-gap::before { animation: none; }
+}
+
+@media (max-width: 48rem) {
+  .lyric-gap {
+    position: static;
+    transform: none;
+    vertical-align: middle;
+    margin-inline-end: 0.5rem;
+  }
+}
+
+.player-lyric .is-word-now,
+.viz-lyric .is-word-now { color: var(--hot); }
+
+/* visualiser lyrics */
 .viz-lyric {
   position: absolute;
   left: var(--gutter);
@@ -1726,22 +1784,11 @@ a .icon {
 .viz-lyric.is-on {
   opacity: 1;
 }
-.viz-lyric span {
+.viz-lyric-line {
   background: var(--paper);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   padding: 0 0.1em;
-}
-.viz-lyric-off {
-  color: color-mix(in srgb, var(--ink) 22%, transparent);
-}
-.viz-lyric.is-new .viz-lyric-on {
-  animation: lyric-in 0.4s ease-out;
-}
-@keyframes lyric-in {
-  from {
-    color: var(--hot);
-  }
 }
 
 /* play ⇄ pause: exactly one of the two is ever visible, whatever the button's layout */
