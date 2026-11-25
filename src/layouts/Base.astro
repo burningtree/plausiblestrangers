@@ -26,6 +26,7 @@ interface Props {
   noindex?: boolean;
   /** false on pages whose music isn't ours to give away (remixes of others' songs) */
   licensed?: boolean;
+  immersive?: boolean;
 }
 const {
   title,
@@ -38,6 +39,7 @@ const {
   jsonLd,
   noindex = false,
   licensed = true,
+  immersive = false,
 } = Astro.props;
 const fullTitle = home
   ? 'Plausible Strangers — human-directed, machine-generated electronic music'
@@ -98,7 +100,7 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
     </script>
     <ClientRouter fallback="swap" />
   </head>
-  <body>
+  <body class:list={{ "immersive-layout": immersive }}>
     <a class="skip" href="#main">skip to content</a>
     <header class:list={['masthead', { 'masthead--home': home }]}>
       {home ? <h1 class="wordmark">{site.name}</h1> : <a class="wordmark" href="/">{site.name}</a>}
@@ -122,6 +124,7 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
         >
           <Icon name="book-stack" /> library
         </a>
+        <a class="corner-btn" href="/booth/" aria-current={Astro.url.pathname.startsWith('/booth') ? 'page' : undefined}>booth</a>
         <Palette />
         <ThemeSwitch />
       </nav>

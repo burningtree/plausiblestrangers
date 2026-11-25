@@ -46,6 +46,7 @@ const ICONS = Object.fromEntries(
 </dialog>
 
 <script>
+  import { activeBooth } from '../lib/booth/audio';
   import { navigate } from 'astro:transitions/client';
   import Fuse, { type FuseResult, type IFuseOptions } from 'fuse.js';
 
@@ -114,7 +115,8 @@ const ICONS = Object.fromEntries(
   // a random playable track — never the one already playing
   async function playRandom() {
     await load();
-    const now = (document.getElementById('ps-audio') as HTMLAudioElement | null)?.getAttribute('src');
+    const booth = activeBooth();
+    const now = booth?.decks[booth.active!].track?.src ?? document.getElementById('ps-audio')?.getAttribute('src');
     const seen = new Set<string>();
     const pool = (index?.tracks ?? []).filter((t) => {
       if (t.index < 0) return false;
@@ -129,11 +131,12 @@ const ICONS = Object.fromEntries(
 
   function commands(): Result[] {
     const audio = document.getElementById('ps-audio') as HTMLAudioElement | null;
-    const hasTrack = !!audio?.getAttribute('src');
+    const hasTrack = !!activeBooth() || !!audio?.getAttribute('src');
     const dark = document.documentElement.dataset.theme === 'dark';
     const list: Omit<Result, 'score'>[] = [
       { kind: 'command', icon: 'home-simple', title: 'home', meta: 'go to the first page', run: () => navigate('/') },
       { kind: 'command', icon: 'book-stack', title: 'library', meta: 'everything, released or not', run: () => navigate('/library/') },
+      { kind: 'command', icon: 'sine-wave', title: 'DJ booth', meta: 'load, scratch and mix records', run: () => navigate('/booth/') },
       { kind: 'command', icon: 'journal', title: 'news', meta: 'what happened lately', run: () => navigate('/news/') },
       { kind: 'command', icon: 'page', title: 'about', meta: 'what this is and how it happens', run: () => navigate('/about/') },
       {

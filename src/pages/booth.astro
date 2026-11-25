@@ -1,0 +1,255 @@
+---
+import { existsSync } from 'node:fs';
+import Base from '../layouts/Base.astro';
+import VinylLabel from '../components/VinylLabel.astro';
+import { finePeaksFor, getArchive, getCatalog, hasAudio, playable, playableArchive } from '../lib/catalog';
+import { channelControls, effectLabels, mixDefaults, waveformPoints, type BoothRelease, type BoothTrack } from '../lib/booth/audio';
+
+const { releases, tracksOf } = await getCatalog();
+const library: BoothTrack[] = [];
+const crate: BoothRelease[] = [];
+function waveformFor(src: string) {
+  const levels = finePeaksFor(src);
+  if (!levels || levels.length <= waveformPoints) return levels;
+  return Array.from({ length: waveformPoints }, (_, i) => {
+    const start = Math.floor(i * levels.length / waveformPoints);
+    const end = Math.floor((i + 1) * levels.length / waveformPoints);
+    return Math.max(...levels.slice(start, end));
+  });
+}
+for (const release of releases) {
+  const tracks = tracksOf(release.id).filter(hasAudio);
+  if (!tracks.length) continue;
+  const cover = release.data.cover?.replace(/\.webp$/, '-480.webp');
+  const labelPath = `/covers/${release.id}-label.webp`;
+  const label = existsSync(`public${labelPath}`) ? labelPath : cover;
+  crate.push({ id: release.id, title: release.data.title, cover, label, back: release.data.backCover, catalog: release.data.catalog });
+  for (const track of tracks) {
+    const item = playable(track, release);
+    library.push({ ...item, label, album: release.id, waveform: waveformFor(item.src) });
+  }
+}
+for (const song of await getArchive()) {
+  const track = playableArchive(song);
+  if (track) library.push({ ...track, album: 'archive', waveform: waveformFor(track.src) });
+}
+const playableReleases = releases.filter(release => crate.some(record => record.id === release.id));
+const queue = JSON.stringify({ crate, library }).replace(/</g, '\\u003c');
+const sides = ['A', 'B'];
+---
+
+<Base immersive title="DJ booth" description="Two Plausible Strangers turntables, a mixer and a crate of records. Play, scratch and mix the catalog in your browser.">
+  <ps-booth class="booth">
+    <section class="booth-room" aria-label="Interactive 3D turntables and mixer">
+      <div class="booth-stage" data-stage>
+        <h1>DJ booth<span>.</span></h1>
+        <div class="booth-cameras" aria-label="Camera views">
+          <button type="button" data-view="studio" aria-pressed="true">Studio</button>
+          <button type="button" data-view="overhead" aria-pressed="false">Overhead</button>
+          <button type="button" data-view="a" aria-pressed="false">Deck A</button>
+          <button type="button" data-view="b" aria-pressed="false">Deck B</button>
+          <button type="button" data-view="mixer" aria-pressed="false">Mixer</button>
+          <button type="button" data-view="crate" aria-pressed="false">Crate</button>
+        </div>
+        <p class="booth-tooltip" data-scene-hint aria-hidden="true"></p>
+        <p class="booth-fallback" data-fallback role="status">Loading the 3D booth…</p>
+        <div class="booth-stage-foot">
+          <span class="booth-gestures"><span>Drag to orbit · scroll to zoom · drag a record to load</span><span>Drag to orbit · pinch to zoom</span></span>
+          <button type="button" data-open-controls aria-haspopup="dialog" aria-controls="booth-controls">Controls</button>
+        </div>
+      </div>
+    </section>
+
+    <dialog class="booth-controls" id="booth-controls" aria-labelledby="booth-controls-title">
+      <div class="booth-dialog-head">
+        <h2 id="booth-controls-title">Decks & mixer</h2>
+        <form method="dialog">
+          <button type="submit" class="booth-close" autofocus>Close</button>
+        </form>
+      </div>
+      <p class="booth-keys">Press <kbd>1</kbd> / <kbd>2</kbd> to start or stop a deck.</p>
+      <p class="booth-status" role="status" data-status></p>
+      <div class="booth-decks">
+        {sides.map((side, i) => (
+          <section class="booth-deck" data-side={i}>
+            <div class="booth-deck-head"><h3>Deck {side}</h3><span>PS-01</span></div>
+            <label class="booth-select">Record
+              <select data-album aria-label={`Record for deck ${side}`}>
+                {crate.map(release => <option value={release.id}>{release.title}</option>)}
+                <option value="archive">Archive</option>
+              </select>
+            </label>
+            <label class="booth-select">Track
+              <select data-track aria-label={`Track for deck ${side}`}></select>
+            </label>
+            <div class="booth-readout"><span data-deck-state>Empty</span><span data-time>0:00</span></div>
+            <label class="booth-select">Waveform
+              <select data-waveform-scope aria-label={`Waveform for deck ${side}`}>
+                <option value="track">Current track</option>
+                <option value="record">Whole record</option>
+              </select>
+            </label>
+            <label class="booth-range">Seek record<input type="range" min="0" max="1" step="0.01" value="0" data-position /></label>
+            <div class="booth-transport">
+              <button type="button" data-action="play" class="booth-start">Start</button>
+              <button type="button" data-action="previous" aria-label={`Previous track on deck ${side}`} disabled>Previous</button>
+              <button type="button" data-action="next" aria-label={`Next track on deck ${side}`} disabled>Next</button>
+              <button type="button" data-action="rpm">33 RPM</button>
+              <button type="button" data-action="cue">Cue</button>
+              <button type="button" data-action="store">Set cue</button>
+              <button type="button" data-action="in">In</button>
+              <button type="button" data-action="out">Out</button>
+              <button type="button" data-action="loop" aria-pressed="false">Loop</button>
+              <button type="button" data-action="reverse" aria-label={`Scratch deck ${side} backward`}>− scratch</button>
+              <button type="button" data-action="forward" aria-label={`Scratch deck ${side} forward`}>+ scratch</button>
+              <button type="button" data-action="monitor" aria-pressed="false" hidden>Headphone cue</button>
+            </div>
+            <label class="booth-range"><span>Pitch <output data-pitch-read>0%</output></span><input type="range" min="-16" max="16" step="0.1" value="0" data-pitch /></label>
+            <details>
+              <summary>Channel {side} controls</summary>
+              <div class="booth-channel">
+                {Object.entries(channelControls).map(([key, spec]) => (
+                  <label class="booth-range">{spec.label}<input type="range" data-channel={key} min={spec.min} max={spec.max} step={spec.step} value={spec.initial} /></label>
+                ))}
+                <label class="booth-select">Effect<select data-effect>
+                  {effectLabels.map((label, index) => <option value={index}>{label}</option>)}
+                </select></label>
+              </div>
+            </details>
+          </section>
+        ))}
+      </div>
+      <div class="booth-master">
+        <label class="booth-range">Master<input type="range" data-mix="master" min="0" max="1" step="0.01" value={mixDefaults.master} /></label>
+        <label class="booth-range">Crossfader <span>A · B</span><input type="range" data-mix="cross" min="-1" max="1" step="0.01" value={mixDefaults.cross} /></label>
+        <div class="booth-master-actions">
+          <button type="button" data-headphones hidden>Headphone output</button>
+          <select data-output aria-label="Headphone output device" hidden></select>
+          <button type="button" data-record hidden>Record mix</button>
+        </div>
+        <p data-output-hint hidden></p>
+      </div>
+
+      <section class="booth-crate" aria-labelledby="booth-crate-title">
+        <h2 id="booth-crate-title">Record crate</h2>
+        <div class="booth-cards">
+          {crate.map(release => (
+            <article class="booth-card" draggable="true" data-record-album={release.id}>
+              {release.cover && <img src={release.cover} alt="" width="480" height="480" loading="lazy" draggable="false" />}
+              <h3>{release.title}</h3>
+              <div>
+                <button type="button" data-load-side="0" aria-label={`Load ${release.title} on deck A`}>Load A</button>
+                <button type="button" data-load-side="1" aria-label={`Load ${release.title} on deck B`}>Load B</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </dialog>
+    {playableReleases.map(({ id, data }) => (
+      <template data-vinyl-label={id}>
+        <VinylLabel release={id} title={data.title} catalog={data.catalog} crop={data.vinylLabel}
+          artwork={data.backCover ?? data.cover?.replace(/\.webp$/, '-480.webp')} />
+      </template>
+    ))}
+    <script is:inline type="application/json" data-booth-catalog set:html={queue} />
+  </ps-booth>
+</Base>
+
+<script>
+  import { BoothElement } from '../lib/booth/controller';
+  if (!customElements.get('ps-booth')) customElements.define('ps-booth', BoothElement);
+</script>
+
+<style is:global>
+  html:has(> .immersive-layout) { overflow: hidden; scrollbar-gutter: auto; }
+  body.immersive-layout { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding: 0 0 var(--player-h); overflow: hidden; background: #191a19; }
+  .immersive-layout > .masthead { flex: none; margin: 0; }
+  .immersive-layout > .colophon { display: none; }
+  .immersive-layout > .skip:focus { z-index: 21; background: var(--paper); }
+  .immersive-layout > main { flex: 1; min-height: 0; max-width: none; }
+  .booth { display: block; --deck-a: #f78652; --deck-b: #88a5fa; }
+  .booth, .booth-room, .booth-stage { height: 100%; }
+  .booth section { margin-bottom: 0; }
+  .booth-room { color: #e6dfd0; color-scheme: dark; }
+  .booth-stage { position: relative; isolation: isolate; overflow: hidden; background: radial-gradient(ellipse at 49% 37%, #44433f 0%, #292a28 42%, #191a19 82%); }
+  .booth-stage::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .2; background-image: radial-gradient(#88847b 0.5px, transparent 0.5px); background-size: 6px 6px; mask-image: radial-gradient(ellipse, transparent 5%, #000); }
+  .booth-stage canvas { width: 100%; height: 100%; position: absolute; inset: 0; display: block; touch-action: none; }
+  .booth-stage h1, .booth-cameras, .booth-tooltip { position: absolute; z-index: 1; }
+  .booth-stage h1 { top: max(1.2rem, env(safe-area-inset-top)); left: max(1.45rem, env(safe-area-inset-left)); margin: 0; font-size: clamp(1.7rem, 3.7vw, 3.4rem); font-weight: 400; line-height: 1; letter-spacing: -.064em; pointer-events: none; }
+  .booth-stage h1 span { color: var(--deck-a); }
+  .booth-cameras { top: max(1.35rem, env(safe-area-inset-top)); right: max(1.45rem, env(safe-area-inset-right)); display: flex; flex-wrap: wrap; justify-content: end; gap: .3rem; }
+  .booth button:not([hidden]), .booth select { font: .73rem/1.22 var(--mono); }
+  .booth button { cursor: pointer; }
+  .booth button:disabled { cursor: default; opacity: .52; }
+  .booth [hidden] { display: none !important; }
+  .booth-cameras button, .booth-stage-foot button { background: #1c1d1bed; color: #e5ded0; border: 1px solid #777469; border-radius: .24rem; padding: .6rem .75rem; }
+  .booth-cameras button:hover, .booth-cameras button[aria-pressed="true"], .booth-stage-foot button:hover { background: #ddd5bd; color: #242320; border-color: #ddd5bd; }
+  .booth-tooltip { bottom: max(4.6rem, calc(env(safe-area-inset-bottom) + 3.1rem)); left: max(1.45rem, env(safe-area-inset-left)); padding: .4rem .62rem; color: #f4e7cc; background: #161715ec; border: 1px solid #737068; border-radius: .25rem; font: .71rem/1.3 var(--mono); pointer-events: none; margin: 0; }
+  .booth-tooltip:empty { display: none; }
+  .booth-fallback { position: absolute; inset: 42% 1rem auto; text-align: center; color: #d6cebd; }
+  .booth-stage-foot { position: absolute; z-index: 1; inset: auto max(1.45rem, env(safe-area-inset-right)) max(1.35rem, env(safe-area-inset-bottom)) max(1.45rem, env(safe-area-inset-left)); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .6rem; font: .74rem/1.4 var(--mono); color: #c9c2b3; pointer-events: none; }
+  .booth-stage-foot button { grid-column: 3; justify-self: end; pointer-events: auto; }
+  .booth-gestures { grid-column: 2; }
+  .booth-gestures span:last-child { display: none; }
+  .booth-controls { width: min(63rem, calc(100% - 2rem)); max-height: min(88dvh, 76rem); margin: auto; padding: clamp(1rem, 3vw, 2rem); overflow: auto; overscroll-behavior: contain; border: 1px solid var(--faint); border-radius: .42rem; background: var(--paper); color: var(--ink); }
+  .booth-controls::backdrop { background: #090a09bb; backdrop-filter: blur(8px); }
+  .booth-dialog-head { position: sticky; top: 0; z-index: 1; background: var(--paper); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+  .booth-dialog-head h2, .booth-crate h2 { margin: 0 0 .6rem; font-size: clamp(1.65rem, 3vw, 2.45rem); line-height: 1.15; font-weight: 400; letter-spacing: -.04em; }
+  .booth-close { color: inherit; border: 1px solid currentColor; border-radius: .24rem; background: transparent; padding: .55rem .7rem; }
+  .booth-close:hover { color: var(--hot); }
+  .booth-keys, .booth-status { margin: 0 0 .85rem; font: .75rem/1.4 var(--mono); }
+  .booth-status:empty { display: none; }
+  .booth-decks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .booth-deck { --deck-color: var(--deck-a); min-width: 0; padding: clamp(.8rem, 2vw, 1.25rem); border: 1px solid #3c3d39; background: #242523; border-radius: .32rem; color: #efebdf; color-scheme: dark; }
+  .booth-deck[data-side="1"] { --deck-color: var(--deck-b); }
+  .booth-deck-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .8rem; }
+  .booth-deck-head h3 { margin: 0; font: 600 .92rem/1.3 var(--mono); color: var(--deck-color); }
+  .booth-deck-head span { font: .69rem/1 var(--mono); color: #bcb5a5; }
+  .booth-select, .booth-range { display: grid; gap: .22rem; margin-bottom: .7rem; font: .74rem/1.4 var(--mono); min-width: 0; }
+  .booth-range span { display: flex; justify-content: space-between; }
+  .booth-range input { width: 100%; min-width: 0; accent-color: var(--deck-color, var(--hot)); margin: .17rem 0; }
+  .booth-deck select, .booth-master select { width: 100%; min-width: 0; min-height: 2.05rem; padding: .28rem .45rem; border: 1px solid #63635a; border-radius: .22rem; background: #1a1b19; color: #eae4d6; }
+  .booth-readout { display: flex; justify-content: space-between; align-items: baseline; gap: .45rem; margin: .9rem 0 .33rem; min-height: 1.3em; color: #cfe7c3; font: .72rem/1.3 var(--mono); }
+  .booth-readout span:last-child { white-space: nowrap; }
+  .booth-transport { display: flex; flex-wrap: wrap; gap: .35rem; margin: .75rem 0 .88rem; }
+  .booth-transport button, .booth-master button, .booth-card button { min-height: 2rem; border: 1px solid currentColor; background: transparent; color: inherit; border-radius: .2rem; padding: .27rem .5rem; }
+  .booth-transport button:hover, .booth-transport button[aria-pressed="true"] { color: var(--deck-color); }
+  .booth-transport .booth-start { color: #241e18; background: var(--deck-color); border-color: var(--deck-color); min-width: 4.1rem; }
+  .booth-transport .booth-start:hover, .booth-transport .booth-start[aria-pressed="true"] { color: #241e18; }
+  .booth-deck summary { font: .76rem/1.4 var(--mono); cursor: pointer; color: #e4dece; }
+  .booth-channel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .2rem 1rem; padding-top: .7rem; }
+  .booth-master { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: .45rem 1.3rem; padding: .85rem 0; }
+  .booth-master .booth-range { margin: 0; }
+  .booth-master .booth-range span { display: inline; color: var(--mute); }
+  .booth-master-actions { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .booth-master [data-output-hint] { grid-column: 1/-1; margin: 0; font: .73rem/1.4 var(--mono); }
+  .booth-crate { border-top: 1px solid var(--faint); margin-top: 1.45rem; padding-top: 1.45rem; }
+  .booth-cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.25rem .85rem; }
+  .booth-card img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--faint); border-radius: .19rem; }
+  .booth-card h3 { margin: .4rem 0 .45rem; font-size: 1rem; line-height: 1.15; font-weight: normal; }
+  .booth-card div { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .booth-card button:hover, .booth-master button:hover { color: var(--hot); }
+  @media (max-width: 800px) {
+    .booth-gestures span:first-child { display: none; }
+    .booth-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .booth-master { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .booth-master-actions { grid-column: 1/-1; }
+  }
+  @media (pointer: coarse) {
+    .booth-gestures span:first-child { display: none; }
+    .booth-gestures span:last-child { display: inline; }
+  }
+  @media (max-width: 575px) {
+    .booth-stage h1 { left: max(.85rem, env(safe-area-inset-left)); }
+    .booth-cameras { inset: max(3.6rem, calc(env(safe-area-inset-top) + 2.6rem)) .5rem auto; display: flex; justify-content: center; }
+    .booth-cameras button:not([hidden]) { font-size: .65rem; min-height: 2.1rem; padding: .4rem .52rem; }
+    .booth-stage-foot { grid-template-columns: 1fr 1fr; inset: auto max(.85rem, env(safe-area-inset-right)) max(.9rem, env(safe-area-inset-bottom)) max(.85rem, env(safe-area-inset-left)); }
+    .booth-stage-foot button { grid-column: 2; }
+    .booth-gestures { grid-column: 1 / -1; grid-row: 1; justify-self: center; }
+    .booth-tooltip { bottom: 5.8rem; left: .85rem; }
+    .booth-controls { width: calc(100% - 1rem); max-height: 92dvh; }
+    .booth-decks { grid-template-columns: 1fr; }
+    .booth-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>

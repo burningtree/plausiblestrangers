@@ -1,0 +1,223 @@
+.disc-label {
+  position: relative;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #4b4437;
+  background-repeat: no-repeat;
+  color: #fff2d9;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.disc-label::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(#0c0c10a8, #0c0c1033 48%, #0c0c1066 60%, #0c0c10c2);
+  box-shadow: inset 0 0 0 1px #fff4;
+}
+
+.disc-label-title,
+.disc-label-artist,
+.disc-label-catalog {
+  position: absolute;
+  text-shadow: 0 1px 2px #000;
+}
+
+.disc-label-title {
+  inset: 17% 12% auto;
+  font: 400 1.78cqi / 1.05 system-ui, sans-serif;
+  text-wrap: balance;
+}
+
+.disc-label-artist,
+.disc-label-catalog {
+  font: 1cqi / 1.1 var(--mono);
+  letter-spacing: 0.05em;
+}
+
+.disc-label-artist { inset: auto 12% 21%; }
+.disc-label-catalog { inset: auto 12% 13%; }
+
+.disc-label[data-label='baroque-acid'] {
+  &::before { background: linear-gradient(160deg, #39233770, #160b1b20 42%, #28101abf); }
+
+  .disc-label-title {
+    inset: 60% 11% auto;
+    rotate: -12deg;
+    color: #ffe1bc;
+    font: italic 2.7cqi / 0.95 var(--serif);
+    text-transform: none;
+  }
+
+  .disc-label-artist {
+    inset: 15% 14% auto 22%;
+    color: #ffd5ea;
+    font-size: 0.92cqi;
+    text-align: right;
+    rotate: 14deg;
+  }
+
+  .disc-label-catalog {
+    inset: 24% auto auto 11%;
+    padding: 0.22cqi 0.42cqi;
+    background: #d5a1b4;
+    color: #332122;
+    text-shadow: none;
+    rotate: -14deg;
+  }
+}
+
+.disc-label[data-label='who-holds-whom'] {
+  &::before { background: linear-gradient(100deg, #4d1c1466, transparent 55%, #210f17b8); }
+
+  .disc-label-title {
+    inset: 12% 15% 12% auto;
+    display: grid;
+    place-items: center;
+    writing-mode: vertical-rl;
+    color: #ffc9a1;
+    font: 400 1.65cqi / 1 system-ui, sans-serif;
+    letter-spacing: 0.12em;
+    text-wrap: nowrap;
+  }
+
+  .disc-label-artist {
+    inset: auto 23% 18% 13%;
+    font-size: 0.9cqi;
+    rotate: 10deg;
+  }
+
+  .disc-label-catalog {
+    inset: 21% auto auto 17%;
+    color: #ffc9a1;
+    border-block-end: 1px solid currentColor;
+    padding-bottom: 0.3cqi;
+  }
+}
+
+.disc-label[data-label='make-room'] {
+  &::before { background: linear-gradient(105deg, #100c0cc9, transparent 68%); }
+
+  .disc-label-title {
+    inset: 23% auto auto 14%;
+    display: grid;
+    justify-items: start;
+    gap: 0.28cqi;
+    color: #fff0d7;
+    font: 400 2.25cqi / 0.92 'Arial Narrow', system-ui, sans-serif;
+    letter-spacing: 0.015em;
+  }
+
+  .disc-label-title span + span { translate: 1.2cqi; }
+
+  .disc-label-artist {
+    inset: auto 10% 16% 13%;
+    font-size: 0.88cqi;
+    letter-spacing: 0.13em;
+  }
+
+  .disc-label-catalog {
+    inset: 56% 12% auto auto;
+    padding: 0.36cqi 0.45cqi;
+    border: 1px solid #ff9b63;
+    color: #ffba8f;
+    background: #21130dd9;
+  }
+}
+
+.disc-label[data-label='the-door'] {
+  &::before { background: linear-gradient(#06172173, transparent 48%, #081219b8); }
+
+  .disc-label-title {
+    inset: 0;
+    color: #ffdb9b;
+    font: 400 2.2cqi / 1 system-ui, sans-serif;
+    letter-spacing: 0.34em;
+  }
+
+  .disc-label-title span:first-child {
+    position: absolute;
+    inset: 32% auto auto 14%;
+    font-size: 1.24cqi;
+    letter-spacing: 0.16em;
+    writing-mode: vertical-rl;
+    rotate: 180deg;
+  }
+
+  .disc-label-title span:last-child { position: absolute; inset: auto 11% 18%; }
+
+  .disc-label-artist { inset: 17% 12% auto; font-size: 0.86cqi; }
+  .disc-label-catalog {
+    inset: 43% 13% auto auto;
+    font-size: 0.97cqi;
+    color: #ffc379;
+    writing-mode: vertical-rl;
+  }
+}
+
+.disc-label[data-label='i-am-your-bug'] {
+  &::before { background: linear-gradient(140deg, #1017156b, transparent 56%, #07100fa1); }
+
+  .disc-label-title {
+    inset: 22% 12% auto;
+    padding: 0.65cqi 0.2cqi 0.55cqi;
+    border-block: 1px dashed #505955;
+    background: #dfdfce;
+    color: #252e2a;
+    font: 400 1.36cqi / 1.1 var(--mono);
+    text-shadow: none;
+    rotate: 12deg;
+  }
+
+  .disc-label-artist {
+    inset: auto 16% 17%;
+    font-size: 0.91cqi;
+    letter-spacing: 0.08em;
+  }
+
+  .disc-label-catalog {
+    inset: 61% 12% auto auto;
+    padding: 0.22cqi 0.45cqi;
+    border: 1px solid #bfdbcb;
+    color: #d0e9d8;
+  }
+}
+
+.disc-label[data-label='probably'] {
+  &::before { background: linear-gradient(160deg, #24243c44, transparent 58%, #341725b0); }
+
+  .disc-label-title {
+    inset: auto 7% 24%;
+    color: #ffabbe;
+    font: 400 2cqi / 1 system-ui, sans-serif;
+    letter-spacing: 0.18em;
+    text-shadow: 0 0 0.55cqi #df516b, 0 1px 2px #281224;
+    rotate: -12deg;
+  }
+
+  .disc-label-artist {
+    inset: 21% auto 21% 15%;
+    writing-mode: vertical-rl;
+    rotate: 180deg;
+    font-size: 0.92cqi;
+  }
+
+  .disc-label-catalog {
+    inset: 20% 17% auto auto;
+    color: #ffced4;
+    border-block-start: 1px solid currentColor;
+    padding-top: 0.32cqi;
+  }
+}
+
+.disc-label::after {
+  content: '';
+  position: absolute;
+  inset: 47%;
+  border-radius: 50%;
+  background: #111;
+}

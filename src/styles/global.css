@@ -4283,3 +4283,5 @@ html.is-playing .wave--bars.is-mine .bars i.on {
   flex: 1 1 22rem;
   margin: 0;
 }
+
+.player.is-booth [data-player="cast"] { display: none; }

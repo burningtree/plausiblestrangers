@@ -130,7 +130,9 @@ const d = release.data;
         {d.kind} · {tracks.length} tracks · {fmtTotal(total)} · {unfinished ? (ready.length < tracks.length ? `in progress, ${ready.length} of ${tracks.length} audible so far` : 'in progress') : fmtDate(d.date)}
       </p>
       {ready.length > 0 && (
-        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} /></p>
+        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} />
+          <a class="album-booth" href={`/booth/?release=${encodeURIComponent(release.id)}`}>open in DJ booth</a>
+        </p>
       )}
     </header>
 
@@ -190,3 +192,7 @@ const d = release.data;
     </div>
   </div>
 </Base>
+
+<style>
+  .album-booth { margin-inline-start: .75rem; font: .77rem/1.4 var(--mono); }
+</style>

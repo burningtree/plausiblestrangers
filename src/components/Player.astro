@@ -53,6 +53,8 @@ import Icon from './Icon.astro';
     activeLyric, highlightLyricWord, lyricGap, renderLyricLine, type TimedLyric,
   } from '../lib/lyric-timing';
 
+  import { activeBooth, boothAudio, playbackTransport } from '../lib/booth/audio';
+
   type Item = {
     id: string;
     title: string;
@@ -73,6 +75,8 @@ import Icon from './Icon.astro';
 
   const player = document.getElementById('player') as HTMLElement;
   const audio = document.getElementById('ps-audio') as HTMLAudioElement;
+  const transport = playbackTransport(audio);
+  const booth = boothAudio();
   const $ = <T extends Element>(sel: string) => player.querySelector(sel) as T;
 
   let queue: Item[] = [];
@@ -82,7 +86,8 @@ import Icon from './Icon.astro';
   let lastSave = 0;
   let restored = false; // true while the track came from a previous visit
 
-  const current = (): Item | undefined => queue[index];
+  const current = (): Item | undefined => booth.active === null ? queue[index] : booth.decks[booth.active].track;
+  let shown: Item | undefined;
   const fmt = (s: number) =>
     !isFinite(s) ? '0:00' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -100,12 +105,21 @@ import Icon from './Icon.astro';
   function load(q: Item[], i: number, opts: { autoplay?: boolean; time?: number } = {}) {
     const { autoplay = true, time = 0 } = opts;
     if (!q[i]) return;
+    if (autoplay || activeBooth()) booth.leaveForSite();
     restored = !autoplay;
     queue = q;
     index = i;
     const t = q[i];
     pendingSeek = time;
     audio.src = t.src;
+    showItem(t);
+    if (autoplay) transport.play().catch(() => {});
+    sync();
+    save(true);
+  }
+
+  function showItem(t: Item) {
+    shown = t;
     player.hidden = false;
     document.documentElement.classList.add('has-player');
     player.classList.remove('is-error');
@@ -120,16 +134,16 @@ import Icon from './Icon.astro';
       pw.dataset.duration = String(t.duration);
       drawWave(pw, true);
     }
-    if (autoplay) audio.play().catch(() => {});
     mediaSession(t);
-    sync();
-    save(true);
   }
 
-  const toggle = () => (audio.paused ? audio.play().catch(() => {}) : audio.pause());
+  const toggle = () => (transport.paused ? transport.play().catch(() => {}) : transport.pause());
   const step = (d: number) => {
-    if (d < 0 && audio.currentTime > 4) return void (audio.currentTime = 0);
-    if (queue[index + d]) load(queue, index + d);
+    if (d < 0 && transport.currentTime > 4) return void (transport.currentTime = 0);
+    if (booth.active !== null) {
+      const next = booth.neighbor(booth.active, d);
+      if (next) void booth.load(booth.active, next, { play: true });
+    } else if (queue[index + d]) load(queue, index + d);
   };
 
   // ---- waveform made of type
@@ -197,12 +211,12 @@ import Icon from './Icon.astro';
     syncLyrics(t);
     barLyric(t);
     if (!t) return;
-    const dur = audio.duration || t.duration;
-    const p = dur ? Math.min(1, audio.currentTime / dur) : 0;
+    const dur = transport.duration || t.duration;
+    const p = dur ? Math.min(1, transport.currentTime / dur) : 0;
     // called every frame while playing: only touch the page when something
     // visible changes
     updateWaves(waves, t.id, p);
-    const cur = fmt(audio.currentTime);
+    const cur = fmt(transport.currentTime);
     if (curEl.textContent !== cur) curEl.textContent = cur;
   }
 
@@ -226,7 +240,7 @@ import Icon from './Icon.astro';
   let barLine: TimedLyric | undefined;
   const barText = $<HTMLElement>('.player-lyric');
   function barLyric(t?: Item) {
-    const now = audio.currentTime;
+    const now = transport.currentTime;
     const line = activeLyric(t?.lyrics ?? [], now);
     if (line !== barLine) {
       barLine = line;
@@ -264,7 +278,7 @@ import Icon from './Icon.astro';
   function syncLyrics(item?: Item) {
     if (!lyricEl) return;
     const mine = item?.id === lyricEl.dataset.track;
-    const now = audio.currentTime;
+    const now = transport.currentTime;
     const cues = mine ? item?.lyrics ?? [] : [];
     const cue = activeLyric(cues, now);
     const active = cue ? lyricLines.get(cue.index) : undefined;
@@ -284,7 +298,7 @@ import Icon from './Icon.astro';
     if (active && cue) highlightLyricWord(active, activeLyric(cue.words, now));
 
     if (!gapEl || !lyricCopy) return;
-    const gap = !cue && cues.length ? lyricGap(cues, now, audio.duration || item?.duration || 0) : undefined;
+    const gap = !cue && cues.length ? lyricGap(cues, now, transport.duration || item?.duration || 0) : undefined;
     if (!gap) {
       if (!gapEl.hidden) {
         gapEl.hidden = true;
@@ -302,7 +316,7 @@ import Icon from './Icon.astro';
       lyricLines.forEach((line, i) => line.classList.toggle('is-past', i <= after));
       gapEl.hidden = false;
     }
-    gapEl.classList.toggle('is-counting', !audio.paused);
+    gapEl.classList.toggle('is-counting', !transport.paused);
     const seconds = (Math.ceil((gap.end - now) * 10) / 10).toFixed(1);
     const text = gap.next ? `−${seconds}s` : `${seconds}s left`;
     if (gapEl.textContent !== text) gapEl.textContent = text;
@@ -311,8 +325,9 @@ import Icon from './Icon.astro';
   // the visualiser (and anything else) can ask what's playing
   (window as any).__ps = {
     current,
-    time: () => audio.currentTime,
-    playing: () => !audio.paused,
+    time: () => transport.currentTime,
+    native: () => ({ item: queue[index], time: audio.currentTime }),
+    playing: () => !transport.paused,
     // the visualiser closed: catch up on what was skipped underneath it
     refresh: () => {
       if (!raf) raf = requestAnimationFrame(loop);
@@ -486,7 +501,7 @@ import Icon from './Icon.astro';
 
   // the loudness curve around a moment (peaks are ~1.3 s apart)
   function envAt(t: Item, time: number) {
-    const dur = audio.duration || t.duration;
+    const dur = transport.duration || t.duration;
     const x = Math.max(0, (time / dur) * (t.peaks.length - 1));
     const i = Math.floor(x);
     const a = t.peaks[i] ?? 0;
@@ -509,8 +524,8 @@ import Icon from './Icon.astro';
   let pattern = 'spectrum';
   function computeFrame(out: Float32Array, hot: Uint8Array) {
     const t = current();
-    if (!t || audio.paused) return;
-    const time = audio.currentTime;
+    if (!t || transport.paused) return;
+    const time = transport.currentTime;
     const beat = 60 / (t.bpm || 124);
     const phase = (time % beat) / beat;
     const kick = Math.pow(1 - phase, 3);
@@ -602,15 +617,15 @@ import Icon from './Icon.astro';
       rel.classList.remove('is-note');
       rel.textContent = current()?.release.toLowerCase() ?? '';
     }, 1400);
-    if (audio.paused) {
+    if (transport.paused) {
       // show a still of the pattern so the click visibly does something
       const fresh = new Float32Array(N);
       const hot = new Uint8Array(N);
       const t = current();
       if (t) {
-        const wasPaused = audio.paused;
+        const wasPaused = transport.paused;
         PATTERNS[mode]({
-          time: audio.currentTime, energy: 0.8, kick: 1, beatNo: 0, sixteenth: Math.floor(Math.random() * 999),
+          time: transport.currentTime, energy: 0.8, kick: 1, beatNo: 0, sixteenth: Math.floor(Math.random() * 999),
           bands: Float32Array.from(shape.map((v) => v * 0.8)), out: fresh, hot,
         });
         for (let i = 0; i < N; i++) { glow[i] = fresh[i]; hotMask[i] = hot[i]; }
@@ -623,17 +638,18 @@ import Icon from './Icon.astro';
   function loop(now = performance.now()) {
     // under the full-screen visualiser nothing here is visible: skip the drawing
     const covered = document.documentElement.classList.contains('viz-covers');
+    if (activeBooth() && !transport.paused) save();
     if (!covered) {
       progress();
       drawMatrix(now);
     } else {
       // only the visualiser's own seek bar is on screen
       const t = current();
-      const dur = audio.duration || t?.duration;
-      if (t && dur) updateWaves(vizWave, t.id, Math.min(1, audio.currentTime / dur));
+      const dur = transport.duration || t?.duration;
+      if (t && dur) updateWaves(vizWave, t.id, Math.min(1, transport.currentTime / dur));
     }
     // keep running briefly after pausing so the pixels fall back down
-    raf = audio.paused && (covered || matrixQuiet()) ? 0 : requestAnimationFrame(loop);
+    raf = transport.paused && (covered || matrixQuiet()) ? 0 : requestAnimationFrame(loop);
   }
 
   // a button is "mine" if it plays this exact track, or (record-level buttons)
@@ -644,7 +660,8 @@ import Icon from './Icon.astro';
   // ---- reflect state on whatever page we are on
   function sync() {
     const t = current();
-    const playing = !!t && !audio.paused && !audio.ended && !audio.error;
+    if (t && t !== shown) showItem(t);
+    const playing = !!t && !transport.paused && transport.available;
     document.documentElement.classList.toggle('is-playing', playing);
     document.documentElement.classList.toggle('has-player', !!t);
     document.querySelectorAll<HTMLElement>('[data-play]').forEach((b) => {
@@ -664,8 +681,8 @@ import Icon from './Icon.astro';
       cover.toggleAttribute('data-playing', selected && playing);
     });
     $<HTMLButtonElement>('.player-toggle').setAttribute('aria-label', playing ? 'pause' : 'play');
-    $<HTMLButtonElement>('[data-player="prev"]').disabled = index <= 0 && audio.currentTime < 4;
-    $<HTMLButtonElement>('[data-player="next"]').disabled = index >= queue.length - 1;
+    $<HTMLButtonElement>('[data-player="prev"]').disabled = (booth.active === null ? index <= 0 : !booth.neighbor(booth.active, -1)) && transport.currentTime < 4;
+    $<HTMLButtonElement>('[data-player="next"]').disabled = booth.active === null ? index >= queue.length - 1 : !booth.neighbor(booth.active, 1);
     progress();
   }
 
@@ -676,7 +693,7 @@ import Icon from './Icon.astro';
     lastSave = now;
     try {
       const item = current();
-      if (item) localStorage.setItem(STORE, JSON.stringify({ id: item.id, time: audio.currentTime || pendingSeek }));
+      if (item) localStorage.setItem(STORE, JSON.stringify({ id: item.id, time: transport.currentTime || pendingSeek }));
     } catch {}
   }
 
@@ -708,13 +725,13 @@ import Icon from './Icon.astro';
   }
   if ('mediaSession' in navigator) {
     const ms = navigator.mediaSession;
-    ms.setActionHandler('play', () => audio.play());
-    ms.setActionHandler('pause', () => audio.pause());
+    ms.setActionHandler('play', () => transport.play());
+    ms.setActionHandler('pause', () => transport.pause());
     ms.setActionHandler('previoustrack', () => step(-1));
     ms.setActionHandler('nexttrack', () => step(1));
     try {
       ms.setActionHandler('seekto', (d) => {
-        if (d.seekTime != null) audio.currentTime = d.seekTime;
+        if (d.seekTime != null) transport.currentTime = d.seekTime;
       });
     } catch {}
   }
@@ -725,7 +742,7 @@ import Icon from './Icon.astro';
     const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
     const t = current();
     if (t && el.dataset.wave === t.id) {
-      audio.currentTime = f * (audio.duration || t.duration);
+      transport.currentTime = f * (transport.duration || t.duration);
       progress();
       return;
     }
@@ -751,7 +768,7 @@ import Icon from './Icon.astro';
     const d = { ArrowRight: 5, ArrowUp: 5, ArrowLeft: -5, ArrowDown: -5 }[e.key];
     if (d) {
       e.preventDefault();
-      audio.currentTime = Math.max(0, audio.currentTime + d);
+      transport.currentTime = Math.max(0, transport.currentTime + d);
     }
   });
 
@@ -768,6 +785,7 @@ import Icon from './Icon.astro';
 
   function showVolume() {
     const v = audio.muted ? 0 : audio.volume;
+    booth.setSiteLevel(v);
     player.dataset.vol = v === 0 ? 'off' : v < 0.5 ? 'low' : 'high';
     volInput.value = String(v);
     volInput.style.setProperty('--v', `${v * 100}%`);
@@ -811,6 +829,7 @@ import Icon from './Icon.astro';
     | undefined;
   const airplay = 'WebKitPlaybackTargetAvailabilityEvent' in window;
   function castPrompt() {
+    if (activeBooth()) return;
     if (airplay) (audio as any).webkitShowPlaybackTargetPicker?.();
     else remote?.prompt().catch(() => {});
   }
@@ -847,7 +866,7 @@ import Icon from './Icon.astro';
     } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
       e.preventDefault();
       const d = e.key === 'ArrowRight' ? 10 : -10;
-      audio.currentTime = Math.max(0, Math.min((audio.duration || 0) - 0.5, audio.currentTime + d));
+      transport.currentTime = Math.max(0, Math.min((transport.duration || 0) - 0.5, transport.currentTime + d));
       progress();
     } else if (e.key === 'm') toggleMute();
     else if (e.key === 'n') step(1);
@@ -871,8 +890,8 @@ import Icon from './Icon.astro';
     if (seek) {
       const time = Number(seek.dataset.seek);
       if (current()?.id === seek.dataset.seekId) {
-        audio.currentTime = time;
-        if (audio.paused) audio.play().catch(() => {});
+        transport.currentTime = time;
+        if (transport.paused) transport.play().catch(() => {});
         progress();
       } else {
         const q = readQueue(seek.dataset.seekQueue);
@@ -889,8 +908,8 @@ import Icon from './Icon.astro';
       if (!Number.isFinite(start)) return;
       const t0 = Math.max(0, start - 0.15);
       if (current()?.id === lyricEl.dataset.track) {
-        audio.currentTime = t0;
-        if (audio.paused) audio.play().catch(() => {});
+        transport.currentTime = t0;
+        if (transport.paused) transport.play().catch(() => {});
         progress();
       } else {
         const btn = document.querySelector<HTMLElement>(`[data-play][data-id="${CSS.escape(lyricEl.dataset.track || '')}"]`);
@@ -919,9 +938,10 @@ import Icon from './Icon.astro';
 
   // ---- audio events
   audio.addEventListener('loadedmetadata', () => {
-    if (pendingSeek) audio.currentTime = Math.min(pendingSeek, audio.duration - 1);
+    if (activeBooth()) return;
+    if (pendingSeek) transport.currentTime = Math.min(pendingSeek, transport.duration - 1);
     pendingSeek = 0;
-    $<HTMLElement>('[data-t="dur"]').textContent = fmt(audio.duration);
+    $<HTMLElement>('[data-t="dur"]').textContent = fmt(transport.duration);
     progress();
   });
   audio.addEventListener('play', () => {
@@ -936,13 +956,15 @@ import Icon from './Icon.astro';
   audio.addEventListener('seeked', progress);
   audio.addEventListener('timeupdate', () => save());
   audio.addEventListener('ended', () => {
+    if (activeBooth()) return;
     if (queue[index + 1]) load(queue, index + 1);
     else {
-      audio.currentTime = 0;
+      transport.currentTime = 0;
       sync();
     }
   });
   audio.addEventListener('error', () => {
+    if (activeBooth()) return;
     if (!audio.src) return;
     if (restored) {
       // a remembered track that no longer exists: forget it quietly
@@ -961,6 +983,25 @@ import Icon from './Icon.astro';
     $<HTMLElement>('.player-release').textContent = 'this file refuses to play.';
   });
 
+  let boothWasActive = false;
+  let lastBoothTransport = '';
+  booth.addEventListener('change', () => {
+    if (booth.active === null && !boothWasActive) return;
+    boothWasActive = booth.active !== null;
+    if (boothWasActive && !audio.paused) audio.pause();
+    player.classList.toggle('is-booth', boothWasActive);
+    const deck = booth.active === null ? undefined : booth.decks[booth.active];
+    const state = deck ? [deck.track?.id, transport.paused, deck.loading, deck.error, deck.duration, booth.active].join(':') : '';
+    if (state === lastBoothTransport) return;
+    lastBoothTransport = state;
+    sync();
+    if (deck) {
+      $<HTMLElement>('[data-t="dur"]').textContent = fmt(deck.duration);
+      if (deck.error) $<HTMLElement>('.player-release').textContent = 'audio unavailable';
+      if (!raf) raf = requestAnimationFrame(loop);
+      save(true);
+    }
+  });
   // other parts of the site (the command palette) can hand over a whole queue
   window.addEventListener('ps:play', (e) => {
     const { queue: q, index: i = 0 } = (e as CustomEvent<{ queue: Item[]; index?: number }>).detail ?? {};

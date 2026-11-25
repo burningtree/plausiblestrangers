@@ -1,0 +1,28 @@
+---
+import type { Release } from '../lib/catalog';
+import '../styles/vinyl-label.css';
+
+interface Props {
+  release: string;
+  title: string;
+  catalog: string;
+  crop?: Release['data']['vinylLabel'];
+  artwork?: string;
+}
+
+const { release, title, catalog, crop, artwork } = Astro.props;
+const separateWords = release === 'make-room' || release === 'the-door';
+const style = crop && artwork ? {
+  backgroundImage: `url("${artwork}")`,
+  backgroundPosition: `${crop.x}% ${crop.y}%`,
+  backgroundSize: `${crop.zoom}%`,
+} : undefined;
+---
+
+<span class="disc-label" data-label={release} style={style}>
+  <span class="disc-label-title">
+    {separateWords ? title.split(' ').map((word, i) => <>{i > 0 && ' '}<span>{word}</span></>) : title}
+  </span>
+  <span class="disc-label-artist">Plausible Strangers</span>
+  <span class="disc-label-catalog">{catalog}</span>
+</span>

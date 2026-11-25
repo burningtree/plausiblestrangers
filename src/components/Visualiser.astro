@@ -50,6 +50,8 @@ import Icon from './Icon.astro';
 <script>
   import { activeLyric, highlightLyricWord, renderLyricLine, type TimedLyric } from '../lib/lyric-timing';
 
+  import { activeBooth, playbackTransport } from '../lib/booth/audio';
+
   const RAMP = [' ', ' ', '·', '.', ':', '-', '=', '+', '*', '░', '▒', '▓', '█'];
   const ROW_MS = 55; // how often a new line is printed
 
@@ -57,6 +59,7 @@ import Icon from './Icon.astro';
   const canvas = viz.querySelector('canvas') as HTMLCanvasElement;
   const ctx2d = canvas.getContext('2d', { alpha: false })!;
   const audio = document.getElementById('ps-audio') as HTMLAudioElement;
+  const transport = playbackTransport(audio);
   const $ = <T extends Element>(s: string) => viz.querySelector(s) as T;
 
   let actx: AudioContext | null = null;
@@ -92,8 +95,9 @@ import Icon from './Icon.astro';
       (window as any).__psViz = {
         // n log-spaced bands, 0–1, for the player's pixel matrix
         bands(n: number) {
-          analyser!.getByteFrequencyData(bass);
-          const nyq = actx!.sampleRate / 2;
+          const source = activeBooth()?.spectrum ?? analyser!;
+          source.getByteFrequencyData(bass);
+          const nyq = source.context.sampleRate / 2;
           const out: number[] = [];
           for (let i = 0; i < n; i++) {
             const f0 = 40 * Math.pow(12000 / 40, i / n);
@@ -107,8 +111,9 @@ import Icon from './Icon.astro';
           return out;
         },
         level() {
-          analyser!.getByteFrequencyData(bass);
-          const nyq = actx!.sampleRate / 2;
+          const source = activeBooth()?.spectrum ?? analyser!;
+          source.getByteFrequencyData(bass);
+          const nyq = source.context.sampleRate / 2;
           const hi = Math.ceil((140 / nyq) * bass.length);
           let m = 0;
           for (let i = 1; i <= hi; i++) m = Math.max(m, bass[i]);
@@ -156,9 +161,11 @@ import Icon from './Icon.astro';
     if (lvBuf.length !== cols) lvBuf = new Float32Array(cols);
     const out = lvBuf;
     out.fill(0);
-    if (!analyser || !actx) return out;
-    analyser.getByteFrequencyData(bins);
-    const nyq = actx.sampleRate / 2;
+    const source = activeBooth()?.spectrum ?? analyser;
+    if (!source) return out;
+    if (bins.length !== source.frequencyBinCount) bins = new Uint8Array(source.frequencyBinCount);
+    source.getByteFrequencyData(bins);
+    const nyq = source.context.sampleRate / 2;
     const half = Math.ceil(cols / 2);
     const lo = 45;
     const hi = 16000;
@@ -203,13 +210,14 @@ import Icon from './Icon.astro';
   }
 
   // Follow the matched word timestamps directly on the media clock.
+  let shownTitle = '';
   let shownLine: TimedLyric | undefined;
   const lyric = $<HTMLElement>('.viz-lyric');
   const lyricText = $<HTMLElement>('.viz-lyric-line');
   function lyricFrame() {
     const ps = (window as any).__ps;
     const lines: TimedLyric[] = ps?.current?.()?.lyrics ?? [];
-    const now = audio.currentTime;
+    const now = transport.currentTime;
     const line = activeLyric(lines, now);
     if (line !== shownLine) {
       shownLine = line;
@@ -221,6 +229,11 @@ import Icon from './Icon.astro';
 
   function frame(t: number) {
     raf = requestAnimationFrame(frame);
+    const title = document.querySelector('#player .player-title')?.textContent || '';
+    if (shownTitle !== title) {
+      shownTitle = title;
+      fillText();
+    }
     lyricFrame();
     if (t - last < ROW_MS) return;
     last = t;
@@ -228,9 +241,9 @@ import Icon from './Icon.astro';
     // transforms only (no letter-spacing): they move on the GPU without re-laying out the text
     titleEl.style.transform = `scale(${(1 + bass * 0.035).toFixed(3)})`;
     albumBox.style.transform = `rotateY(${(-24 + bass * 7).toFixed(2)}deg) rotateX(${(4 - bass * 3).toFixed(2)}deg) translateZ(${(bass * 18).toFixed(1)}px)`;
-    const time = audio.src && isFinite(audio.duration) ? `${fmt(audio.currentTime)} / ${fmt(audio.duration)}` : '';
+    const time = transport.src && isFinite(transport.duration) ? `${fmt(transport.currentTime)} / ${fmt(transport.duration)}` : '';
     if (timeEl.textContent !== time) timeEl.textContent = time;
-    if (idleEl.hidden !== !audio.paused) idleEl.hidden = !audio.paused;
+    if (idleEl.hidden !== !transport.paused) idleEl.hidden = !transport.paused;
   }
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   const titleEl = $<HTMLElement>('.viz-title');
@@ -264,11 +277,11 @@ import Icon from './Icon.astro';
   function open() {
     if (!viz.hidden) return;
     // nothing loaded? start the first thing on this page
-    if (!audio.src) document.querySelector<HTMLElement>('[data-play]')?.click();
-    if (!ensureGraph()) return;
+    if (!transport.src) document.querySelector<HTMLElement>('[data-play]')?.click();
+    if (!activeBooth() && !ensureGraph()) return;
     actx?.resume();
     // you opened it to watch something move
-    if (audio.src && audio.paused) audio.play().catch(() => {});
+    if (transport.src && transport.paused) transport.play().catch(() => {});
     opener = document.activeElement;
     readColors();
     viz.hidden = false;
@@ -327,7 +340,7 @@ import Icon from './Icon.astro';
     clearTimeout(idle);
     idle = window.setTimeout(() => {
       // stay up while paused, or while the pointer / focus is on the controls
-      if (!audio.paused && !viz.querySelector('.viz-controls:hover, .viz-controls:focus-within')) viz.classList.remove('ui-on');
+      if (!transport.paused && !viz.querySelector('.viz-controls:hover, .viz-controls:focus-within')) viz.classList.remove('ui-on');
     }, 2600);
   }
   viz.addEventListener('pointermove', wake);
@@ -356,7 +369,7 @@ import Icon from './Icon.astro';
     // tapping the picture itself plays / pauses
     // tapping the picture itself plays / pauses (everything else is a control)
     if (t === canvas || t === viz || t.closest('.viz-bottom, .viz-lyric, .viz-idle')) {
-      audio.paused ? audio.play().catch(() => {}) : audio.pause();
+      transport.paused ? transport.play().catch(() => {}) : transport.pause();
     }
   });
   // On desktop, set up the analyser as soon as music plays (a user gesture),
