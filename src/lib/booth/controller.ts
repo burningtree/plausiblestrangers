@@ -1,4 +1,4 @@
-import { activeBooth, boothAudio, effects, type BoothRelease, type BoothTrack, type ChannelControl, type Side, type WaveformScope } from './audio';
+import { activeBooth, boothAudio, channelControls, effects, type BoothRelease, type BoothTrack, type ChannelControl, type Side, type WaveformScope } from './audio';
 import type { createBoothScene } from './scene';
 
 const sides = [0, 1] as const;
@@ -300,7 +300,25 @@ export class BoothElement extends HTMLElement {
       }
     }, { signal, capture: true });
 
-    if (linked && engine.decks[0].track?.id !== linked.id) {
+    // The site's player is playing something: carry it on, on deck A, from
+    // where it is. The header player keeps playing while the deck decodes, and
+    // pauses itself the moment the deck starts (see Player.astro), so there's
+    // no gap and no double audio.
+    const site = (window as Window & { __ps?: PlayerBridge & { playing?: () => boolean } }).__ps;
+    const siteItem = site?.native().item;
+    const handover = !activeBooth() && site?.playing?.() && siteItem ? trackById.get(siteItem.id) : undefined;
+    if (handover) {
+      // continue the same song, not a variation of it: neutral tempo and filter,
+      // no effect, and make sure channel A can be heard
+      const a = engine.decks[0];
+      if (a.pitch) engine.setPitch(0, 0);
+      if (a.rpm !== 33) engine.toggleRpm(0);
+      if (engine.filterAmount(0)) engine.setFilter(0, 0);
+      if (a.effect !== 'off') engine.setEffect(0, 0);
+      if (a.controls.volume < 0.2) engine.setChannel(0, 'volume', channelControls.volume.initial);
+      if (engine.cross > 0.6) engine.setMix('cross', 0);
+      load(0, handover, true);
+    } else if (linked && engine.decks[0].track?.id !== linked.id) {
       // Keep the album selected until the first gesture can unlock Web Audio.
       status.textContent = `${linked.release} selected for deck A.`;
     }

@@ -44,7 +44,7 @@ const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min(max, v
 const range = (value: number, min: number, max: number) => min + value * (max - min);
 const TAU = Math.PI * 2;
 const deckX = [-3.48, 3.48] as const;
-const deckDisplayY = 0.290;
+const deckDisplayY = 0.2835;
 const armStart = -0.50;
 const armEnd = -0.855;
 const ivory = 0xe1ded2;
@@ -279,8 +279,14 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
   const white = 0xf4f3ee;
 
   // the slab: a thin rounded body, a darker underside, small feet
+  // where each device's keys come through its faceplate (filled in as keys are built)
+  const cutouts = new Map<T.Object3D, { x: number; z: number; w: number; d: number }[]>();
+
   function casework(parent: T.Object3D, width: number, top: T.Material, depth: number, center: number) {
-    box(parent, width, 0.3, depth, 0, 0.13, center, top, 0.07, true);
+    // the body stops 2 cm below the top; the faceplate (with holes) goes on last
+    box(parent, width, 0.28, depth, 0, 0.12, center, top, 0.07, true);
+    parent.userData.plate = { width, depth, center, top };
+    cutouts.set(parent, []);
     box(parent, width - 0.06, 0.12, depth - 0.06, 0, -0.06, center, top === mixerBody ? rubber : bodyEdge, 0.04, true);
     for (const x of [-width / 2 + 0.3, width / 2 - 0.3]) {
       for (const z of [center - depth / 2 + 0.3, center + depth / 2 - 0.3]) {
@@ -294,14 +300,46 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
 
   const invisible = new T.MeshBasicMaterial({ visible: false });
 
+  function roundedRect(path: T.Path, x: number, y: number, w: number, h: number, r: number) {
+    path.moveTo(x + r, y);
+    path.lineTo(x + w - r, y);
+    path.quadraticCurveTo(x + w, y, x + w, y + r);
+    path.lineTo(x + w, y + h - r);
+    path.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    path.lineTo(x + r, y + h);
+    path.quadraticCurveTo(x, y + h, x, y + h - r);
+    path.lineTo(x, y + r);
+    path.quadraticCurveTo(x, y, x + r, y);
+  }
+
+  // the top panel of a device: 2 cm thick, with a real cut-out for every key
+  function faceplate(parent: T.Object3D) {
+    const { width, depth, center, top } = parent.userData.plate as { width: number; depth: number; center: number; top: T.Material };
+    const inset = 0.03;
+    const outline = new T.Shape();
+    // shape y runs along -z once the panel is laid flat
+    roundedRect(outline, -width / 2 + inset, -(center + depth / 2) + inset, width - inset * 2, depth - inset * 2, 0.06);
+    const floor = material(0x0f0f0e, 0, 0.95);
+    for (const hole of cutouts.get(parent) ?? []) {
+      const path = new T.Path();
+      roundedRect(path, hole.x - hole.w / 2, -hole.z - hole.d / 2, hole.w, hole.d, 0.035);
+      outline.holes.push(path);
+      box(parent, hole.w, 0.004, hole.d, hole.x, 0.262, hole.z, floor);
+    }
+    const geometry = new T.ExtrudeGeometry(outline, { depth: 0.02, bevelEnabled: false, curveSegments: 6 });
+    const plate = mesh(parent, geometry, top, 0, 0.26, 0, true);
+    plate.rotation.x = -Math.PI / 2;
+    plate.position.y = 0.26;
+  }
+
   // a key: a square cap that travels, a printed caption, an LED that lights
   function button(parent: T.Object3D, x: number, z: number, width: number, caption: string, cap: T.Material, action: Action,
     on?: () => boolean, led = 0xff6a2b, depth = 0.3, captionColor = print, shortcut?: string) {
     const key = new T.Group();
-    key.position.set(x, 0.312, z);
+    key.position.set(x, 0.3, z);
     parent.add(key);
-    // a soft shadow line around the cap instead of a black well
-    box(parent, width + 0.02, 0.004, depth + 0.02, x, 0.281, z, material(0x8e8c85, 0, 0.9), 0.008);
+    // the key comes up through a cut-out in the faceplate (see faceplate())
+    cutouts.get(parent)?.push({ x, z, w: width + 0.03, d: depth + 0.03 });
     const top = box(key, width, 0.06, depth, 0, 0.0, 0, cap, 0.025, true);
     mark(key, caption, 0, 0.0, Math.min(0.1, 0.85 * width / (caption.length * 0.62)), captionColor, 0.032, 'center', '700');
     if (shortcut) mark(key, shortcut, width / 2 - 0.055, depth / 2 - 0.05, 0.055, captionColor === print ? printSoft : captionColor, 0.031);
@@ -314,7 +352,8 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     } });
     hit(box(parent, width + 0.04, 0.12, depth + 0.04, x, 0.33, z, invisible), top.userData.action);
     animated.push(() => {
-      const target = (key.userData.pressed ?? 0) > performance.now() || key.userData.held ? 0.298 : 0.312;
+      // at rest the cap stands ~2 cm proud of the panel; pressed, it sinks in
+      const target = (key.userData.pressed ?? 0) > performance.now() || key.userData.held ? 0.29 : 0.3;
       key.position.y = T.MathUtils.lerp(key.position.y, target, 0.32);
       if (ledDot) ledDot.visible = on!();
     });
@@ -323,7 +362,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
 
   // a knob: a tall coloured cylinder with a pointer on top, ticks printed around it
   function knob(parent: T.Object3D, x: number, z: number, caption: string, color: number, get: () => number, set: (value: number) => void,
-    initial: number, size = 1, labelColor = print, describe?: () => string) {
+    initial: number, size = 1, labelColor = print, describe?: () => string, homeLabel?: string) {
     const r = 0.2 * size;
     cylinder(parent, r * 1.22, 0.02, x, 0.29, z, rubber, 48);
     const dial = new T.Group();
@@ -335,11 +374,19 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     box(dial, 0.028 * size, 0.006, r * 0.55, 0, height + 0.003, -r * 0.5, pointer, 0.002);
     for (let i = 0; i <= 10; i++) {
       const angle = range(i / 10, 2.36, -2.36);
-      const tick = box(parent, i % 5 ? 0.008 : 0.014, 0.003, 0.045, x + Math.sin(angle) * r * 1.42, 0.282, z - Math.cos(angle) * r * 1.42, material(labelColor === print ? 0x2b2a27 : 0xd8d6cf));
-      tick.rotation.y = -angle;
+      const tick = box(parent, i % 5 ? 0.008 : 0.014, 0.003, 0.045, x - Math.sin(angle) * r * 1.42, 0.282, z - Math.cos(angle) * r * 1.42, material(labelColor === print ? 0x2b2a27 : 0xd8d6cf));
+      tick.rotation.y = angle;
     }
+    // home: the tick at the default is longer and bolder than the rest. The dial
+    // turns by rotation.y, which sends its pointer to (-sin, -cos): same here.
+    const home = range(initial, 2.36, -2.36);
+    const homeTick = box(parent, 0.022, 0.004, 0.085, x - Math.sin(home) * r * 1.5, 0.283, z - Math.cos(home) * r * 1.5, material(labelColor === print ? 0x2b2a27 : 0xd8d6cf));
+    homeTick.rotation.y = home;
+    if (homeLabel) mark(parent, homeLabel, x - Math.sin(home) * r * 2.15, z - Math.cos(home) * r * 2.15, 0.055, labelColor, 0.283, 'center', '700');
     mark(parent, caption, x, z + r * 1.95, 0.08, labelColor, 0.283, 'center', '700');
-    const action: Action = { label: caption, get, drag: set, reset: () => set(initial), shape: [cap], describe };
+    // a gentle detent: close to the default, the knob settles on it
+    const detent = (value: number) => set(Math.abs(value - initial) < 0.035 ? initial : value);
+    const action: Action = { label: caption, get, drag: detent, reset: () => set(initial), shape: [cap], describe };
     hit(cap, action);
     animated.push(() => dial.rotation.y = range(get(), 2.36, -2.36));
   }
@@ -405,8 +452,11 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     return { group, face, edge, setLabel };
   }
 
-  function display(parent: T.Object3D, x: number, z: number, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => string, resolution = { width: 650, height: 190 }, flush = false) {
-    const bezel = box(parent, w + 0.052, flush ? 0.014 : 0.039, h + 0.052, x, flush ? 0.281 : 0.288, z, flush ? dark : rubber, 0.004);
+  function display(parent: T.Object3D, x: number, z: number, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => string, resolution = { width: 650, height: 190 }, flush = false, gap?: T.Material) {
+    // with `gap`, no frame: the screen sits in the surface with a thin line around it
+    const bezel = gap
+      ? box(parent, w + 0.02, 0.004, h + 0.02, x, 0.281, z, gap, 0.008)
+      : box(parent, w + 0.052, flush ? 0.014 : 0.039, h + 0.052, x, flush ? 0.281 : 0.288, z, flush ? dark : rubber, 0.004);
     const label = surfaceTexture(resolution.width, resolution.height);
     label.map.generateMipmaps = false;
     label.map.minFilter = T.LinearFilter;
@@ -551,16 +601,15 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     knob(group, -0.5, rows.knobs, 'FILTER', green, () => (engine.filterAmount(side) + 1) / 2, v => engine.setFilter(side, range(v, -1, 1)), 0.5, 1, print,
       () => { const f = engine.filterAmount(side); return f < -0.02 ? `◀ dark ${Math.round(-f * 100)}%` : f > 0.02 ? `thin ${Math.round(f * 100)}% ▶` : 'off'; });
     knob(group, 0.5, rows.knobs, `FX ${name}`, grey, () => effects.indexOf(deck.effect) / (effects.length - 1), v => engine.setEffect(side, Math.round(v * (effects.length - 1))), 0, 1, print,
-      () => effectLabels[effects.indexOf(deck.effect)].toLowerCase());
+      () => effectLabels[effects.indexOf(deck.effect)].toLowerCase(), 'OFF');
     const trim = channelControls.gain;
     knob(group, 1.5, rows.knobs, 'TRIM', white, () => (deck.controls.gain - trim.min) / (trim.max - trim.min), v => engine.setChannel(side, 'gain', range(v, trim.min, trim.max)), (trim.initial - trim.min) / (trim.max - trim.min), 1, print,
       () => `${Math.round(deck.controls.gain * 100)}%`);
 
     // the screen: waveform, bpm, time, cue and loop, hot cues
     const screen = { width: 3.7, height: 0.45, z: rows.screen };
-    box(group, screen.width + 0.1, 0.012, screen.height + 0.1, 0, 0.282, screen.z, rubber, 0.02);
     const face = display(group, 0, screen.z, screen.width, screen.height,
-      deckDisplay(side, deck, recordPosition, preview, () => engine.speed(side)), deckScreen, true);
+      deckDisplay(side, deck, recordPosition, preview, () => engine.speed(side)), deckScreen, true, material(0x8e8c85, 0, 0.9));
     const waveWidth = screen.width * (1 - 2 * deckScreen.inset / deckScreen.width);
     const waveDepth = screen.height * (deckScreen.waveBottom - deckScreen.waveTop) / deckScreen.height;
     const waveZ = screen.z + screen.height * ((deckScreen.waveBottom + deckScreen.waveTop) / (2 * deckScreen.height) - 0.5);
@@ -642,6 +691,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
         key.on, key.led, 0.3, key.color ?? print, key.shortcut);
       left += key.width + gap;
     }
+    faceplate(group);
   }
 
   // ---- the mixer (PS-02): a dark slab between the decks
@@ -654,28 +704,49 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     mark(group, 'TWO-CHANNEL MIXER', -1.02, -1.72, 0.07, soft, 0.282, 'left', '500');
 
     // the screen: each deck's tempo and effect
-    box(group, 2.1, 0.012, 0.52, 0, 0.282, -1.25, rubber, 0.02);
+    // a canvas with the screen's own proportions (2.0 × 0.42), so nothing stretches
+    const W = 960, H = 202;
     display(group, 0, -1.25, 2.0, 0.42, ctx => {
-      const state = engine.decks.map((deck, side) => `${deck.effect}:${engine.tempo(side as Side)?.toFixed(1)}:${deck.playing}`).join('|');
+      const state = engine.decks.map((deck, side) => `${deck.effect}:${engine.tempo(side as Side)?.toFixed(1)}:${deck.playing}:${!!deck.track}`).join('|');
       if (ctx.canvas.dataset.state === state) return state;
       ctx.canvas.dataset.state = state;
       ctx.fillStyle = '#151615';
-      ctx.fillRect(0, 0, 650, 190);
-      ctx.font = 'bold 44px monospace';
+      ctx.fillRect(0, 0, W, H);
+      const cols = { deck: 34, state: 120, bpm: 290, fx: W - 34 };
+      // small headings
+      ctx.font = 'bold 26px monospace';
+      ctx.fillStyle = '#8a877e';
+      ctx.fillText('DECK', cols.deck, 36);
+      ctx.fillText('BPM', cols.bpm, 36);
+      ctx.textAlign = 'right';
+      ctx.fillText('FX', cols.fx, 36);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#2c2d2a';
+      ctx.fillRect(cols.deck, 50, W - 68, 2);
       for (const side of [0, 1] as const) {
         const deck = engine.decks[side];
+        const y = 114 + side * 66;
+        const colour = side ? '#9cb9ff' : '#ffb67c';
         const bpm = engine.tempo(side);
-        ctx.fillStyle = side ? '#9cb9ff' : '#ffb67c';
-        ctx.fillText(`${side ? 'B' : 'A'}${deck.playing ? '▶' : ' '}`, 26, 72 + 80 * side);
-        ctx.fillStyle = '#eee9dd';
-        ctx.fillText(bpm ? `${bpm.toFixed(1)}` : '—', 120, 72 + 80 * side);
-        ctx.fillStyle = '#bdb8ae';
+        ctx.font = 'bold 54px monospace';
+        ctx.fillStyle = colour;
+        ctx.fillText(side ? 'B' : 'A', cols.deck, y);
+        // playing ▶ (in the deck's colour), stopped ■ (grey), empty (nothing)
+        ctx.font = '40px monospace';
+        ctx.fillStyle = deck.playing ? colour : '#55564f';
+        if (deck.track) ctx.fillText(deck.playing ? '▶' : '■', cols.state, y - 2);
+        ctx.font = 'bold 54px monospace';
+        ctx.fillStyle = bpm ? '#eee9dd' : '#55564f';
+        ctx.fillText(bpm ? bpm.toFixed(1) : '—', cols.bpm, y);
+        const fx = effects.indexOf(deck.effect);
         ctx.textAlign = 'right';
-        ctx.fillText(effectLabels[effects.indexOf(deck.effect)].toUpperCase().slice(0, 10), 624, 72 + 80 * side);
+        ctx.font = fx ? 'bold 46px monospace' : '42px monospace';
+        ctx.fillStyle = fx ? colour : '#7d7a72';
+        ctx.fillText(effectLabels[fx].toLowerCase(), cols.fx, y);
         ctx.textAlign = 'left';
       }
       return state;
-    });
+    }, { width: W, height: H }, true, material(0x1c1d1b, 0, 0.9));
 
     // per channel: three EQ knobs, a headphone key and the volume fader
     for (const side of [0, 1] as const) {
@@ -723,6 +794,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     if (typeof MediaRecorder !== 'undefined') button(group, 0, 1.85, 0.42, 'REC', material(0xd1301f, 0.05, 0.55), { label: 'Record the mix (again to stop and save)', press: options.record }, () => engine.recording, 0xffffff, 0.28, '#ffffff');
     fader(group, 0, 4.02, 1.5, 'A  ◀  MIX  ▶  B', white, () => (engine.cross + 1) / 2, v => engine.setMix('cross', range(v, -1, 1)), (mixDefaults.cross + 1) / 2, true, light,
       () => engine.cross < -0.02 ? `◀ A ${Math.round(-engine.cross * 100)}%` : engine.cross > 0.02 ? `B ${Math.round(engine.cross * 100)}% ▶` : 'centre');
+    faceplate(group);
   }
 
   let drag: { id: number; action: Action; x: number; y: number; value: number; angle?: number; at: number; moved: boolean; armOffset?: number; recordFraction?: number } | undefined;
