@@ -9,20 +9,28 @@ interface Props {
   hiddenLyrics?: boolean;
   trackId?: string;
   timed?: TimedLyric[];
+  // sheet music (MusicXML) shown as another view, following the player
+  score?: { src: string; bars: number[]; id: string; queue: string; index: number };
 }
 
-const { body, audio, instrumental, hiddenLyrics = false, trackId, timed } = Astro.props;
+const { body, audio, instrumental, hiddenLyrics = false, trackId, timed, score } = Astro.props;
 const prompt = parseLyrics(body);
 const performance = instrumental ? prompt : performedLyrics(body, audio);
-const completeOnly = !instrumental && !!audio;
+// every performed line is shown; the ones the sync could time also follow the music
 const hasPrompt = !instrumental && prompt.length > 0 && !hiddenLyrics;
 const audibleCues = timed?.length && trackId && !hiddenLyrics;
 const cuesByLine = new Map(timed?.map((line) => [line.index, line]));
 let index = 0;
+// what this column can show, in this order: the words, the notes, what we asked for
+const views: [string, string, string][] = [
+  ['copy', instrumental ? 'the score' : 'lyrics', 'lyrics-copy'],
+  ...(score ? [['sheet', 'notes', 'lyrics-sheet'] as [string, string, string]] : []),
+  ...(hasPrompt ? [['prompt', 'prompt', 'lyrics-prompt'] as [string, string, string]] : []),
+];
 const stanzas = performance.map((stanza) => stanza.map((line) => {
   const n = line.direction ? -1 : index++;
   return { ...line, index: n, cue: cuesByLine.get(n) };
-}).filter((line) => !completeOnly || line.cue)).filter((stanza) => stanza.length);
+})).filter((stanza) => stanza.length);
 ---
 
 <section
@@ -31,10 +39,18 @@ const stanzas = performance.map((stanza) => stanza.map((line) => {
   data-track={audibleCues ? trackId : undefined}
 >
   <div class="lyrics-head">
-    <h2 id="lyrics-h" class="label">{instrumental ? 'the score' : 'lyrics'}</h2>
-    {hasPrompt && (
-      <button type="button" class="lyrics-view-toggle" aria-expanded="false" aria-controls="lyrics-prompt" data-lyrics-view>
-        prompt lyrics
+    {views.length > 1 ? (
+      <h2 id="lyrics-h" class="label lyrics-tabs" role="group" aria-label="show">
+        {views.map(([view, label, controls], i) => (
+          <button type="button" aria-pressed={String(i === 0)} aria-controls={controls} data-lyrics-view={view}>{label}</button>
+        ))}
+      </h2>
+    ) : (
+      <h2 id="lyrics-h" class="label">{views[0][1]}</h2>
+    )}
+    {(audibleCues || score) && (
+      <button type="button" class="lyrics-follow" aria-pressed="false" data-lyrics-follow title="a small window that keeps the current line in view">
+        follow
       </button>
     )}
   </div>
@@ -47,7 +63,7 @@ const stanzas = performance.map((stanza) => stanza.map((line) => {
       <p class="muted">This one is a remix of somebody else's song, so its words are theirs and not printed here.</p>
     ) : (
       <>
-        {!stanzas.length && (!completeOnly || !index) && <p class="muted">{instrumental ? 'No score available.' : 'No lyrics.'}</p>}
+        {!stanzas.length && <p class="muted">{instrumental ? 'No score available.' : 'No lyrics.'}</p>}
         {stanzas.map((stanza) =>
           stanza[0].direction ? (
             <p class="direction">[{stanza[0].text}]</p>
@@ -55,7 +71,7 @@ const stanzas = performance.map((stanza) => stanza.map((line) => {
             <p class="stanza">
               {stanza.map((line, i) => (
                 <>
-                  <span class="ly" data-li={line.cue ? line.index : undefined} data-ly-at={line.cue?.t}>
+                  <span class="ly" data-ln={line.index} data-li={line.cue ? line.index : undefined} data-ly-at={line.cue?.t}>
                     {line.cue ? lyricSegments(line.text, line.cue.words).map((segment) =>
                       segment.index === undefined ? segment.text :
                         <span data-word={segment.index} data-word-at={segment.at}>{segment.text}</span>
@@ -82,22 +98,55 @@ const stanzas = performance.map((stanza) => stanza.map((line) => {
       ))}
     </div>
   )}
+  {score && (
+    <div
+      id="lyrics-sheet"
+      class="lyrics-sheet"
+      hidden
+      data-score={score.src}
+      data-bars={JSON.stringify(score.bars)}
+      data-seek-id={score.id}
+      data-seek-queue={score.queue}
+      data-seek-index={score.index}
+    >
+      <p class="muted sheet-status">reading the score…</p>
+      <div class="sheet-scroll"><div class="sheet"></div><span class="sheet-head" aria-hidden="true" hidden></span></div>
+      <p class="meta sheet-note">transcribed by the machine that made the song. Tap a bar to jump there.</p>
+    </div>
+  )}
 </section>
 
 <script>
+  import { openSheet } from '../lib/sheet';
+  import { setFollow, restoreFollow } from '../lib/lyrics-follow';
+
+  // follow mode: on or off for every song, remembered in this browser
+  restoreFollow();
+  document.addEventListener('astro:page-load', restoreFollow);
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest<HTMLButtonElement>('[data-lyrics-follow]');
+    const lyrics = button?.closest<HTMLElement>('.lyrics');
+    if (button && lyrics) setFollow(lyrics, button.getAttribute('aria-pressed') !== 'true', true);
+  });
+
+  // one view at a time: what was sung (copy), the notes (sheet), or what was asked for (prompt)
   document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
     const button = event.target.closest<HTMLButtonElement>('[data-lyrics-view]');
-    const lyrics = button?.closest('.lyrics');
+    const lyrics = button?.closest<HTMLElement>('.lyrics');
     if (!button || !lyrics) return;
 
-    const prompt = lyrics.querySelector<HTMLElement>('.lyrics-prompt');
-    const copy = lyrics.querySelector<HTMLElement>('.lyrics-copy');
-    if (!prompt || !copy) return;
-    const showPrompt = prompt.hidden;
-    prompt.hidden = !showPrompt;
-    copy.hidden = showPrompt;
-    button.setAttribute('aria-expanded', String(showPrompt));
-    button.textContent = showPrompt ? 'performed lyrics' : 'prompt lyrics';
+    const show = button.dataset.lyricsView!;
+    const panes = { copy: '.lyrics-copy', prompt: '.lyrics-prompt', sheet: '.lyrics-sheet' } as const;
+    for (const [name, selector] of Object.entries(panes)) {
+      const pane = lyrics.querySelector<HTMLElement>(selector);
+      if (pane) pane.hidden = name !== show;
+    }
+    for (const b of lyrics.querySelectorAll<HTMLButtonElement>('[data-lyrics-view]')) {
+      b.setAttribute('aria-pressed', String(b === button));
+    }
+    const sheet = lyrics.querySelector<HTMLElement>('.lyrics-sheet');
+    if (sheet && show === 'sheet') openSheet(sheet);
   });
 </script>

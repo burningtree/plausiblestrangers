@@ -263,7 +263,8 @@ import Icon from './Icon.astro';
   let lyricEl: HTMLElement | null = null;
   let lyricCopy: HTMLElement | null = null;
   let gapEl: HTMLElement | null = null;
-  let lyricLines = new Map<number, HTMLElement>();
+  let lyricLines = new Map<number, HTMLElement>(); // timed lines
+  let lyricAll = new Map<number, HTMLElement>(); // every line, timed or not: for past/future shading
   let lyricNow: HTMLElement | undefined;
   let gapAfter: number | undefined;
 
@@ -276,6 +277,10 @@ import Icon from './Icon.astro';
     lyricLines = new Map(
       Array.from(lyricEl?.querySelectorAll<HTMLElement>('[data-li]') ?? [],
         (el) => [Number(el.dataset.li), el]),
+    );
+    lyricAll = new Map(
+      Array.from(lyricEl?.querySelectorAll<HTMLElement>('[data-ln]') ?? [],
+        (el) => [Number(el.dataset.ln), el]),
     );
   }
 
@@ -296,7 +301,7 @@ import Icon from './Icon.astro';
       lyricNow = active;
       if (active && cue) {
         active.classList.add('is-now');
-        lyricLines.forEach((line, i) => line.classList.toggle('is-past', i < cue.index));
+        lyricAll.forEach((line, i) => line.classList.toggle('is-past', i < cue.index));
       }
     }
     if (active && cue) highlightLyricWord(active, activeLyric(cue.words, now));
@@ -317,7 +322,7 @@ import Icon from './Icon.astro';
       gapAfter = after;
       const anchor = lyricLines.get(gap.next?.index ?? after);
       (anchor ?? lyricCopy).prepend(gapEl);
-      lyricLines.forEach((line, i) => line.classList.toggle('is-past', i <= after));
+      lyricAll.forEach((line, i) => line.classList.toggle('is-past', i <= after));
       gapEl.hidden = false;
     }
     gapEl.classList.toggle('is-counting', !transport.paused);
@@ -926,9 +931,9 @@ import Icon from './Icon.astro';
       }
       return;
     }
-    // a tracklist row plays its track, unless you clicked the title link
+    // a tracklist row plays its track, unless you clicked the title link or its download menu
     const row = target.closest<HTMLElement>('.tl-row');
-    if (row && !target.closest('a')) {
+    if (row && !target.closest('a, [data-dl-menu]')) {
       row.querySelector<HTMLElement>('[data-play]')?.click();
       return;
     }

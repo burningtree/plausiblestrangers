@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # lyric sync working files (separated vocals, raw transcripts)
 .cache/
+
+# downloads served from public.plausiblestrangers.com (npm run files:upload), not from the site
+files/

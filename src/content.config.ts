@@ -18,6 +18,7 @@ const releases = defineCollection({
       zoom: z.number().min(100),
     }).optional(),
     suno: z.string().url().optional(),
+    ace: z.string().url().optional(),
     // 'unfinished' records show up with a stamp, after the released ones
     status: z.enum(['released', 'unfinished']).default('released'),
     hidden: z.boolean().default(false),
@@ -47,6 +48,7 @@ const tracks = defineCollection({
     tags: z.string().optional(),
     style: z.string().optional(),
     suno: z.string().url().optional(),
+    ace: z.string().url().optional(),
     notes: z.string().optional(),
   }),
 });
@@ -68,6 +70,7 @@ const archive = defineCollection({
     style: z.string().optional(),
     machine: z.string().optional(),
     suno: z.string().url().optional(),
+    ace: z.string().url().optional(),
     notes: z.string().optional(),
     hidden: z.boolean().default(false),
   }),

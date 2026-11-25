@@ -3,7 +3,7 @@
 // switch between them. The choice is remembered in this browser.
 import Spectrogram from './Spectrogram.astro';
 import WaveBars from './WaveBars.astro';
-import type { Analysis } from '../lib/catalog';
+import type { Analysis, Section, StemPart } from '../lib/catalog';
 
 interface Props {
   analysis?: Analysis;
@@ -14,25 +14,88 @@ interface Props {
   duration: number;
   queue: string;
   index: number;
+  /** intro, verse, chorus… drawn on the picture */
+  sections?: Section[];
+  /** the song's separate parts: lanes under the picture, each can be muted or soloed */
+  stems?: StemPart[];
+  /** the zip of the stems, to remix (when the song is ours to give away) */
+  stemsZip?: string;
 }
-const { analysis, id, peaks, src, duration, queue, index } = Astro.props;
+const { analysis, id, peaks, src, duration, queue, index, sections = [], stems = [], stemsZip } = Astro.props;
+const stemsSize = stems.reduce((n, p) => n + p.size, 0);
+const mb = (b: number) => `${Math.round(b / 1e6)} MB`;
+const pct = (t: number) => `${((t / duration) * 100).toFixed(3)}%`;
+const marks = duration ? sections : [];
 const both = Boolean(analysis && peaks.length);
 ---
 
 <div class="sound-view" data-sound-view data-view={peaks.length ? 'bars' : 'spectro'}>
   {
-    both && (
-      <p class="view-switch" role="group" aria-label="show the sound as">
-        <button type="button" data-view-btn="spectro" aria-pressed="false">spectrogram</button>
-        <button type="button" data-view-btn="bars" aria-pressed="true">waveform</button>
-      </p>
+    (both || stems.length > 0) && (
+      <div class="sound-head">
+        {stems.length > 0 && (
+          <button type="button" class="stems-toggle" aria-expanded="false" aria-controls={`stems-${id}`} data-stems-toggle>
+            stems <span class="n">{stems.length} parts</span>
+          </button>
+        )}
+        {both && (
+          <p class="view-switch" role="group" aria-label="show the sound as">
+            <button type="button" data-view-btn="spectro" aria-pressed="false">spectrogram</button>
+            <button type="button" data-view-btn="bars" aria-pressed="true">waveform</button>
+          </p>
+        )}
+      </div>
     )
   }
+  <div class="sound-body">
   {analysis && <div class="sound-view-spectro"><Spectrogram analysis={analysis} id={id} queue={queue} index={index} duration={duration} src={src} /></div>}
   {peaks.length > 0 && <div class="sound-view-bars"><WaveBars id={id} peaks={peaks} src={src} duration={duration} queue={queue} index={index} /></div>}
+  {marks.length > 0 && (
+    <div class="sound-marks" aria-hidden="true">
+      {marks.filter((m) => m.at > 0).map((m) => <span style={`left:${pct(m.at)}`} />)}
+    </div>
+  )}
+  </div>
+  {marks.length > 0 && (
+    <p class="sound-sections" role="group" aria-label="the song's sections">
+      {marks.map((m, i) => (
+        <button
+          type="button"
+          style={`left:${pct(m.at)};max-width:${pct((marks[i + 1]?.at ?? duration) - m.at)}`}
+          data-seek={m.at}
+          data-seek-id={id}
+          data-seek-queue={queue}
+          data-seek-index={index}
+          title={`${m.name}: play from here`}
+        >
+          {m.name}
+        </button>
+      ))}
+    </p>
+  )}
+  {stems.length > 0 && (
+    <div class="stems" id={`stems-${id}`} hidden data-stems={id}>
+      {stems.map((part) => (
+        <div class="stem" data-stem={part.name} data-src={part.src}>
+          <button type="button" class="stem-name" aria-pressed="true" title={`${part.name}: on or off`}>{part.name}</button>
+          <WaveBars id={id} peaks={part.peaks} duration={duration} queue={queue} index={index} absolute bars={240} label={`${part.name}: click to jump to that moment`} />
+          <button type="button" class="stem-solo" aria-pressed="false" title={`hear only the ${part.name}`}>solo</button>
+        </div>
+      ))}
+      <p class="stems-foot">
+        <span class="stems-status" data-stems-status>turn parts off, or solo one, while it plays.</span>
+        <button type="button" class="stems-reset" data-stems-reset hidden>all parts on</button>
+        {stemsZip && (
+          <a class="stems-zip" href={stemsZip} download>download the stems <span class="n">{mb(stemsSize)} · zip · CC0</span></a>
+        )}
+      </p>
+    </div>
+  )}
 </div>
 
 <script>
   import { initSoundView } from '../lib/sound-view';
+  import { initStems } from '../lib/stems';
   initSoundView();
+  initStems();
 </script>

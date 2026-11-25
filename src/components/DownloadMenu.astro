@@ -1,0 +1,43 @@
+---
+// "download": a small menu of the formats a song comes in (MP3, FLAC, m4a), each
+// with its size. A plain <details>, so it opens without JavaScript too;
+// src/lib/download-menu.ts closes it nicely and saves files from the download
+// server under a friendly name.
+import { existsSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import Icon from './Icon.astro';
+import { downloadsFor, mb } from '../lib/files';
+
+interface Props {
+  audio: string;
+  title: string;
+  /** a full button ("download"), or just the icon (track lists) */
+  variant?: 'button' | 'icon';
+  class?: string;
+}
+const { audio, title, variant = 'button', class: cls } = Astro.props;
+const local = join(process.cwd(), 'public', audio);
+const options = downloadsFor(audio, title, existsSync(local) ? statSync(local).size : undefined);
+---
+
+<details class:list={['dl-menu', `dl-menu--${variant}`, cls]} data-dl-menu>
+  <summary class={variant === 'icon' ? 'tl-dl' : 'download-btn'} aria-label={`download ${title}`} title={`download ${title}`}>
+    <Icon name="download" />{variant === 'button' && ' download'}
+  </summary>
+  <div class="dl-menu-list">
+    {
+      options.map((o) => (
+        <a class="dl-opt" href={o.href} download={o.name} data-dl-name={o.name}>
+          <span class="dl-format">{o.format}</span>
+          <span class="dl-note">{o.note}</span>
+          <span class="dl-size">{mb(o.size)}</span>
+        </a>
+      ))
+    }
+  </div>
+</details>
+
+<script>
+  import { initDownloadMenus } from '../lib/download-menu';
+  initDownloadMenus();
+</script>

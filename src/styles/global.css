@@ -22,6 +22,7 @@
     --mute: #8f8b81;
     --faint: #3a3935;
     --hot: #ff5b3a;
+    --sheet-ink: invert(0.74) sepia(0.12);
   }
 }
 :root[data-theme='dark'] {
@@ -30,6 +31,7 @@
   --mute: #8f8b81;
   --faint: #3a3935;
   --hot: #ff5b3a;
+  --sheet-ink: invert(0.74) sepia(0.12);
   color-scheme: dark;
 }
 :root[data-theme='light'] {
@@ -751,11 +753,12 @@ html.is-playing .wave--player .wave-fill {
   color: var(--ink);
 }
 
-.theme-switch .label-dark,
-:root[data-theme='dark'] .theme-switch .label-light {
+/* the switch names (and shows) where it takes you, not where you are */
+.theme-switch .label-light,
+:root[data-theme='dark'] .theme-switch .label-dark {
   display: none;
 }
-:root[data-theme='dark'] .theme-switch .label-dark {
+:root[data-theme='dark'] .theme-switch .label-light {
   display: inline;
 }
 
@@ -1694,15 +1697,15 @@ a .icon {
   height: 100%;
   transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.35s ease;
 }
-.theme-icons .moon {
-  opacity: 0;
-  transform: rotate(-120deg) scale(0.5);
-}
-:root[data-theme='dark'] .theme-icons .sun {
+.theme-icons .sun {
   opacity: 0;
   transform: rotate(120deg) scale(0.5);
 }
 :root[data-theme='dark'] .theme-icons .moon {
+  opacity: 0;
+  transform: rotate(-120deg) scale(0.5);
+}
+:root[data-theme='dark'] .theme-icons .sun {
   opacity: 1;
   transform: none;
 }
@@ -1717,14 +1720,39 @@ a .icon {
   column-gap: 1.25rem;
 }
 
-.lyrics-view-toggle {
-  color: var(--mute);
-  font: 0.75rem / 1.4 var(--mono);
+.lyrics-tabs { display: flex; gap: 1.1rem; }
+.lyrics-tabs button { padding: 0; color: var(--mute); font: inherit; }
+.lyrics-tabs button:hover { color: var(--ink); }
+.lyrics-tabs button[aria-pressed='true'] {
+  color: var(--ink);
   text-decoration: underline;
-  text-underline-offset: 0.2em;
+  text-decoration-color: var(--hot);
+  text-underline-offset: 0.35em;
 }
 
-.lyrics-view-toggle:hover { color: var(--ink); }
+/* sheet music: inline with the page, the playhead drawn on top */
+.lyrics-sheet[hidden] { display: none; }
+.sheet-scroll {
+  position: relative;
+  overflow: hidden;
+}
+.sheet { cursor: pointer; }
+.sheet svg { display: block; filter: var(--sheet-ink, none); }
+.sheet-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--hot);
+  pointer-events: none;
+}
+.sheet-head[hidden] { display: none; }
+.sheet-note {
+  margin-top: 0.6rem;
+  font: 0.75rem / 1.5 var(--mono);
+  color: var(--mute);
+}
 
 .lyrics-copy[hidden],
 .lyrics-prompt[hidden],
@@ -2097,6 +2125,8 @@ html:not(.is-playing) .record.is-current .record-cat::after {
   background: var(--hover);
   color: var(--ink);
 }
+.download-btn .n { color: var(--mute); margin-left: 0.15em; font-variant-numeric: tabular-nums; }
+.download-btn[aria-busy='true'] { cursor: progress; }
 .download-btn .icon {
   width: 1.1em;
   height: 1.1em;
@@ -2331,7 +2361,7 @@ html:not(.is-playing) .record.is-current .record-cat::after {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.lib-item.is-archive .lib-status {
+.lib-item.is-unreleased .lib-status {
   color: var(--ink);
 }
 .lib-item.is-unfinished .lib-status {
@@ -4175,13 +4205,17 @@ html.is-playing .wave--bars.is-mine .bars i.on {
 
 /* song headers: download (and suno) are words like play: the tap area stays
    big, the text lines up */
-.track--clean .track-actions .download-btn {
+.track--clean .track-actions .download-btn,
+.release-actions .download-btn {
   min-height: 0;
   margin: -0.7rem -0.8rem;
   padding: 0.7rem 0.8rem;
 }
-.track--clean .track-actions {
+.track--clean .track-actions,
+.release-actions {
   gap: 0.5rem 2.25rem;
+  /* centre, not baseline: a leading icon would otherwise set the line and lift its text */
+  align-items: center;
 }
 
 @media (max-width: 34rem) {
@@ -4694,3 +4728,210 @@ html.is-playing .player.is-empty .player-toggle > .when-playing {
 .player-toggle.is-rolling .when-empty .icon {
   animation: dice-roll 0.5s cubic-bezier(0.3, 1.4, 0.6, 1);
 }
+
+/* the score's facts in the side column */
+.paper-form,
+.paper-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.9rem;
+}
+.paper-files a { white-space: nowrap; }
+.details dd a + a { margin-left: 0.9rem; }
+
+/* the song's form over its picture: a hairline at each section, its name underneath */
+.sound-body { position: relative; }
+.sound-marks {
+  position: absolute;
+  inset: 0 0 1rem;
+  pointer-events: none;
+}
+.sound-marks span {
+  /* a clear cut through the bars: a thin line with a sliver of paper on each side */
+  position: absolute;
+  top: -0.4rem;
+  bottom: -1.1rem;
+  width: 3px;
+  margin-left: -1px;
+  background: linear-gradient(to right,
+    var(--paper) 0 1px, color-mix(in srgb, var(--ink) 50%, transparent) 1px 2px, var(--paper) 2px);
+}
+.sound-sections {
+  position: relative;
+  height: 1.2rem;
+  margin: -0.6rem 0 1.25rem;
+  font: 0.7rem / 1.2rem var(--mono);
+}
+.sound-sections button {
+  position: absolute;
+  top: 0;
+  padding: 0 0.35rem 0 0.3rem;
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sound-sections button:hover { color: var(--ink); }
+
+/* follow mode: a small window on the lyrics (or one line of music), kept on the current line */
+.lyrics-follow {
+  padding: 0;
+  font: 0.75rem / 1.4 var(--mono);
+  color: var(--mute);
+}
+.lyrics-follow:hover { color: var(--ink); }
+.lyrics-follow[aria-pressed='true'] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hot);
+  text-underline-offset: 0.35em;
+}
+.lyrics.is-follow .lyrics-copy {
+  position: relative;
+  height: 20rem;
+  overflow: hidden;
+  padding-block: 9rem;
+  /* reach into the margin, so the countdown to the next line (left of it) isn't cut off */
+  padding-inline-start: 5rem;
+  margin-inline-start: -5rem;
+  font-size: 0.92em;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
+.lyrics.is-follow.is-current-track .lyrics-copy .ly { color: var(--mute); transition: color 0.3s ease; }
+.lyrics.is-follow.is-current-track .lyrics-copy .ly.is-now { color: var(--ink); }
+.lyrics.is-follow .sheet-scroll {
+  height: 20rem;
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent);
+  mask-image: linear-gradient(to bottom, #000 80%, transparent);
+}
+.lyrics.is-follow .sheet-note { display: none; }
+
+/* stems: the song's parts as thin lanes under its waveform, each can be turned off or soloed */
+.sound-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+}
+.sound-head .view-switch { margin: 0 0 0 auto; }
+.stems-toggle {
+  padding: 0.25rem 0;
+  font: 0.75rem var(--mono);
+  color: var(--mute);
+}
+.stems-toggle:hover { color: var(--ink); }
+.stems-toggle[aria-expanded='true'] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hot);
+  text-underline-offset: 0.35em;
+}
+.stems-toggle .n { color: var(--mute); margin-left: 0.3em; }
+.stems-toggle::before { content: '▸'; display: inline-block; width: 1.1em; color: var(--hot); transition: transform 0.2s ease; }
+.stems-toggle[aria-expanded='true']::before { transform: rotate(90deg); }
+.stems-toggle { color: var(--ink); }
+.stems[hidden] { display: none; }
+.stems { margin: -0.4rem 0 2rem; }
+/* open: names (and solo) sit in gutters beside the lanes, and the waveform above
+   moves in by the same amount, so every lane still lines up with it */
+.sound-view { --stem-name: 7.5rem; --stem-solo: 2.75rem; }
+.sound-view .sound-body,
+.sound-view .sound-sections { transition: margin 0.25s ease; }
+.sound-view.is-stems .sound-body,
+.sound-view.is-stems .sound-sections {
+  margin-inline: var(--stem-name) var(--stem-solo);
+}
+.stem {
+  display: grid;
+  grid-template-columns: var(--stem-name) minmax(0, 1fr) var(--stem-solo);
+  align-items: center;
+}
+.stem + .stem { margin-top: 0.15rem; }
+.stem-name,
+.stem-solo {
+  padding: 0.2rem 0;
+  font: 0.7rem / 1.2 var(--mono);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stem-name { grid-column: 1; text-align: left; padding-right: 0.75rem; }
+.stem-solo { grid-column: 3; text-align: right; color: var(--mute); }
+.stem .wave { grid-column: 2; grid-row: 1; }
+.stem-name:hover,
+.stem-solo:hover { color: var(--hot); }
+.stem-solo[aria-pressed='true'] { color: var(--hot); }
+.stem .wave.wave--bars {
+  height: 2.1rem;
+  margin: 0;
+}
+.stem.is-off .stem-name { color: var(--mute); text-decoration: line-through; text-decoration-color: var(--faint); }
+.stem.is-off .wave { opacity: 0.28; }
+@media (max-width: 560px) {
+  .sound-view { --stem-name: 5.25rem; --stem-solo: 2.25rem; }
+  .stem-name, .stem-solo { font-size: 0.65rem; }
+}
+.stem .wave { transition: opacity 0.2s ease; }
+.stems-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1.5rem;
+  margin-top: 0.9rem;
+  font: 0.72rem / 1.4 var(--mono);
+  color: var(--mute);
+}
+.stems-reset { font: inherit; color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+.stems-zip { margin-left: auto; color: var(--ink); }
+.stems-zip .n { color: var(--mute); margin-left: 0.3em; }
+
+/* download menus: the formats a song (or a whole record) comes in, each with its size */
+.dl-menu { position: relative; display: inline-block; }
+.dl-menu > summary { list-style: none; cursor: pointer; }
+.dl-menu > summary::-webkit-details-marker { display: none; }
+.dl-menu[open] > summary { color: var(--ink); }
+.dl-menu > summary[data-progress]::after {
+  content: attr(data-progress);
+  margin-left: 0.5em;
+  color: var(--hot);
+  font-variant-numeric: tabular-nums;
+}
+.dl-menu--icon > summary[data-progress]::after { position: absolute; right: 100%; white-space: nowrap; font: 0.7rem var(--mono); }
+.dl-menu-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  min-width: 23rem;
+  padding: 0.35rem;
+  background: var(--paper);
+  border: 1px solid var(--faint);
+  border-radius: 3px;
+  box-shadow: 0 0.6rem 1.6rem rgb(0 0 0 / 0.28);
+  font: 0.78rem / 1.3 var(--mono);
+}
+.dl-menu--icon .dl-menu-list { left: auto; right: 0; }
+.dl-opt {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 2px;
+  color: var(--ink);
+  text-align: left;
+  text-decoration: none;
+}
+.dl-opt:hover, .dl-opt:focus-visible { background: var(--hover); }
+.dl-opt:hover .dl-format { color: var(--hot); }
+.dl-format { font-weight: 600; }
+.dl-note { color: var(--mute); white-space: nowrap; }
+.dl-size { color: var(--mute); text-align: right; font-variant-numeric: tabular-nums; }
+.tl-row .dl-menu--icon { display: grid; align-self: stretch; }
+.tl-row .dl-menu--icon > summary { height: 100%; }

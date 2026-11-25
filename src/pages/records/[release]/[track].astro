@@ -8,11 +8,16 @@ import VinylCover from '../../../components/VinylCover.astro';
 import Wave from '../../../components/Wave.astro';
 import SoundView from '../../../components/SoundView.astro';
 import Stamp from '../../../components/Stamp.astro';
+import DownloadMenu from '../../../components/DownloadMenu.astro';
+import { downloadsFor } from '../../../lib/files';
 import Icon from '../../../components/Icon.astro';
 import StylePrompt from '../../../components/StylePrompt.astro';
 import SoundStats from '../../../components/SoundStats.astro';
 import {
   parseLyrics,
+  songSections,
+  stemsFor,
+  stemsZipUrl,
   getCatalog,
   releaseUrl,
   trackUrl,
@@ -20,7 +25,6 @@ import {
   fmtTime,
   fmtDate,
   keyName,
-  downloadName,
   trackAnalysis,
   getArchive,
   archiveUrl,
@@ -146,25 +150,23 @@ const details: [string, string | undefined][] = [
         <p class="meta">
           {fmtTime(t.duration)}{t.bpm && ` · ${t.bpm} bpm`}{t.key && ` · ${keyName(t.key)}`}{t.instrumental && ' · instrumental'}
         </p>
-        <p class="track-actions">
+        <div class="track-actions">
           {audible ? (
             <>
               <PlayButton queue={release.id} index={qi} id={p.id} />
-              <a class="download-btn" href={t.audio} download={downloadName(track)} title="download (m4a)">
-                <Icon name="download" /> download
-              </a>
+              <DownloadMenu audio={t.audio!} title={t.title} />
             </>
           ) : (
             <span class="meta">not audible yet. it exists, mostly.</span>
           )}
-        </p>
+        </div>
       </div>
     </header>
 
     {
       audible &&
         (analysis || p.peaks.length ? (
-          <SoundView analysis={analysis} id={p.id} peaks={p.peaks} src={t.audio} duration={t.duration} queue={release.id} index={qi} />
+          <SoundView analysis={analysis} id={p.id} peaks={p.peaks} src={t.audio} duration={t.duration} queue={release.id} index={qi} sections={songSections({ audio: t.audio, body: track.body, timed: p.lyrics, duration: t.duration })} stems={stemsFor(t.audio)} stemsZip={t.audio && stemsFor(t.audio)?.length ? stemsZipUrl(t.audio) : undefined} />
         ) : (
           <Wave id={p.id} peaks={p.peaks} duration={t.duration} queue={release.id} index={qi} class="wave--big" />
         ))
@@ -194,7 +196,7 @@ const details: [string, string | undefined][] = [
           <>
             <dt>{t.audio ? 'file' : 'elsewhere'}</dt>
             <dd>
-              {t.audio && <a href={t.audio} download={downloadName(track)}>{t.audio.split(".").pop()}</a>}
+              {t.audio && downloadsFor(t.audio, t.title).map((o, i) => <>{i > 0 && ' · '}<a class="dl-opt" href={o.href} download={o.name} data-dl-name={o.name}>{o.format}</a></>)}
               {t.audio && t.suno && ' · '}
               {t.suno && <a href={t.suno}>suno <Icon name="arrow-up-right" /></a>}
             </dd>
@@ -221,7 +223,7 @@ const details: [string, string | undefined][] = [
     {
       archiveVersions.length > 0 && (
         <section class="versions" aria-labelledby="versions-h">
-          <h2 id="versions-h" class="label">other versions, in the archive</h2>
+          <h2 id="versions-h" class="label">other versions, unreleased</h2>
           <ul class="plain versions-list">
             {archiveVersions.map((v) => (
               <li>

@@ -1,8 +1,9 @@
 ---
-// One unreleased song from the archive.
+// One unreleased song: in the backlog, not on a record (yet).
 import Lyrics from '../../components/Lyrics.astro';
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
+import DownloadMenu from '../../components/DownloadMenu.astro';
 import Icon from '../../components/Icon.astro';
 import PlayButton from '../../components/PlayButton.astro';
 import Queue from '../../components/Queue.astro';
@@ -15,6 +16,10 @@ import {
   getArchive,
   playableArchive,
   archiveAnalysis,
+  scoreFor,
+  songSections,
+  stemsFor,
+  stemsZipUrl,
   getCatalog,
   archiveUrl,
   trackUrl,
@@ -39,6 +44,9 @@ const { song, newer, older } = Astro.props as { song: ArchiveSong; newer?: Archi
 const d = song.data;
 const recording = playableArchive(song);
 const analysis = recording ? archiveAnalysis(song) : undefined;
+const score = recording ? scoreFor(d.audio) : undefined;
+const kb = (bytes: number) => (bytes > 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : `${Math.round(bytes / 1e3)} kB`);
+const fileLabels = { pdf: 'pdf', musicxml: 'musicxml', mid: 'midi' } as const;
 
 // other versions: released tracks and archive songs sharing the same base title
 const base = songBase(d.title);
@@ -51,7 +59,7 @@ const releasedVersions = releases.flatMap((r) =>
 const archiveVersions = (await getArchive()).filter((a) => a.id !== song.id && songBase(a.data.title) === base);
 
 const details: [string, string | undefined][] = [
-  ['status', 'unreleased · archive'],
+  ['status', 'unreleased'],
   ['length', d.duration ? fmtTime(d.duration) : undefined],
   ['tempo', d.bpm ? `${d.bpm} bpm` : undefined],
   ['tags', d.tags],
@@ -63,8 +71,8 @@ const details: [string, string | undefined][] = [
 
 <Base
   licensed={!d.remix}
-  title={`${d.title} — archive`}
-  description={`${d.title}: an unreleased Plausible Strangers song from the archive${d.bpm ? `, ${d.bpm} bpm` : ''}. Lyrics, the prompt, and a link to listen.`}
+  title={`${d.title} — unreleased`}
+  description={`${d.title}: an unreleased Plausible Strangers song${d.bpm ? `, ${d.bpm} bpm` : ''}. Lyrics, the prompt, and a link to listen.`}
   type="music.song"
   jsonLd={graph(
     {
@@ -88,20 +96,19 @@ const details: [string, string | undefined][] = [
       <header class="track-head">
         <div class="track-cover archive-art"><PixelArt seed={d.title} label={`pixel art for ${d.title}`} /></div>
         <div>
-          <p class="kicker"><a href="/library/">library</a> / archive <span class="stamp stamp--quiet">unreleased</span></p>
+          <p class="kicker"><a href="/library/">library</a> <span class="stamp stamp--quiet">unreleased</span></p>
           <h1 class="title">{d.title}</h1>
           <p class="meta">
-            {d.duration && fmtTime(d.duration)}{d.bpm && ` · ${d.bpm} bpm`}{d.instrumental && ' · instrumental'}{d.created && ` · ${fmtDate(d.created)}`}
+            {d.duration && fmtTime(d.duration)}{d.bpm && ` · ${d.bpm} bpm`}{score && ` · ${score.key}`}{d.instrumental && ' · instrumental'}{d.created && ` · ${fmtDate(d.created)}`}
           </p>
-          <p class="track-actions">
+          <div class="track-actions">
             {
               recording ? (
                 <>
                   <PlayButton queue={recording.id} index={0} id={recording.id} label="play" />
-                  <a class="download-btn" href={recording.src} download={`Plausible Strangers - ${d.title}.m4a`} aria-label={`download ${d.title}`}>
-                    <Icon name="download" /> download
-                  </a>
+                  <DownloadMenu audio={recording.src} title={d.title} />
                   {d.suno && <a class="download-btn" href={d.suno}>on suno <Icon name="arrow-up-right" /></a>}
+                  {d.ace && <a class="download-btn" href={d.ace}>on ace music <Icon name="arrow-up-right" /></a>}
                 </>
               ) : d.suno ? (
                 <a class="suno-btn" href={d.suno}>
@@ -111,14 +118,14 @@ const details: [string, string | undefined][] = [
                 <span class="meta">no recording kept.</span>
               )
             }
-          </p>
+          </div>
         </div>
       </header>
 
       {
         recording &&
           (analysis || recording.peaks.length ? (
-            <SoundView analysis={analysis} id={recording.id} peaks={recording.peaks} src={recording.src} duration={recording.duration} queue={recording.id} index={0} />
+            <SoundView analysis={analysis} id={recording.id} peaks={recording.peaks} src={recording.src} duration={recording.duration} queue={recording.id} index={0} sections={songSections({ audio: d.audio, body: song.body, timed: recording.lyrics, duration: recording.duration })} stems={stemsFor(d.audio)} stemsZip={d.audio && stemsFor(d.audio)?.length && !d.remix ? stemsZipUrl(d.audio) : undefined} />
           ) : (
             <Wave id={recording.id} peaks={recording.peaks} duration={recording.duration} queue={recording.id} index={0} class="wave--big" />
           ))
@@ -126,7 +133,15 @@ const details: [string, string | undefined][] = [
     </div>
 
     <div class="track-main">
-      <Lyrics body={song.body} audio={d.audio} instrumental={d.instrumental} hiddenLyrics={d.lyricsHidden} trackId={recording?.id} timed={recording?.lyrics} />
+      <Lyrics
+        body={song.body}
+        audio={d.audio}
+        instrumental={d.instrumental}
+        hiddenLyrics={d.lyricsHidden}
+        trackId={recording?.id}
+        timed={recording?.lyrics}
+        score={score?.files.musicxml && recording ? { src: score.files.musicxml.src, bars: score.bars, id: recording.id, queue: recording.id, index: 0 } : undefined}
+      />
     </div>
 
     <aside class="track-side">
@@ -143,13 +158,20 @@ const details: [string, string | undefined][] = [
                 </>
               ))
           }
-          {d.suno && (
+          {(d.suno || d.ace) && (
             <>
               <dt>elsewhere</dt>
               <dd>
-                <a href={d.suno}>
-                  suno <Icon name="arrow-up-right" />
-                </a>
+                {d.suno && (
+                  <a href={d.suno}>
+                    suno <Icon name="arrow-up-right" />
+                  </a>
+                )}
+                {d.ace && (
+                  <a href={d.ace}>
+                    ace music <Icon name="arrow-up-right" />
+                  </a>
+                )}
               </dd>
             </>
           )}
@@ -165,6 +187,57 @@ const details: [string, string | undefined][] = [
       </section>
 
       {analysis && recording && <SoundStats analysis={analysis} id={recording.id} queue={recording.id} index={0} part="energy" />}
+
+      {
+        score && recording && (
+          <section class="on-paper" aria-labelledby="paper-h">
+            <h2 id="paper-h" class="label">on paper</h2>
+            <dl class="details">
+              <dt>key</dt>
+              <dd>{score.key}</dd>
+              <dt>metre</dt>
+              <dd>{score.meter.join(', ')} · ♩ = {score.tempo.join(', ')}</dd>
+              <dt>bars</dt>
+              <dd>{score.bars.length - 1}</dd>
+              {score.parts.map((p) => (
+                <>
+                  <dt>{p.name}</dt>
+                  <dd>{p.notes} notes{p.low && ` · ${p.low}–${p.high}`}</dd>
+                </>
+              ))}
+              {score.chords.length > 0 && (
+                <>
+                  <dt>chords</dt>
+                  <dd>{score.chords.slice(0, 5).join(' · ')}</dd>
+                </>
+              )}
+              {score.sections.length > 0 && (
+                <>
+                  <dt>form</dt>
+                  <dd class="paper-form">
+                    {score.sections.map((x) => (
+                      <button type="button" class="stat-jump" data-seek={x.at} data-seek-queue={recording.id} data-seek-index={0} data-seek-id={recording.id}>
+                        {x.name.toLowerCase()} <span class="meta">{fmtTime(x.at)}</span>
+                      </button>
+                    ))}
+                  </dd>
+                </>
+              )}
+              <dt>files</dt>
+              <dd class="paper-files">
+                {(Object.keys(fileLabels) as (keyof typeof fileLabels)[]).map((ext) => {
+                  const f = score.files[ext];
+                  return f && (
+                    <a href={f.src} download={`Plausible Strangers - ${d.title}.${ext}`}>
+                      <Icon name="download" /> {fileLabels[ext]} <span class="meta">{kb(f.size)}</span>
+                    </a>
+                  );
+                })}
+              </dd>
+            </dl>
+          </section>
+        )
+      }
 
       {
         d.notes && (
@@ -187,7 +260,7 @@ const details: [string, string | undefined][] = [
               ))}
               {archiveVersions.map((v) => (
                 <li>
-                  <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">archive</span>
+                  <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">unreleased</span>
                 </li>
               ))}
             </ul>
@@ -197,10 +270,10 @@ const details: [string, string | undefined][] = [
 
       {analysis && recording && <SoundStats analysis={analysis} id={recording.id} queue={recording.id} index={0} part="numbers" />}
 
-      {d.style && <StylePrompt text={d.style} />}
+      {d.style && <StylePrompt text={d.style} machine={d.machine} />}
     </aside>
 
-    <nav class="pager" aria-label="other archive songs">
+    <nav class="pager" aria-label="other unreleased songs">
       {newer ? <a href={archiveUrl(newer)} rel="prev">← {newer.data.title}</a> : <a href="/library/">← library</a>}
       {older ? <a href={archiveUrl(older)} rel="next">{older.data.title} →</a> : <a href="/library/">library ↑</a>}
     </nav>

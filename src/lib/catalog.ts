@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { fileSize, fileUrl } from './files';
 import peaksData from '../data/peaks.json';
 import finePeaksData from '../data/peaks-hd.json';
 import fineSpectroData from '../data/spectro-hd.json';
@@ -6,6 +7,9 @@ import syncData from '../data/lyric-sync.json';
 import performanceData from '../data/lyric-performances.json';
 import blurData from '../data/blurhash.json';
 import analysisData from '../data/analysis.json';
+import scoreData from '../data/scores.json';
+import gridData from '../data/grid.json';
+import stemData from '../data/stems.json';
 import { hasCompleteWordTiming, type StoredLine, type TimedLyric, type TimedWord } from './lyric-timing';
 
 export type Release = CollectionEntry<'releases'>;
@@ -327,5 +331,93 @@ export function playableArchive(song: ArchiveSong) {
 
   const id = `archive/${song.id}`;
   const lyrics = !song.data.instrumental && !song.data.lyricsHidden ? lyricsFor(id, song.body, duration ?? Infinity, audio) : undefined;
-  return { id, title, release: 'archive', src: audio, url: archiveUrl(song), duration: duration ?? 0, peaks: peaks[id] ?? [], bpm, lyrics };
+  return { id, title, release: 'unreleased', src: audio, url: archiveUrl(song), duration: duration ?? 0, peaks: peaks[id] ?? [], bpm, lyrics };
 }
+
+// ---- sheet music exported from the machine (scripts/import-scores.mjs), keyed by audio path
+export interface Score {
+  key: string;
+  tempo: number[];
+  meter: string[];
+  bars: number[]; // start of each bar in seconds, plus the end
+  parts: { name: string; notes: number; low?: string; high?: string }[];
+  sections: { name: string; bar: number; at: number }[];
+  chords: string[];
+  files: Partial<Record<'musicxml' | 'mid' | 'pdf', { src: string; size: number }>>;
+}
+const scores = scoreData as Record<string, Score>;
+export const scoreFor = (audio?: string): Score | undefined => (audio ? scores[audio] : undefined);
+
+// ---- the song's form (intro, verse, chorus…) as moments on its timeline.
+// From the score's rehearsal marks when there is one; otherwise from the [directions]
+// in the lyrics, each placed where the next sung line starts (synced lyrics only).
+export type Section = { name: string; at: number };
+
+// The beat grid (scripts/grid.mjs). A section usually turns over on the beat, often
+// a bar or two before the voice comes in: move a sung line's start to the beat
+// where the sound changes most in the two bars before it, if it clearly does,
+// otherwise to the nearest beat.
+type Grid = { bpm: number; first: number; beat: number; change: number[] };
+const grids = gridData as Record<string, Grid>;
+function onTheBeat(audio: string | undefined, t: number) {
+  const g = audio ? grids[audio] : undefined;
+  if (!g) return t;
+  const k = Math.round((t - g.first) / g.beat);
+  let top = k;
+  for (let j = k - 8; j <= k + 1; j++) if ((g.change[j] ?? 0) > (g.change[top] ?? 0)) top = j;
+  const pick = (g.change[top] ?? 0) > 1.5 * (g.change[k] ?? 0) && (g.change[top] ?? 0) > 0.35 ? top : k;
+  return Math.max(0, +(g.first + pick * g.beat).toFixed(2));
+}
+const FORM = /^(?:(?:final|instrumental)\s+)?(?:intro|verse|pre-?chorus|post-?chorus|chorus|hook|refrain|bridge|break(?:down)?|drop|interlude|build(?:-?up)?|climax|outro|coda)(?:\s+\d+)?\b|^instrumental\b/i;
+
+export function songSections(opts: { audio?: string; body?: string; timed?: TimedLyric[]; duration: number }): Section[] {
+  const { audio, body, timed, duration } = opts;
+  const score = scoreFor(audio);
+  let out: Section[] = [];
+  if (score?.sections.length) {
+    out = score.sections.map((s) => ({ name: s.name.toLowerCase(), at: s.at }));
+  } else if (timed?.length) {
+    // walk the prompt like performedLyrics does, so line numbers match the cues
+    const edits = new Map((audio ? performanceEdits[audio] ?? [] : []).map((edit) => [edit.line, edit]));
+    let prompt = 0;
+    let sung = 0;
+    let pending: string | undefined;
+    for (const stanza of parseLyrics(body)) {
+      for (const line of stanza) {
+        if (line.direction) {
+          const m = line.text.trim().match(FORM);
+          // the last one before a sung line names it; a wordless break in between drops out
+          if (m) pending = m[0].trim().toLowerCase();
+          continue;
+        }
+        const edit = edits.get(prompt++);
+        const count = edit?.prompt === line.text ? edit.lines.length : 1;
+        if (pending) {
+          const cue = timed.find((c) => c.index >= sung);
+          // an intro starts the song, everything else around when its first line is sung
+          if (cue) out.push({ name: pending, at: /^intro/.test(pending) ? 0 : onTheBeat(audio, cue.t) });
+          pending = undefined;
+        }
+        sung += count;
+      }
+    }
+  }
+  // the first section starts the song, even when the score's clock starts a beat late
+  if (out[0] && out[0].at < 5) out[0] = { ...out[0], at: 0 };
+  // in order, inside the song, no two on the same moment
+  return out
+    .filter((s) => s.at >= 0 && s.at < duration - 2)
+    .sort((a, b) => a.at - b.at)
+    .filter((s, i, all) => i === 0 || s.at - all[i - 1].at > 4);
+}
+
+// ---- stems: the separate parts of a song (scripts/import-stems.mjs), keyed by audio path
+export type StemPart = { name: string; src: string; size: number; peaks: number[] };
+const stemsByAudio = stemData as Record<string, { parts: StemPart[] }>;
+// the parts and their zip live on the download server (src/lib/files.ts)
+export const stemsFor = (audio?: string): StemPart[] | undefined =>
+  audio ? stemsByAudio[audio]?.parts.filter((p) => fileSize(p.src)).map((p) => ({ ...p, src: fileUrl(p.src) })) : undefined;
+export const stemsZipUrl = (audio: string) => {
+  const path = `/stems/${audio.split('/').pop()!.replace(/\.[^.]+$/, '')}.zip`;
+  return fileSize(path) ? fileUrl(path) : undefined;
+};

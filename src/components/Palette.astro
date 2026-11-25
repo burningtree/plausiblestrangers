@@ -24,7 +24,7 @@ const ICONS = Object.fromEntries(
       <input
         class="palette-input"
         type="text"
-        placeholder="records, songs, lyrics, the archive, or a command…"
+        placeholder="records, songs, lyrics, or a command…"
         autocomplete="off"
         autocapitalize="off"
         spellcheck="false"
@@ -325,7 +325,7 @@ const ICONS = Object.fromEntries(
     return out + esc(text.slice(at));
   }
 
-  const LABEL = { command: 'do', record: 'record', track: 'track', lyric: 'lyrics', archive: 'archive', news: 'news' };
+  const LABEL = { command: 'do', record: 'record', track: 'track', lyric: 'lyrics', archive: 'unreleased', news: 'news' };
 
   function render() {
     const d = dlg();

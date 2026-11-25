@@ -17,8 +17,10 @@ interface Props {
   /** how many bars to draw on the server; the browser redraws at ~96 per minute */
   bars?: number;
   label?: string;
+  /** keep the levels as given (0–1, shared across several waves, e.g. a song's stems), don't stretch to fill */
+  absolute?: boolean;
 }
-const { id, peaks: coarse, src, duration, queue, index, mini = false, bars, label } = Astro.props;
+const { id, peaks: coarse, src, duration, queue, index, mini = false, bars, label, absolute = false } = Astro.props;
 const raw = finePeaksFor(src) ?? coarse;
 // longer tracks get more bars (the browser refines this to fit the width)
 const want = bars ?? Math.round(Math.min(288, Math.max(96, (duration / 60) * 48)));
@@ -35,7 +37,9 @@ const peaks = Array.from({ length: n }, (_, i) => {
 const sorted = [...peaks].sort((x, y) => x - y);
 const lo = peaks.length ? sorted[Math.floor(sorted.length * 0.05)] * 0.85 : 0;
 const hi = peaks.length ? sorted[sorted.length - 1] : 1;
-const heights = peaks.map((v) => Math.max(6, Math.round(Math.max(0, (v - lo) / (hi - lo || 1)) ** 1.4 * 100)));
+const heights = absolute
+  ? peaks.map((v) => Math.max(3, Math.round(v ** 0.8 * 100)))
+  : peaks.map((v) => Math.max(6, Math.round(Math.max(0, (v - lo) / (hi - lo || 1)) ** 1.4 * 100)));
 // minis: up to 240 heights, one base-36 character each (0–z), drawn in the browser to fit
 const MINI_BARS = 240;
 const miniHeights = mini
@@ -59,6 +63,7 @@ const miniHeights = mini
   data-wave={id}
   data-duration={duration}
   data-fine={mini ? undefined : JSON.stringify(raw)}
+  data-absolute={absolute ? '' : undefined}
   data-h={miniHeights}
   data-queue={queue}
   data-index={index}
@@ -76,7 +81,7 @@ const miniHeights = mini
 
 <script>
   // ---- bars: rebuilt for the chosen detail and the space available
-  function heightsFor(raw: number[], n: number) {
+  function heightsFor(raw: number[], n: number, absolute = false) {
     const peaks = Array.from({ length: n }, (_, i) => {
       const a = Math.floor((i * raw.length) / n);
       const b = Math.max(a + 1, Math.floor(((i + 1) * raw.length) / n));
@@ -84,6 +89,7 @@ const miniHeights = mini
       for (let j = a; j < b; j++) if (raw[j] > m) m = raw[j];
       return m;
     });
+    if (absolute) return peaks.map((v) => Math.max(3, Math.round(v ** 0.8 * 100)));
     const sorted = [...peaks].sort((x, y) => x - y);
     const lo = sorted[Math.floor(sorted.length * 0.05)] * 0.85;
     const hi = sorted[sorted.length - 1] || 1;
@@ -127,7 +133,7 @@ const miniHeights = mini
     if (el.dataset.drawn === key) return;
     el.dataset.drawn = key;
     const box = el.querySelector('.bars')!;
-    box.innerHTML = heightsFor(raw, n)
+    box.innerHTML = heightsFor(raw, n, 'absolute' in el.dataset)
       .map((h) => `<i style="height:${h}%"></i>`)
       .join('');
     delete el.dataset.lit;

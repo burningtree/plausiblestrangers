@@ -76,7 +76,7 @@ const sides = ['A', 'B'];
             <label class="booth-select">Record
               <select data-album aria-label={`Record for deck ${side}`}>
                 {crate.map(release => <option value={release.id}>{release.title}</option>)}
-                <option value="archive">Archive</option>
+                <option value="archive">Unreleased</option>
               </select>
             </label>
             <label class="booth-select">Track

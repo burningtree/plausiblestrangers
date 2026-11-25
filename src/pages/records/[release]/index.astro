@@ -5,6 +5,8 @@ import Base from '../../../layouts/Base.astro';
 import Queue from '../../../components/Queue.astro';
 import Stamp from '../../../components/Stamp.astro';
 import Gallery from '../../../components/Gallery.astro';
+import DownloadMenu from '../../../components/DownloadMenu.astro';
+import { fileSize, fileUrl, safeName, mb, FORMAT_NOTES } from '../../../lib/files';
 import Icon from '../../../components/Icon.astro';
 import PlayButton from '../../../components/PlayButton.astro';
 import VinylCover from '../../../components/VinylCover.astro';
@@ -17,12 +19,13 @@ import {
   fmtTotal,
   fmtDate,
   playable,
-  downloadName,
   hasAudio,
   isUnfinished,
   type Release,
 } from '../../../lib/catalog';
 import { site } from '../../../site';
+import { statSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../../lib/seo';
 
 export const getStaticPaths = (async () => {
@@ -47,6 +50,40 @@ const total = tracks.reduce((s, t) => s + t.data.duration, 0);
 const { Content } = await render(release);
 const hasNotes = Boolean(release.body?.trim());
 const d = release.data;
+
+// the whole record as one zip, in any format every track has, put together in
+// the browser (src/lib/album-zip.ts); the m4a are the site's, the rest come from
+// the download server (src/lib/files.ts)
+const sizeOf = (src: string) => {
+  const file = join(process.cwd(), 'public', src);
+  return existsSync(file) ? statSync(file).size : 0;
+};
+const coverJpg = d.cover?.replace(/\.webp$/, '.jpg');
+const cover = coverJpg && sizeOf(coverJpg) ? [{ name: 'cover.jpg', src: coverJpg, size: sizeOf(coverJpg) }] : [];
+const zipFormats = (['mp3', 'flac', 'm4a'] as const)
+  .map((format) => {
+    const files = ready.map((t) => {
+      const path = t.data.audio!.replace(/\.[^.]+$/, `.${format}`);
+      const size = format === 'm4a' ? sizeOf(path) : (fileSize(path) ?? 0);
+      return { name: `${String(t.data.number).padStart(2, '0')} ${safeName(t.data.title)}.${format}`, src: format === 'm4a' ? path : fileUrl(path), size };
+    });
+    return { format, files: [...files, ...cover], size: [...files, ...cover].reduce((n, f) => n + f.size, 0), complete: files.every((f) => f.size) };
+  })
+  .filter((f) => ready.length && f.complete);
+const zipName = `Plausible Strangers - ${safeName(d.title)}`;
+const zipReadme = [
+  `${d.title} — Plausible Strangers`,
+  `${d.kind}${d.catalog ? ` · ${d.catalog}` : ''}${!unfinished && d.date ? ` · ${fmtDate(d.date)}` : ''}`,
+  '',
+  ...ready.map((t) => `  ${String(t.data.number).padStart(2, ' ')}. ${t.data.title}  (${fmtTime(t.data.duration)})`),
+  '',
+  `${abs(releaseUrl(release.id))}`,
+  '',
+  `Licence: ${site.license.title} (${site.license.url}).`,
+  'No rights reserved: play it, share it, remix it — no need to ask.',
+  '',
+].join('\n');
+const zipPlan = JSON.stringify({ name: zipName, readme: zipReadme, formats: Object.fromEntries(zipFormats.map((f) => [f.format, f.files])) });
 ---
 
 <Base
@@ -130,9 +167,26 @@ const d = release.data;
         {d.kind} · {tracks.length} tracks · {fmtTotal(total)} · {unfinished ? (ready.length < tracks.length ? `in progress, ${ready.length} of ${tracks.length} audible so far` : 'in progress') : fmtDate(d.date)}
       </p>
       {ready.length > 0 && (
-        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} />
-          <a class="album-booth" href={`/booth/?release=${encodeURIComponent(release.id)}`}>open in DJ booth</a>
-        </p>
+        <div class="track-actions release-actions">
+          <PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} />
+          {zipFormats.length > 0 && (
+            <details class="dl-menu dl-menu--button" data-dl-menu>
+              <summary class="download-btn" title={`all ${ready.length} tracks${cover.length ? ' and the cover' : ''} in one zip`}>
+                <Icon name="download" /> {unfinished ? 'download what exists' : 'download the album'}
+              </summary>
+              <div class="dl-menu-list" data-album-zip={zipPlan}>
+                {zipFormats.map((f) => (
+                  <button type="button" class="dl-opt" data-album-zip-format={f.format}>
+                    <span class="dl-format">{f.format}</span>
+                    <span class="dl-note">{FORMAT_NOTES[f.format]}</span>
+                    <span class="dl-size">{mb(f.size)}</span>
+                  </button>
+                ))}
+              </div>
+            </details>
+          )}
+          <a class="download-btn" href={`/booth/?release=${encodeURIComponent(release.id)}`}><Icon name="sine-wave" /> open in DJ booth</a>
+        </div>
       )}
     </header>
 
@@ -154,9 +208,7 @@ const d = release.data;
               </a>
               <span class="tl-dur">{fmtTime(t.data.duration)}</span>
               {qi >= 0 ? (
-                <a class="tl-dl" href={t.data.audio} download={downloadName(t)} title={`download ${t.data.title}`} aria-label={`download ${t.data.title}`}>
-                  <Icon name="download" />
-                </a>
+                <DownloadMenu audio={t.data.audio!} title={t.data.title} variant="icon" />
               ) : (
                 <span />
               )}
@@ -194,5 +246,9 @@ const d = release.data;
 </Base>
 
 <style>
-  .album-booth { margin-inline-start: .75rem; font: .77rem/1.4 var(--mono); }
 </style>
+
+<script>
+  import { initAlbumZip } from '../../../lib/album-zip';
+  initAlbumZip();
+</script>

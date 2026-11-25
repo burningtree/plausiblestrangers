@@ -105,7 +105,7 @@ const { releases, tracksOf } = await getCatalog();
 type Entry = {
   title: string;
   url: string;
-  where: string; // the record, or "archive"
+  where: string; // the record, or "unreleased"
   a: Analysis;
   bpm?: number;
   duration?: number;
@@ -148,7 +148,7 @@ for (const song of await getArchive()) {
   entries.push({
     title: song.data.title,
     url: archiveUrl(song),
-    where: 'archive',
+    where: 'unreleased',
     a,
     bpm: song.data.bpm,
     duration: song.data.duration,

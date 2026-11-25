@@ -57,7 +57,8 @@ function fft(re, im) {
   }
 }
 
-export async function tempo(file) {
+// Onset strength through the song (pulses only, trend removed), plus the samples.
+export async function onsets(file) {
   const x = await pcm(file);
   const frames = Math.floor((x.length - N) / HOP);
   const win = Float32Array.from({ length: N }, (_, i) => 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N));
@@ -93,6 +94,13 @@ export async function tempo(file) {
     if (i >= w) sum -= env[i - w];
     o[i] = Math.max(0, env[i] - sum / Math.min(i + 1, w));
   }
+  // frame f is centred N/2 samples after its start
+  return { o, fps, x, sr: SR, offset: N / 2 / SR };
+}
+
+export async function tempo(file) {
+  const { o, fps } = await onsets(file);
+  const frames = o.length;
   // autocorrelation over 60–200 bpm, weighted towards ~125 bpm
   const score = (bpm) => {
     const lag = (60 / bpm) * fps;

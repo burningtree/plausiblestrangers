@@ -17,11 +17,19 @@
     "influences:spotify": "node --env-file-if-exists=.env scripts/influences-spotify.mjs",
     "import:audio": "node scripts/import-audio.mjs",
     "peaks": "node scripts/peaks-hd.mjs",
-    "spectro": "node scripts/spectro-hd.mjs"
+    "spectro": "node scripts/spectro-hd.mjs",
+    "import:scores": "node scripts/import-scores.mjs",
+    "grid": "node scripts/grid.mjs",
+    "import:stems": "node scripts/import-stems.mjs",
+    "files": "node scripts/files.mjs",
+    "files:upload": "rsync -av --delete-after --exclude .DS_Store files/ ${FILES_HOST:-tree@koren.pp0.co}:${FILES_DIR:-/corn/plausiblestrangers}/",
+    "downloads": "node scripts/make-downloads.mjs",
+    "tag": "uv run --with mutagen scripts/tag.py"
   },
   "dependencies": {
     "astro": "^7.4.13",
     "fuse.js": "^7.5.0",
+    "opensheetmusicdisplay": "^3.0.0",
     "three": "^0.187.0"
   },
   "devDependencies": {

@@ -48,6 +48,7 @@ import Icon from './Icon.astro';
 </div>
 
 <script>
+  import { mixGraph } from '../lib/mix-graph';
   import { activeLyric, highlightLyricWord, renderLyricLine, type TimedLyric } from '../lib/lyric-timing';
 
   import { activeBooth, playbackTransport } from '../lib/booth/audio';
@@ -81,14 +82,12 @@ import Icon from './Icon.astro';
   function ensureGraph() {
     if (analyser) return true;
     try {
-      const AC = window.AudioContext || (window as any).webkitAudioContext;
-      actx = new AC();
-      const src = actx.createMediaElementSource(audio);
-      analyser = actx.createAnalyser();
+      // shared with the stems player (src/lib/mix-graph.ts)
+      const graph = mixGraph();
+      actx = graph.actx;
+      analyser = graph.analyser;
       analyser.fftSize = 4096;
       analyser.smoothingTimeConstant = 0.72;
-      src.connect(analyser);
-      analyser.connect(actx.destination);
       bins = new Uint8Array(analyser.frequencyBinCount);
       // let the player bar pulse with the real bass from now on
       const bass = new Uint8Array(analyser.frequencyBinCount);

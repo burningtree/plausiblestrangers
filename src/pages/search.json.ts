@@ -62,7 +62,7 @@ export const GET: APIRoute = async () => {
     if (recording) queues[recording.id] = [recording];
     tracks.push({
       title: a.data.title,
-      release: 'archive',
+      release: 'unreleased',
       releaseId: recording?.id ?? '',
       meta: `archive · unreleased${a.data.created ? ` · ${fmtDate(a.data.created)}` : ''}`,
       url: archiveUrl(a),

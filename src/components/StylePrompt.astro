@@ -3,12 +3,15 @@
 // to read the rest. Short prompts that fit show no button.
 interface Props {
   text: string;
+  // only Suno writes the prompt itself; elsewhere it is the one we gave the machine
+  machine?: string;
 }
-const { text } = Astro.props;
+const { text, machine } = Astro.props;
+const label = !machine || machine.startsWith('suno') ? 'style prompt, written by suno' : `style prompt, given to ${machine.replace(/ v[\d.].*$/, '')}`;
 ---
 
 <section class="brief" aria-labelledby="brief-h" data-brief>
-  <h2 id="brief-h" class="label">style prompt, written by suno</h2>
+  <h2 id="brief-h" class="label">{label}</h2>
   <p class="brief-text is-clamped" id="brief-text">{text}</p>
   <button type="button" class="brief-more" aria-controls="brief-text" aria-expanded="false" hidden>
     <span class="when-closed">show the whole prompt ↓</span><span class="when-open">show less ↑</span>

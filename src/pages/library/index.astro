@@ -1,6 +1,6 @@
 ---
-// Everything we've made: records, released songs, and the archive of songs
-// that never made it onto a record. Filterable, sortable, shareable (?query).
+// Everything we've made: records, released songs, and the unreleased backlog
+// of songs not on a record (yet). Filterable, sortable, shareable (?query).
 import Base from '../../layouts/Base.astro';
 import Queue from '../../components/Queue.astro';
 import PlayButton from '../../components/PlayButton.astro';
@@ -31,7 +31,7 @@ import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '..
 
 type Row = {
   type: 'song' | 'record';
-  status: 'released' | 'unfinished' | 'archive';
+  status: 'released' | 'unfinished' | 'unreleased';
   title: string;
   sub: string;
   url: string;
@@ -40,6 +40,7 @@ type Row = {
   bpm?: number;
   vocal: 'lyrics' | 'instrumental';
   tags: string[];
+  model?: string; // the machine that made it, e.g. "suno v6"
   cover?: string;
   play?: { queue: string; index: number; id: string; record?: string };
   spec?: { cols: number; bands: number; steps: string }; // mini spectrogram, for songs with audio
@@ -89,6 +90,7 @@ for (const r of releases) {
       bpm: t.data.bpm,
       vocal: t.data.instrumental ? 'instrumental' : 'lyrics',
       tags: splitTags(t.data.tags),
+      model: t.data.machine,
       cover,
       play: qi >= 0 ? { queue: r.id, index: qi, id: playable(t, r).id } : undefined,
       spec: qi >= 0 && trackAnalysis(t) ? miniSteps(trackAnalysis(t)!, t.data.audio) : undefined,
@@ -101,15 +103,16 @@ for (const a of archive) {
   const recording = playableArchive(a);
   rows.push({
     type: 'song',
-    status: 'archive',
+    status: 'unreleased',
     title: a.data.title,
-    sub: a.data.remix ? 'archive · remix' : 'archive',
+    sub: a.data.remix ? 'unreleased · remix' : 'unreleased',
     url: archiveUrl(a),
     date: a.data.created,
     dur: a.data.duration,
     bpm: a.data.bpm,
     vocal: a.data.instrumental ? 'instrumental' : 'lyrics',
     tags: splitTags(a.data.tags),
+    model: a.data.machine,
     play: recording ? { queue: recording.id, index: 0, id: recording.id } : undefined,
     spec: recording && archiveAnalysis(a) ? miniSteps(archiveAnalysis(a)!, recording.src) : undefined,
     peaks: recording?.peaks,
@@ -127,11 +130,15 @@ const topTags = [...tagCount.entries()]
   .map(([t]) => t);
 
 const songs = rows.filter((r) => r.type === 'song');
+// every model that made a song, most used first
+const modelCount = new Map<string, number>();
+for (const r of songs) if (r.model) modelCount.set(r.model, (modelCount.get(r.model) ?? 0) + 1);
+const models = [...modelCount.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 const counts = {
   songs: songs.length,
   released: songs.filter((r) => r.status === 'released').length,
   unfinished: songs.filter((r) => r.status === 'unfinished').length,
-  archive: songs.filter((r) => r.status === 'archive').length,
+  unreleased: songs.filter((r) => r.status === 'unreleased').length,
   records: rows.filter((r) => r.type === 'record').length,
   minutes: Math.round(songs.reduce((s, r) => s + (r.dur ?? 0), 0) / 60),
 };
@@ -160,7 +167,7 @@ const short = (d?: Date) =>
   <section class="library" aria-labelledby="library-h" data-sound-view data-view="bars">
     <h1 id="library-h" class="title">library</h1>
     <p class="lede library-lede">
-      {`Everything we kept: ${counts.songs} songs, about ${counts.minutes} minutes. ${counts.released} made it onto a record, ${counts.unfinished} are waiting on an unfinished one, ${counts.archive} never will. The archive includes words, instructions, and links to recordings where available.`}
+      {`Everything we kept: ${counts.songs} songs, about ${counts.minutes} minutes. ${counts.released} made it onto a record, ${counts.unfinished} are waiting on an unfinished one, ${counts.unreleased} are unreleased, waiting in the backlog. Every song comes with its words and the prompt behind it.`}
     </p>
     <p class="more-link"><a href="/rankings/">songs ranked by loudness, brightness, tempo… →</a></p>
 
@@ -182,7 +189,7 @@ const short = (d?: Date) =>
           <button type="button" data-value="" aria-pressed="true">all</button>
           <button type="button" data-value="released" aria-pressed="false">released <span class="n">{counts.released}</span></button>
           <button type="button" data-value="unfinished" aria-pressed="false">unfinished <span class="n">{counts.unfinished}</span></button>
-          <button type="button" data-value="archive" aria-pressed="false">archive <span class="n">{counts.archive}</span></button>
+          <button type="button" data-value="unreleased" aria-pressed="false">unreleased <span class="n">{counts.unreleased}</span></button>
         </fieldset>
 
         <fieldset class="seg" data-filter="vocal">
@@ -191,6 +198,14 @@ const short = (d?: Date) =>
           <button type="button" data-value="lyrics" aria-pressed="false">lyrics</button>
           <button type="button" data-value="instrumental" aria-pressed="false">instrumental</button>
         </fieldset>
+
+        <label class="lib-sort">
+          <span>model</span>
+          <select name="model">
+            <option value="">any</option>
+            {models.map(([m, n]) => <option value={m}>{m} ({n})</option>)}
+          </select>
+        </label>
 
         <label class="lib-sort">
           <span>sort</span>
@@ -228,6 +243,7 @@ const short = (d?: Date) =>
             data-type={r.type}
             data-status={r.status}
             data-vocal={r.vocal}
+            data-model={r.model ?? ''}
             data-tags={r.tags.join('|')}
             data-date={iso(r.date)}
             data-dur={r.dur ?? 0}
@@ -305,8 +321,8 @@ const short = (d?: Date) =>
   import { initSpectros } from '../../lib/spectro';
   initSpectros();
 
-  type State = { q: string; type: string; status: string; vocal: string; tags: string[]; sort: string };
-  const DEFAULT: State = { q: '', type: 'song', status: '', vocal: '', tags: [], sort: 'new' };
+  type State = { q: string; type: string; status: string; vocal: string; model: string; tags: string[]; sort: string };
+  const DEFAULT: State = { q: '', type: 'song', status: '', vocal: '', model: '', tags: [], sort: 'new' };
 
   function setup() {
     const root = document.querySelector<HTMLElement>('.library');
@@ -316,6 +332,7 @@ const short = (d?: Date) =>
     const items = [...list.querySelectorAll<HTMLLIElement>('.lib-item')];
     const input = root.querySelector<HTMLInputElement>('input[name="q"]')!;
     const select = root.querySelector<HTMLSelectElement>('select[name="sort"]')!;
+    const modelSelect = root.querySelector<HTMLSelectElement>('select[name="model"]')!;
     const countEl = root.querySelector<HTMLElement>('[data-count]')!;
     const reset = root.querySelector<HTMLButtonElement>('.lib-reset')!;
     const empty = root.querySelector<HTMLElement>('.lib-empty')!;
@@ -325,8 +342,10 @@ const short = (d?: Date) =>
     const state: State = {
       q: p.get('q') ?? '',
       type: p.get('show') === 'records' ? 'record' : 'song',
-      status: p.get('status') ?? '',
+      // old links said ?status=archive
+      status: p.get('status') === 'archive' ? 'unreleased' : (p.get('status') ?? ''),
       vocal: p.get('voice') ?? '',
+      model: p.get('model') ?? '',
       tags: (p.get('tags') ?? '').split(',').filter(Boolean),
       sort: p.get('sort') ?? 'new',
     };
@@ -343,6 +362,7 @@ const short = (d?: Date) =>
       if (state.type === 'record') u.set('show', 'records');
       if (state.status) u.set('status', state.status);
       if (state.vocal) u.set('voice', state.vocal);
+      if (state.model) u.set('model', state.model);
       if (state.tags.length) u.set('tags', state.tags.join(','));
       if (state.sort !== 'new') u.set('sort', state.sort);
       const qs = u.toString();
@@ -353,6 +373,7 @@ const short = (d?: Date) =>
       // controls
       input.value = state.q;
       select.value = state.sort;
+      modelSelect.value = state.model;
       root!.querySelectorAll<HTMLElement>('[data-filter]').forEach((fs) => {
         const key = fs.dataset.filter as 'type' | 'status' | 'vocal' | 'tags';
         fs.querySelectorAll<HTMLButtonElement>('button').forEach((b) => {
@@ -371,6 +392,7 @@ const short = (d?: Date) =>
           d.type === state.type &&
           (!state.status || d.status === state.status) &&
           (!state.vocal || d.vocal === state.vocal) &&
+          (!state.model || d.model === state.model) &&
           (!state.tags.length || state.tags.some((t) => tags.includes(t))) &&
           words.every((w) => d.search!.includes(w));
         li.hidden = !ok;
@@ -415,6 +437,10 @@ const short = (d?: Date) =>
     });
     input.addEventListener('input', () => {
       state.q = input.value;
+      paint();
+    });
+    modelSelect.addEventListener('change', () => {
+      state.model = modelSelect.value;
       paint();
     });
     select.addEventListener('change', () => {
