@@ -1,131 +1,36 @@
-# plausible strangers. — website
+<p align="center">
+  <img src="public/art/about/plausible-strangers.webp" alt="Two figures standing in the fog under the words PLAUSIBLE STRANGERS" width="720">
+</p>
 
-A small static Astro site. No analytics, no cookies, no UI framework.
+<h1 align="center">plausible strangers.</h1>
 
-```
-npm install
-npm run dev        # http://localhost:4321
-npm run build      # static site in dist/
-```
+<p align="center">
+  <em>Electronic music to dance to, drift off to, and play a little too loud.</em><br>
+  <a href="https://plausiblestrangers.com">plausiblestrangers.com</a> ·
+  <a href="https://suno.com/@plausiblestrangers">suno</a> ·
+  <a href="https://x.com/plstrangers">x / twitter</a> ·
+  <a href="https://github.com/burningtree/plausiblestrangers">github</a>
+</p>
 
-## Where things live
-
-| what                          | where                                         |
-| ----------------------------- | --------------------------------------------- |
-| home page copy                | `src/pages/index.astro`                       |
-| links / contact email         | `src/site.ts`                                 |
-| a record (title, date, notes) | `src/content/releases/<slug>.md`              |
-| a track (lyrics, notes, info) | `src/content/tracks/<record>/<nn>-<slug>.md`  |
-| audio / covers                | `public/audio/…`, `public/covers/…`           |
-| styles                        | `src/styles/global.css`                       |
-| the player                    | `src/components/Player.astro`                 |
-
-Track files: the frontmatter holds the facts (`bpm`, `key`, `style` = the prompt
-given to the machine, optional `notes`), and the body is the lyrics as plain text.
-Lines in `[brackets]` are shown as stage directions. Records can be hidden with
-`hidden: true`.
-
-Extra images (concept art, outtakes) go in `public/art/<record>/` and are listed
-under `gallery:` in the record's markdown, each with `src`, `alt` (a description
-for people who can't see it) and an optional `caption`. Put a 640px version next
-to each image with `-640` in the name for the thumbnail, e.g.:
-
-```
-magick photo.jpg -resize 1600x1600 -quality 82 public/art/my-record/01.webp
-magick photo.jpg -resize 640x640 -quality 76 public/art/my-record/01-640.webp
-```
-
-Records can also be marked `status: "unfinished"`: they get a stamp and sort
-after the released ones. Tracks without `audio:` show their words but no player.
-
-## Adding a new record
-
-Put it in the music folder like the others (`006-NEW-THING-EP/01-track.wav`,
-`cover-upscaled.jpg`), make it a public playlist on Suno with the same name, then:
-
-```
-npm run import -- "/path/to/My Music/Plausible Strangers"
-```
-
-This encodes AAC (.m4a) (needs `ffmpeg` and ImageMagick `magick`), resizes covers,
-computes waveforms and pulls lyrics + style prompts from Suno. It never
-overwrites markdown you already edited (`--rewrite` forces that, `--force`
-re-encodes audio and covers).
-
-## The archive (/library)
-
-Songs that never made it onto a record live in `src/content/archive/`, one
-markdown file each (title, date, tempo, tags, prompt, lyrics). They're info
-only: no audio is hosted, each page links to the song on Suno. To pull in new
-public Suno songs that aren't on a record:
-
-```
-npm run import:archive
-```
-
-Existing files are never overwritten, so edit freely. Remixes of other
-people's songs get `lyricsHidden: true` (their words aren't ours to print).
-Set `hidden: true` to leave a song out of the library.
-
-## Image placeholders
-
-Covers and gallery images show a blurred colour preview while they load
-(BlurHash, decoded at build time into a tiny inline PNG — no JavaScript).
-`npm run import` refreshes them; after adding images by hand run:
-
-```
-npm run blurhash
-```
-
-## News
-
-Posts live in `src/content/news/`, one markdown file each:
-
-```
 ---
-title: "Something happened"
-date: 2026-12-01
-summary: "One or two sentences for lists, the home page and the RSS feed."
-records: ["i-am-your-bug"]   # optional: shown at the end with a play button
-draft: true                   # optional: hide it until it's ready
+
+Plausible Strangers is a human-directed, machine-made electronic music project. Hypnotic grooves somewhere between
+house, techno and electroclash, with strange voices, misplaced instruments and occasionally just noise.
+
+We have loved music all our lives but never had the lessons, the instruments or the hands to play them. So a machine
+plays what we can't, and we do the rest: the ideas, the words, and a lot of listening. Most of what it makes, we throw
+away; we keep only the songs we'd put on ourselves. Nothing is hidden: every song's lyrics and the prompt behind it
+are on the website.
+
+Inspired by Vitalic, Sexy Sushi, Fischerspooner, The Blaze, МЫ, MIDI Lidi, Forest Swords and
+[many more](https://plausiblestrangers.com/about/#influences).
+
+<a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://licensebuttons.net/p/zero/1.0/88x31.png" alt="CC0" align="right"></a>
+
+**All our music is free:** public domain under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Use it
+however you like, no need to ask or credit us. (Our remixes of other artists' songs excepted.)
+
 ---
-The post itself, in markdown.
-```
 
-The newest three appear on the home page; all of them on `/news`, in search,
-and in the RSS feed at `/rss.xml`.
-
-## Influences (/about)
-
-The list lives in `src/data/influences.ts`. To give an artist a photo, save it
-as `public/art/influences/<slug>.webp` (or .jpg/.png), where the slug is the
-name in lowercase without accents or punctuation: `vitalic`, `miss-kittin`,
-`etienne-de-crecy`, `slagsmalsklubben`… Until then the tile shows initials.
-Photos are shown in black and white, in colour on hover. Run `npm run blurhash`
-after adding them for the blurred loading preview. Only use photos you have the
-rights to.
-
-### Photos from Spotify
-
-Tiles without a photo of your own can use the artist's Spotify picture:
-
-1. Create a free app at https://developer.spotify.com/dashboard and copy its
-   Client ID and Client Secret into `web/.env` (git ignores it):
-
-   ```
-   SPOTIFY_CLIENT_ID=...
-   SPOTIFY_CLIENT_SECRET=...
-   ```
-
-2. `npm run influences:spotify` — it prints each match (✓ exact, ≈ guessed).
-   For a wrong match, put the right artist id (from its
-   `open.spotify.com/artist/<id>` link) as `id` in
-   `src/data/influences-spotify.json`, remove its `image`, and run again.
-
-Only image addresses are stored; the pictures load from Spotify, unaltered and
-linked to the artist, with a credit under the grid (as Spotify's terms ask).
-
-## Deploy
-
-`dist/` is plain files — any static host works (Netlify, Cloudflare Pages, a
-cheap server with nginx). Set `site` in `astro.config.mjs` to the real domain.
+<sub>This repository is the website: a small static [Astro](https://astro.build) site, `npm install` then
+`npm run dev`. How to add records and songs: [docs/website.md](docs/website.md).</sub>

@@ -1,0 +1,25 @@
+---
+// A small "CC0 · no rights reserved" badge, in the site's own type, linking to
+// the CC0 deed. The two marks are drawn here: "cc" in a circle, a slashed zero.
+import { site } from '../site';
+interface Props {
+  class?: string;
+}
+const { class: cls } = Astro.props;
+---
+
+<a class:list={['cc0', cls]} href={site.license.url} rel="license" title={site.license.title}>
+  <svg class="cc0-marks" viewBox="0 0 46 22" aria-hidden="true" focusable="false">
+    <g fill="none" stroke="currentColor" stroke-width="1.6">
+      <circle cx="11" cy="11" r="9.5"></circle>
+      <circle cx="35" cy="11" r="9.5"></circle>
+      <!-- the zero, with its slash -->
+      <ellipse cx="35" cy="11" rx="3.6" ry="5.4"></ellipse>
+      <path d="M38.2 6.3 31.8 15.7"></path>
+      <!-- "cc": two open arcs -->
+      <path d="M9.4 8.6a3 3 0 1 0 0 4.8"></path>
+      <path d="M15.4 8.6a3 3 0 1 0 0 4.8"></path>
+    </g>
+  </svg>
+  <span class="cc0-text"><strong>CC0</strong> no rights reserved</span>
+</a>

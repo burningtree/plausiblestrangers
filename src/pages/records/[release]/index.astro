@@ -22,6 +22,7 @@ import {
   isUnfinished,
   type Release,
 } from '../../../lib/catalog';
+import { site } from '../../../site';
 import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../../lib/seo';
 
 export const getStaticPaths = (async () => {
@@ -57,6 +58,7 @@ const d = release.data;
   jsonLd={graph(
     {
       '@type': 'MusicAlbum',
+      license: site.license.url,
       '@id': abs(releaseUrl(release.id)) + '#album',
       name: d.title,
       url: abs(releaseUrl(release.id)),

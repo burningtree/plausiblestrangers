@@ -24,6 +24,7 @@ import {
   fmtDate,
   type ArchiveSong,
 } from '../../lib/catalog';
+import { site } from '../../site';
 import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../lib/seo';
 
 export const getStaticPaths = (async () => {
@@ -61,12 +62,14 @@ const details: [string, string | undefined][] = [
 ---
 
 <Base
+  licensed={!d.remix}
   title={`${d.title} — archive`}
   description={`${d.title}: an unreleased Plausible Strangers song from the archive${d.bpm ? `, ${d.bpm} bpm` : ''}. Lyrics, the prompt, and a link to listen.`}
   type="music.song"
   jsonLd={graph(
     {
       '@type': 'MusicRecording',
+      license: d.remix ? undefined : site.license.url,
       name: d.title,
       url: abs(archiveUrl(song)),
       byArtist: bandRef,
@@ -149,6 +152,14 @@ const details: [string, string | undefined][] = [
                 </a>
               </dd>
             </>
+          )}
+          <dt>license</dt>
+          {d.remix ? (
+            <dd>not ours to give away: a remix of someone else's song, so the original's rights apply</dd>
+          ) : (
+            <dd>
+              <a href={site.license.url} rel="license" title={site.license.title}>CC0 1.0</a> · free, no rights reserved
+            </dd>
           )}
         </dl>
       </section>

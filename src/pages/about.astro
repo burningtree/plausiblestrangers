@@ -2,6 +2,7 @@
 // About: the longer version of "what we are".
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
+import Cc0Badge from '../components/Cc0Badge.astro';
 import PixelArt from '../components/PixelArt.astro';
 import { getCatalog, getArchive, blurStyle, isCopy } from '../lib/catalog';
 import { site } from '../site';
@@ -197,6 +198,24 @@ const songs = released + archive.length;
         So everything is open. The lyrics, the instructions, the unfinished album, the songs we decided not to
         release. You can see exactly where the human ends and the machine begins, or at least where we think it does.
       </p>
+    </section>
+
+    <section aria-labelledby="a-free" id="free" class="about-free">
+      <h2 id="a-free" class="label">free music</h2>
+      <p>
+        Everything we make is yours too. All our songs are dedicated to the public domain under{' '}
+        <a href={site.license.url} rel="license">CC0</a>: as far as the law allows, we waive every right we have in
+        them. Listen, download, share, sample, remix, put them in a film or a game, sell them. You don't have to ask,
+        and you don't have to credit us (though we'd love to hear what you made).
+      </p>
+      <p>
+        It's in the spirit of the free music movement, and it fits how these songs come to be: a machine plays the
+        instruments and we choose what to keep. Locking that up never felt right. Music wants to be passed around.
+      </p>
+      <p class="muted">
+        One exception: our remixes of other people's songs. Those aren't ours to give away, and their pages say so.
+      </p>
+      <p><Cc0Badge /></p>
     </section>
 
     <section aria-labelledby="a-here">

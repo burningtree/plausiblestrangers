@@ -7,7 +7,14 @@ export const site = {
   links: [
     { label: 'suno', href: 'https://suno.com/@plausiblestrangers' },
     { label: 'x / twitter', href: 'https://x.com/plstrangers' },
+    { label: 'github', href: 'https://github.com/burningtree/plausiblestrangers' },
   ],
+  // Our music is free: CC0, no rights reserved (except remixes of other people's songs).
+  license: {
+    name: 'CC0 1.0',
+    title: 'Creative Commons CC0 1.0 Universal (public domain dedication)',
+    url: 'https://creativecommons.org/publicdomain/zero/1.0/',
+  },
   // shown as the site's account when links are shared on X
   twitter: '@plstrangers',
   // Leave empty to hide.

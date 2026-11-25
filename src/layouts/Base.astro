@@ -5,6 +5,7 @@ import ThemeSwitch from '../components/ThemeSwitch.astro';
 import Visualiser from '../components/Visualiser.astro';
 import Palette from '../components/Palette.astro';
 import Icon from '../components/Icon.astro';
+import Cc0Badge from '../components/Cc0Badge.astro';
 import { site } from '../site';
 import '../styles/global.css';
 
@@ -23,6 +24,8 @@ interface Props {
   jsonLd?: unknown;
   /** keep this page out of search results (e.g. 404) */
   noindex?: boolean;
+  /** false on pages whose music isn't ours to give away (remixes of others' songs) */
+  licensed?: boolean;
 }
 const {
   title,
@@ -34,6 +37,7 @@ const {
   published,
   jsonLd,
   noindex = false,
+  licensed = true,
 } = Astro.props;
 const fullTitle = home
   ? 'Plausible Strangers — human-directed, machine-generated electronic music'
@@ -57,6 +61,7 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {licensed && <link rel="license" href={site.license.url} />}
     {noindex && <meta name="robots" content="noindex, follow" />}
     <meta name="author" content="Plausible Strangers" />
     <meta name="theme-color" content="#f7f6f1" media="(prefers-color-scheme: light)" />
@@ -125,6 +130,13 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
       <slot />
     </main>
     <footer class="colophon">
+      <div class="colophon-free">
+        <Cc0Badge />
+        <p>
+          All our music is public domain (CC0). Use it however you like, no need to ask or credit us.
+          Our remixes of other artists' songs excepted. <a href="/about/#free">Why?</a>
+        </p>
+      </div>
       <p>
         No cookies, no analytics, no algorithm. Just files on a server. <a href="/about/">About us.</a><br />
         Sounds by machines, decisions by humans, mistakes by both.

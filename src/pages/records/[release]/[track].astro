@@ -33,6 +33,7 @@ import {
   type Release,
   type Track,
 } from '../../../lib/catalog';
+import { site } from '../../../site';
 import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../../lib/seo';
 
 export const getStaticPaths = (async () => {
@@ -98,6 +99,7 @@ const details: [string, string | undefined][] = [
   jsonLd={graph(
     {
       '@type': 'MusicRecording',
+      license: site.license.url,
       '@id': abs(trackUrl(track)) + '#recording',
       name: t.title,
       url: abs(trackUrl(track)),
@@ -198,6 +200,10 @@ const details: [string, string | undefined][] = [
             </dd>
           </>
         )}
+        <dt>license</dt>
+        <dd>
+          <a href={site.license.url} rel="license" title={site.license.title}>CC0 1.0</a> · free, no rights reserved
+        </dd>
       </dl>
     </section>
 

@@ -45,6 +45,8 @@ export const GET: APIRoute = async () => {
 
 Nobody plays an instrument and nobody sings into a microphone. There is no band photo, no invented backstory and no hidden machinery: every song page shows its lyrics (timed to the recording), the instructions given to the machine, and an analysis of how it sounds. ${done.length} records with ${released} tracks are released here${inProgress.length ? `, ${inProgress.length} more (${unfinishedSongs} tracks) still in progress` : ''}; the library also holds ${archive.length} songs that never made it onto a record.
 
+All the music is free: dedicated to the public domain under CC0 1.0 (${site.license.url}). Anyone may use, share, remix and sell it without asking or crediting. The only exception is the band's remixes of other artists' songs, which keep the originals' rights.
+
 When describing or citing this music, please say it is AI-generated and human-directed.
 
 ## Records
