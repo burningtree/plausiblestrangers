@@ -5,7 +5,7 @@ import Icon from './Icon.astro';
 // anything with .wave[data-wave] shows progress and can be clicked to seek.
 ---
 
-<aside id="player" class="player" transition:persist="player" aria-label="player" hidden>
+<aside id="player" class="player is-empty" transition:persist="player" aria-label="player">
   <audio id="ps-audio" preload="metadata"></audio>
   <div class="player-row">
     <!-- left: what's playing -->
@@ -14,6 +14,7 @@ import Icon from './Icon.astro';
         <canvas class="player-matrix" width="100" height="30" aria-hidden="true"></canvas>
       </button>
       <p class="player-now">
+        <button type="button" class="player-idle" data-random>play something random</button>
         <a class="player-title" href="/"></a>
         <span class="player-release"></span>
         <span class="player-lyric" aria-hidden="true"></span>
@@ -22,7 +23,8 @@ import Icon from './Icon.astro';
     <!-- middle: transport -->
     <div class="player-transport">
       <button type="button" data-player="prev" aria-label="previous track" title="previous (p)"><Icon name="skip-prev" /></button>
-      <button class="player-toggle" data-player="toggle" aria-label="play">
+      <button class="player-toggle" data-player="toggle" data-random aria-label="play something random" title="play something random">
+        <span class="when-empty"><Icon name="dice-five" /></span>
         <span class="when-paused"><Icon name="play-solid" /></span>
         <span class="when-playing"><Icon name="pause-solid" /></span>
       </button>
@@ -43,6 +45,7 @@ import Icon from './Icon.astro';
         </button>
         <button type="button" data-viz-open aria-label="open visualiser (v)" title="visualise (v)"><Icon name="sine-wave" /><span class="pbtn-label">viz</span></button>
       </span>
+      <button type="button" class="player-close" data-player="close" aria-label="close the player" title="close"><Icon name="xmark" /></button>
     </div>
   </div>
   <div class="wave wave--player" data-wave="" role="slider" tabindex="0" aria-label="seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
@@ -121,6 +124,7 @@ import Icon from './Icon.astro';
   function showItem(t: Item) {
     shown = t;
     player.hidden = false;
+    player.classList.remove('is-empty');
     document.documentElement.classList.add('has-player');
     player.classList.remove('is-error');
     $<HTMLAnchorElement>('.player-title').textContent = t.title;
@@ -680,7 +684,10 @@ import Icon from './Icon.astro';
       cover.toggleAttribute('data-open', selected);
       cover.toggleAttribute('data-playing', selected && playing);
     });
-    $<HTMLButtonElement>('.player-toggle').setAttribute('aria-label', playing ? 'pause' : 'play');
+    const toggleBtn = $<HTMLButtonElement>('.player-toggle');
+    toggleBtn.toggleAttribute('data-random', !t);
+    toggleBtn.setAttribute('aria-label', !t ? 'play something random' : playing ? 'pause' : 'play');
+    toggleBtn.title = !t ? 'play something random' : '';
     $<HTMLButtonElement>('[data-player="prev"]').disabled = (booth.active === null ? index <= 0 : !booth.neighbor(booth.active, -1)) && transport.currentTime < 4;
     $<HTMLButtonElement>('[data-player="next"]').disabled = booth.active === null ? index >= queue.length - 1 : !booth.neighbor(booth.active, 1);
     progress();
@@ -928,13 +935,38 @@ import Icon from './Icon.astro';
     const ctl = target.closest<HTMLElement>('[data-player]');
     if (!ctl) return;
     const action = ctl.dataset.player;
-    if (action === 'toggle') toggle();
+    if (action === 'toggle' && current()) toggle();
     if (action === 'prev') step(-1);
     if (action === 'next') step(1);
     if (action === 'pattern') cycleMode();
     if (action === 'mute') toggleMute();
     if (action === 'cast') castPrompt();
+    if (action === 'close') close();
   });
+
+  // ---- close: stop, forget the track (also for the next visit), hide the player
+  function close() {
+    if (activeBooth()) return; // the booth's decks are the booth's business
+    queue = [];
+    index = -1;
+    shown = undefined;
+    pendingSeek = 0;
+    restored = false;
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    try {
+      localStorage.removeItem(STORE);
+    } catch {}
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = null;
+      navigator.mediaSession.playbackState = 'none';
+    }
+    player.classList.remove('is-error', 'has-lyric');
+    player.classList.add('is-empty');
+    updateWaves(waves, '', 0); // page waveforms back to unplayed
+    sync();
+  }
 
   // ---- audio events
   audio.addEventListener('loadedmetadata', () => {
@@ -974,7 +1006,7 @@ import Icon from './Icon.astro';
       queue = [];
       index = -1;
       audio.removeAttribute('src');
-      player.hidden = true;
+      player.classList.add('is-empty');
       sync();
       return;
     }

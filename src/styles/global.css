@@ -4284,4 +4284,413 @@ html.is-playing .wave--bars.is-mine .bars i.on {
   margin: 0;
 }
 
+/* ==== sticky header, with the player folded into it ==== */
+
+/* the old bottom bar is gone: nothing to make room for */
+html.has-player {
+  --player-h: 0px;
+}
+/* anchors land below the header */
+html {
+  scroll-padding-top: calc(var(--head-h, 4rem) + 1rem);
+}
+
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'word player nav';
+  align-items: center;
+  gap: 0.5rem 2rem;
+  /* full width, edge to edge, while the content keeps its margins */
+  margin: 0 calc(-1 * var(--gutter)) clamp(2rem, 6vw, 4rem);
+  padding: 0.85rem var(--gutter);
+  background: var(--paper);
+  border-bottom: 1px solid var(--faint);
+}
+.masthead > .wordmark {
+  grid-area: word;
+}
+.masthead > .corner {
+  grid-area: nav;
+}
+.masthead--home .wordmark {
+  font-size: clamp(1.15rem, 0.95rem + 0.6vw, 1.35rem);
+}
+
+/* ---- the player, one quiet line in the middle of the header ---- */
+.masthead .player {
+  grid-area: player;
+  position: static;
+  justify-self: center;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+  animation: player-fade 0.35s ease;
+  font-size: 0.78rem;
+}
+@keyframes player-fade {
+  from {
+    opacity: 0;
+  }
+}
+.masthead .player-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  max-width: none;
+}
+.masthead .player-transport {
+  order: -1;
+  gap: 0;
+}
+.masthead .player-transport button {
+  min-width: 2rem;
+  min-height: 2rem;
+}
+.masthead .player-transport .icon {
+  width: 1rem;
+  height: 1rem;
+}
+.masthead .player-transport .player-toggle {
+  width: 2.2rem;
+  height: 2.2rem;
+  margin: 0 0.15rem;
+}
+.masthead .player-transport .player-toggle .icon {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.masthead .player-left {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.masthead .player-right {
+  flex: none;
+  gap: 0.75rem;
+}
+/* the LED matrix and the volume slider don't fit a header (m still mutes) */
+.masthead .player-matrix-btn,
+.masthead .player-volume {
+  display: none;
+}
+.masthead .player-now {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.masthead .player-time {
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+.masthead .player-skip button {
+  min-height: 2rem;
+}
+
+/* progress: a thin line along the header's bottom edge, which you can click
+   or drag to seek; it thickens under the pointer */
+.masthead .wave--player {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: -1px;
+  height: 3px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  cursor: pointer;
+  background: linear-gradient(to right, var(--ink) var(--p, 0%), transparent 0);
+  transition: height 0.15s ease, background-color 0.45s ease;
+}
+html.is-playing .masthead .wave--player {
+  background: linear-gradient(to right, var(--hot) var(--p, 0%), transparent 0);
+}
+.masthead .wave--player > * {
+  display: none; /* the typed waveform isn't drawn here */
+}
+.masthead .wave--player::after {
+  /* a taller invisible strip, so the line is easy to hit */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.9rem;
+}
+.masthead .wave--player:hover,
+.masthead .wave--player:focus-visible {
+  height: 6px;
+}
+
+/* things that stick must clear the header */
+@media (min-width: 68rem) {
+  .release-cover {
+    top: calc(var(--head-h, 4rem) + 1.5rem);
+  }
+}
+
+/* phones: wordmark, menu, then the player on a row of its own */
+@media (max-width: 48rem) {
+  .masthead {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'word' 'nav' 'player';
+    gap: 0.35rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.6rem;
+  }
+  .masthead .player {
+    justify-self: stretch;
+    margin-top: 0.15rem;
+  }
+  .masthead .player-row {
+    gap: 0.6rem;
+  }
+  .masthead .player-left {
+    flex: 1 1 auto;
+  }
+  .masthead .player-time {
+    display: none;
+  }
+}
+
 .player.is-booth [data-player="cast"] { display: none; }
+/* no visualiser button in the header (the v key still opens it) */
+.masthead [data-viz-open] {
+  display: none;
+}
+.wordmark a {
+  color: inherit;
+  text-decoration: none;
+}
+.wordmark a:hover,
+a.wordmark:hover {
+  color: var(--hot);
+}
+
+/* the line being sung: a small chip of its own, so it never reads as part of
+   the title; only the word being sung right now is in the accent */
+.masthead .player.has-lyric .player-lyric {
+  display: inline-block;
+  max-width: 100%;
+  margin-left: 0.6em;
+  padding: 0.15rem 0.65rem 0.2rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 13%, var(--paper));
+  font-size: 0.9rem;
+  line-height: 1.3;
+  vertical-align: baseline;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.masthead .player-lyric::before {
+  content: '♪';
+  margin-right: 0.4em;
+  color: var(--mute);
+  font-style: normal;
+}
+.masthead .player-lyric::after {
+  content: none;
+}
+@media (max-width: 34rem) {
+  .masthead .player.has-lyric .player-lyric {
+    margin-left: 0;
+  }
+}
+/* the logo is the same size on every page */
+.masthead .wordmark,
+.masthead--home .wordmark {
+  font-size: 1.25rem;
+}
+
+/* ---- player: a fixed slot, so nothing moves when titles and lyrics change ----
+   [ prev ▶ next | title  ♪ lyric……………… | 0:36 / 2:49 ] */
+.masthead .player {
+  justify-self: center;
+  width: min(40rem, 100%);
+}
+.masthead .player-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+}
+.masthead .player-transport {
+  order: 0;
+  grid-column: 1;
+  grid-row: 1;
+}
+.masthead .player-left {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+.masthead .player-right {
+  grid-column: 3;
+  grid-row: 1;
+}
+/* title and lyric side by side, centred on one line, each shortened with … */
+.masthead .player-now {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.2;
+}
+.masthead .player-title,
+.masthead .player-release {
+  flex: 0 1 auto;
+  min-width: 2.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* while a line is sung, the title gives way first (down to a few letters), the lyric last */
+.masthead .player.has-lyric .player-lyric {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: 0;
+}
+.masthead .player.has-lyric .player-title {
+  flex-shrink: 1000;
+  min-width: 6ch;
+}
+.masthead .player-time {
+  min-width: 5.6em;
+  text-align: right;
+}
+@media (max-width: 48rem) {
+  .masthead .player {
+    width: 100%;
+  }
+  .masthead .player-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+/* ---- where the player sits in the header ----
+   most screens: logo and menu on top, the player on a row of its own below,
+   so a long title and the sung line both get room; only very wide screens
+   fit it in between */
+.masthead {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'word nav'
+    'player player';
+  row-gap: 0.4rem;
+}
+.masthead > .corner {
+  justify-self: end;
+}
+.masthead .player {
+  justify-self: start;
+  width: min(48rem, 100%);
+}
+@media (min-width: 100rem) {
+  .masthead {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'word player nav';
+  }
+  .masthead .player {
+    justify-self: center;
+    width: min(44rem, 100%);
+  }
+}
+@media (max-width: 48rem) {
+  .masthead {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'word' 'nav' 'player';
+  }
+  .masthead > .corner {
+    justify-self: start;
+  }
+  .masthead .player {
+    width: 100%;
+  }
+}
+
+/* close the player: a small ✕ at the end of its row */
+.masthead .player-row {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+.player-close {
+  grid-column: 4;
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-right: -0.5rem;
+  border-radius: 50%;
+  color: var(--mute);
+}
+.player-close .icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+.player-close:hover {
+  color: var(--hot);
+  background: var(--hover);
+}
+.player.is-booth .player-close {
+  display: none;
+}
+@media (max-width: 48rem) {
+  .masthead .player-row {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+}
+
+/* ---- the player with nothing loaded: ⏮ 🎲 ⏭  play something random ----
+   in the very same place as when it plays, so nothing jumps; the dice plays a random song */
+.player-idle,
+.player .when-empty {
+  display: none;
+}
+.player.is-empty .player-idle {
+  display: inline;
+  padding: 0.3rem 0;
+  font: inherit;
+  color: var(--mute);
+  text-decoration: underline;
+  text-decoration-color: var(--faint);
+  text-underline-offset: 0.3em;
+  white-space: nowrap;
+}
+.player.is-empty .player-idle:hover {
+  color: var(--hot);
+}
+.player.is-empty .player-toggle > .when-empty {
+  display: grid;
+  place-items: center;
+}
+.player.is-empty .player-toggle > .when-paused,
+.player.is-empty .player-toggle > .when-playing,
+html.is-playing .player.is-empty .player-toggle > .when-playing {
+  display: none;
+}
+.player.is-empty .player-title,
+.player.is-empty .player-release,
+.player.is-empty .player-lyric,
+.player.is-empty .player-time,
+.player.is-empty .player-close,
+.player.is-empty .wave--player {
+  display: none;
+}
+.player.is-empty .player-toggle:hover {
+  color: var(--hot);
+}
+.player.is-empty.is-rolling .when-empty .icon,
+.player-toggle.is-rolling .when-empty .icon {
+  animation: dice-roll 0.5s cubic-bezier(0.3, 1.4, 0.6, 1);
+}

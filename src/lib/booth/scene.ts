@@ -23,6 +23,10 @@ type Action = {
   side?: Side;
   type?: 'scratch' | 'arm' | 'record';
   album?: string;
+  /** keys that act while held (nudge) */
+  hold?: (down: boolean) => void;
+  /** the current value in words, shown with the label while hovering or turning */
+  describe?: () => string;
 };
 interface SceneOptions {
   play: (side: Side) => void;
@@ -260,83 +264,102 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     slot.rotation.y = (x + z) * 3;
   }
 
-  function casework(parent: T.Object3D, width: number, top: T.Material) {
-    const depth = 4.77;
-    const center = 0.21;
-    box(parent, width, 0.29, depth, 0, 0.063, center, silver, 0.009, true);
-    box(parent, width - 0.045, 0.145, depth - 0.045, 0, -0.138, center, dark, 0.01, true);
-    box(parent, width - 0.014, 0.018, depth - 0.014, 0, 0.212, center, dark, 0.004);
-    box(parent, width - 0.028, 0.056, depth - 0.028, 0, 0.25, center, top, 0.009, true);
-    for (const x of [-width / 2 + 0.15, width / 2 - 0.15]) {
-      for (const z of [center - depth / 2 + 0.15, center + depth / 2 - 0.15]) {
-        box(parent, 0.29, 0.17, 0.26, x * 0.83, -0.278, center + (z - center) * 0.83, rubber, 0.012, true);
-        screw(parent, x, z);
+  // ---- Teenage Engineering–style hardware: flat grey slabs, printed mono
+  // labels, big colour-coded knobs, square keys with little LEDs.
+  const body = material(0xc4c2bb, 0.06, 0.64);
+  const bodyEdge = material(0xa9a7a0, 0.06, 0.7);
+  const mixerBody = material(0x30312e, 0.12, 0.66);
+  const keycap = material(0xf1f0eb, 0.02, 0.6);
+  const padcap = material(0xe2e0d9, 0.02, 0.62);
+  const print = '#2b2a27';
+  const printSoft = '#7a776f';
+  const deckColour = [0xf05a1a, 0x2f66ea] as const;
+  const green = 0x2fae78;
+  const grey = 0x9a9893;
+  const white = 0xf4f3ee;
+
+  // the slab: a thin rounded body, a darker underside, small feet
+  function casework(parent: T.Object3D, width: number, top: T.Material, depth: number, center: number) {
+    box(parent, width, 0.3, depth, 0, 0.13, center, top, 0.07, true);
+    box(parent, width - 0.06, 0.12, depth - 0.06, 0, -0.06, center, top === mixerBody ? rubber : bodyEdge, 0.04, true);
+    for (const x of [-width / 2 + 0.3, width / 2 - 0.3]) {
+      for (const z of [center - depth / 2 + 0.3, center + depth / 2 - 0.3]) {
+        cylinder(parent, 0.11, 0.1, x, -0.16, z, rubber, 24, 0.11, true);
       }
+    }
+    for (const x of [-width / 2 + 0.14, width / 2 - 0.14]) {
+      for (const z of [center - depth / 2 + 0.14, center + depth / 2 - 0.14]) screw(parent, x, z);
     }
   }
 
   const invisible = new T.MeshBasicMaterial({ visible: false });
-  function button(parent: T.Object3D, x: number, z: number, width: number, caption: string, color: number, action: Action, on?: () => boolean, frontLed?: number) {
-    const button = new T.Group();
-    button.position.set(x, 0.294, z);
-    parent.add(button);
-    box(parent, width + 0.045, 0.009, 0.315, x, 0.281, z, rubber, 0.004);
-    const cap = box(button, width, 0.073, 0.272, 0, 0.012, 0, material(color, 0.02, 0.69), 0.007, true);
-    mark(button, caption, 0, 0.006, Math.min(0.12, 0.88 * width / (caption.length * 0.42)), color === ink || color === blue ? '#f2efe3' : '#282724', 0.052);
-    const panelLed = on && frontLed !== undefined
-      ? new T.MeshBasicMaterial({ color: 0x87847a, toneMapped: false })
-      : undefined;
-    if (panelLed) box(parent, 0.128, 0.004, 0.026, x, 0.283, z + 0.239, panelLed, 0.001);
-    const ledMat = on && !panelLed
-      ? new T.MeshStandardMaterial({ color: 0x504d47, emissive: 0xffa452, roughness: 0.55 })
-      : undefined;
-    if (ledMat) box(parent, 0.071, 0.008, 0.018, x, 0.283, z - 0.196, ledMat);
-    hit(cap, { ...action, shape: [cap], press: event => {
-      button.userData.pressed = performance.now() + 135;
+
+  // a key: a square cap that travels, a printed caption, an LED that lights
+  function button(parent: T.Object3D, x: number, z: number, width: number, caption: string, cap: T.Material, action: Action,
+    on?: () => boolean, led = 0xff6a2b, depth = 0.3, captionColor = print, shortcut?: string) {
+    const key = new T.Group();
+    key.position.set(x, 0.312, z);
+    parent.add(key);
+    // a soft shadow line around the cap instead of a black well
+    box(parent, width + 0.02, 0.004, depth + 0.02, x, 0.281, z, material(0x8e8c85, 0, 0.9), 0.008);
+    const top = box(key, width, 0.06, depth, 0, 0.0, 0, cap, 0.025, true);
+    mark(key, caption, 0, 0.0, Math.min(0.1, 0.85 * width / (caption.length * 0.62)), captionColor, 0.032, 'center', '700');
+    if (shortcut) mark(key, shortcut, width / 2 - 0.055, depth / 2 - 0.05, 0.055, captionColor === print ? printSoft : captionColor, 0.031);
+    // the LED is only there when it's on
+    const ledMat = on ? new T.MeshBasicMaterial({ color: led, toneMapped: false }) : undefined;
+    const ledDot = ledMat ? cylinder(key, 0.026, 0.006, -width / 2 + 0.06, 0.031, -depth / 2 + 0.06, ledMat, 16) : undefined;
+    hit(top, { ...action, shape: [top], press: event => {
+      key.userData.pressed = performance.now() + 135;
       action.press?.(event);
     } });
-    hit(box(parent, width + 0.06, 0.12, 0.37, x, 0.33, z, invisible), cap.userData.action);
+    hit(box(parent, width + 0.04, 0.12, depth + 0.04, x, 0.33, z, invisible), top.userData.action);
     animated.push(() => {
-      const target = (button.userData.pressed ?? 0) > performance.now() ? 0.274 : 0.294;
-      button.position.y = T.MathUtils.lerp(button.position.y, target, 0.32);
-      const lit = on?.();
-      if (panelLed) panelLed.color.setHex(lit ? frontLed! : 0x87847a);
-      if (ledMat) ledMat.emissiveIntensity = lit ? 2.3 : 0;
+      const target = (key.userData.pressed ?? 0) > performance.now() || key.userData.held ? 0.298 : 0.312;
+      key.position.y = T.MathUtils.lerp(key.position.y, target, 0.32);
+      if (ledDot) ledDot.visible = on!();
     });
+    return key;
   }
 
-  function knob(parent: T.Object3D, x: number, z: number, caption: string, color: number, get: () => number, set: (value: number) => void, initial: number, indicator = color === ink ? ivory : ink) {
-    const base = cylinder(parent, 0.161, 0.023, x, 0.29, z, rubber, 40);
+  // a knob: a tall coloured cylinder with a pointer on top, ticks printed around it
+  function knob(parent: T.Object3D, x: number, z: number, caption: string, color: number, get: () => number, set: (value: number) => void,
+    initial: number, size = 1, labelColor = print, describe?: () => string) {
+    const r = 0.2 * size;
+    cylinder(parent, r * 1.22, 0.02, x, 0.29, z, rubber, 48);
     const dial = new T.Group();
-    dial.position.set(x, 0.302, z);
+    dial.position.set(x, 0.3, z);
     parent.add(dial);
-    const cap = cylinder(dial, 0.142, 0.102, 0, 0.052, 0, material(color, 0.05, 0.69), 48, 0.137, true);
-    box(dial, 0.021, 0.005, 0.078, 0, 0.105, -0.077, material(indicator), 0.001);
-    mark(parent, caption, x, z + 0.231, 0.105, '#eae7dc');
-    for (const angle of [-2.23, 0, 2.23]) {
-      const tick = box(parent, 0.01, 0.004, 0.023, x + Math.sin(angle) * 0.19, 0.281, z - Math.cos(angle) * 0.19, silver);
+    const height = 0.13 * size;
+    const cap = cylinder(dial, r, height, 0, height / 2, 0, material(color, 0.04, 0.5), 48, r * 0.97, true);
+    const pointer = color === white || color === grey ? material(0x2b2a27) : material(0xffffff);
+    box(dial, 0.028 * size, 0.006, r * 0.55, 0, height + 0.003, -r * 0.5, pointer, 0.002);
+    for (let i = 0; i <= 10; i++) {
+      const angle = range(i / 10, 2.36, -2.36);
+      const tick = box(parent, i % 5 ? 0.008 : 0.014, 0.003, 0.045, x + Math.sin(angle) * r * 1.42, 0.282, z - Math.cos(angle) * r * 1.42, material(labelColor === print ? 0x2b2a27 : 0xd8d6cf));
       tick.rotation.y = -angle;
     }
-    const action = { label: caption, get, drag: set, reset: () => set(initial), shape: [cap] };
-    hit(base, action);
+    mark(parent, caption, x, z + r * 1.95, 0.08, labelColor, 0.283, 'center', '700');
+    const action: Action = { label: caption, get, drag: set, reset: () => set(initial), shape: [cap], describe };
     hit(cap, action);
-    animated.push(() => dial.rotation.y = range(get(), 2.25, -2.25));
+    animated.push(() => dial.rotation.y = range(get(), 2.36, -2.36));
   }
 
-  function fader(parent: T.Object3D, x: number, z: number, length: number, caption: string, color: number, get: () => number, set: (value: number) => void, initial: number, horizontal = false, textColor = '#e9e3d4') {
+  // a fader: a slot, a chunky cap with a coloured line
+  function fader(parent: T.Object3D, x: number, z: number, length: number, caption: string, color: number, get: () => number, set: (value: number) => void,
+    initial: number, horizontal = false, textColor = '#e9e3d4', describe?: () => string) {
     const base = new T.Group();
     base.position.set(x, 0, z);
     base.rotation.y = horizontal ? -Math.PI / 2 : 0;
     parent.add(base);
-    box(base, 0.053, 0.01, length + 0.055, 0, 0.281, 0, rubber, 0.002);
+    box(base, 0.06, 0.012, length + 0.08, 0, 0.282, 0, rubber, 0.003);
     for (let i = 0; i <= 4; i++)
-      box(base, i % 2 ? 0.029 : 0.053, 0.004, 0.009, 0.091, 0.281, range(i / 4, -length / 2, length / 2), silver);
-    const cap = box(base, 0.26, 0.068, 0.136, 0, 0.327, 0, color === ink ? dark : cream, 0.007, true);
-    box(cap, 0.185, 0.005, 0.021, 0, 0.036, 0, material(color === ivory ? ink : color === ink ? ivory : color), 0.002);
-    const action = { label: caption, get, drag: set, reset: () => set(initial), shape: [cap] };
+      box(base, i % 2 ? 0.03 : 0.06, 0.004, 0.01, 0.12, 0.282, range(i / 4, -length / 2, length / 2), material(0x8d8b84));
+    const cap = box(base, 0.3, 0.1, 0.17, 0, 0.34, 0, keycap, 0.025, true);
+    box(cap, 0.24, 0.006, 0.03, 0, 0.051, 0, material(color), 0.002);
+    const action: Action = { label: caption, get, drag: set, reset: () => set(initial), shape: [cap], describe };
     hit(cap, action);
-    hit(box(base, 0.28, 0.16, length + 0.12, 0, 0.337, 0, invisible), action);
-    mark(parent, caption, x, z + (horizontal ? 0.235 : length / 2 + 0.2), 0.106, textColor);
+    hit(box(base, 0.32, 0.18, length + 0.14, 0, 0.35, 0, invisible), action);
+    mark(parent, caption, x, z + (horizontal ? 0.27 : length / 2 + 0.22), 0.085, textColor, 0.283, 'center', '600');
     animated.push(() => cap.position.z = range(get(), length / 2, -length / 2));
   }
 
@@ -399,9 +422,19 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     return bezel;
   }
 
+  // ---- a deck (PS-01): the record on top, then four big knobs, the screen,
+  // hot-cue pads and loop keys, and the transport along the front
+  const deckDepth = 6.6, deckCenter = 1.13;
+  const rows = { knobs: 1.85, screen: 2.78, pads: 3.55, keys: 4.1 };
+  const deckKeys = [
+    { play: '1', cue: 'A', sync: 'S', pads: ['Q', 'W', 'E', 'R'] },
+    { play: '2', cue: 'J', sync: 'K', pads: ['U', 'I', 'O', 'P'] },
+  ];
   function turntable(side: Side) {
     const name = side ? 'B' : 'A';
     const deck = engine.decks[side];
+    const accent = deckColour[side];
+    const keys = deckKeys[side];
     const recordPosition = () => engine.recordPosition(side, options.selected(side));
     const seek = (fraction: number) => {
       const position = recordPosition();
@@ -409,22 +442,21 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     };
     const preview = () => drag?.action.side === side ? drag.recordFraction : undefined;
     const canSeek = () => !deck.loading && (recordPosition()?.record.duration ?? 0) > 0;
+    const loaded = () => !!deck.track && !deck.loading && !deck.error;
     const group = new T.Group();
     group.position.x = deckX[side];
     scene.add(group);
-    casework(group, 4.25, aluminium);
-    const accent = side ? blue : orange;
-    const labelColor = '#2b2c29';
-    mark(group, 'PS-01', -1.78, -1.91, 0.221, labelColor, 0.282, 'left', '700', 'sans-serif');
-    mark(group, `DIRECT DRIVE / 0${side + 1}`, -1.76, -1.71, 0.102, labelColor, 0.282, 'left');
-    box(group, 0.25, 0.005, 0.24, 1.8, 0.282, -1.81, cream);
-    mark(group, name, 1.8, -1.81, 0.148, labelColor, 0.287, 'center', '700', 'sans-serif');
-    box(group, 3.65, 0.004, 0.011, 0, 0.281, 1.39, silver);
+    casework(group, 4.25, body, deckDepth, deckCenter);
+    mark(group, 'PS-01', -1.86, -1.9, 0.17, print, 0.282, 'left', '700', 'sans-serif');
+    mark(group, `DECK ${name} · 33/45 · DIRECT DRIVE`, -1.86, -1.72, 0.07, printSoft, 0.282, 'left', '500');
+    cylinder(group, 0.15, 0.012, 1.86, 0.283, -1.86, material(accent), 32);
+    mark(group, name, 1.86, -1.86, 0.15, '#ffffff', 0.291, 'center', '700', 'sans-serif');
+
+    // the record: a recessed well, a light platter with a strobe ring, a black mat
     const x = -0.37, z = -0.13;
-    cylinder(group, 1.469, 0.043, x, 0.30, z, rubber, 96, 1.469, true);
-    cylinder(group, 1.43, 0.15, x, 0.403, z, silver, 96, 1.43, true);
-    cylinder(group, 1.427, 0.026, x, 0.379, z, dark, 96);
-    const dots = new T.InstancedMesh(new T.BoxGeometry(0.013, 0.027, 0.008), dark, 48);
+    cylinder(group, 1.5, 0.03, x, 0.27, z, rubber, 96, 1.5);
+    cylinder(group, 1.43, 0.15, x, 0.403, z, bodyEdge, 96, 1.43, true);
+    const dots = new T.InstancedMesh(new T.BoxGeometry(0.018, 0.03, 0.01), material(accent), 60);
     const transform = new T.Object3D();
     for (let i = 0; i < dots.count; i++) {
       const angle = i / dots.count * TAU;
@@ -436,17 +468,13 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     dots.position.set(x, 0, z);
     group.add(dots);
     cylinder(group, 1.391, 0.023, x, 0.487, z, rubber, 96);
-    for (const radius of [0.5, 0.75, 1, 1.25]) {
-      const ring = mesh(group, new T.RingGeometry(radius, radius + 0.011, 80), dark, x, 0.501, z);
-      ring.rotation.x = -Math.PI / 2;
-    }
     const vinyl = disc(group, 1.365);
     vinyl.group.position.set(x, 0.519, z);
     vinyl.group.visible = false;
     const scratch = { label: `Scratch deck ${name}`, type: 'scratch' as const, side, shape: [vinyl.edge] };
     hit(vinyl.face, scratch);
     hit(vinyl.edge, scratch);
-    cylinder(group, 0.039, 0.10, x, 0.548, z, silver, 20, 0.032);
+    cylinder(group, 0.039, 0.10, x, 0.548, z, keycap, 20, 0.032);
     let lastTrack = '';
     let lastRecord: RecordTimeline | undefined;
     const bandGeometry = new T.RingGeometry(0.987, 1, 96);
@@ -482,22 +510,24 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
       dots.rotation.y = -angle;
     });
 
+    // the tonearm: a white arm, a counterweight in the deck's colour
     const pivot = new T.Group();
     pivot.position.set(1.42, 0.64, -1.35);
     group.add(pivot);
-    const base = cylinder(group, 0.233, 0.157, 1.42, 0.354, -1.35, dark, 48, 0.233, true);
-    cylinder(group, 0.19, 0.2, 1.42, 0.50, -1.35, silver, 40, 0.168, true);
+    const base = cylinder(group, 0.233, 0.157, 1.42, 0.354, -1.35, rubber, 48, 0.233, true);
+    cylinder(group, 0.19, 0.2, 1.42, 0.50, -1.35, keycap, 40, 0.168, true);
     const hinge = new T.Group();
     pivot.add(hinge);
-    const arm = box(hinge, 0.082, 0.05, 1.9, 0, 0, 0.63, silver, 0.005, true);
-    const offset = box(hinge, 0.082, 0.05, 0.46, 0.093, -0.012, 1.68, silver, 0.005, true);
+    const armMat = material(0xf4f3ee, 0.1, 0.4);
+    const arm = box(hinge, 0.07, 0.05, 1.9, 0, 0, 0.63, armMat, 0.02, true);
+    const offset = box(hinge, 0.07, 0.05, 0.46, 0.093, -0.012, 1.68, armMat, 0.02, true);
     offset.rotation.y = 0.51;
-    box(hinge, 0.18, 0.13, 0.27, 0, 0, -0.264, dark, 0.008);
-    const shell = box(hinge, 0.159, 0.053, 0.285, 0.2, -0.025, 1.92, dark, 0.006, true);
+    box(hinge, 0.2, 0.15, 0.27, 0, 0, -0.264, material(accent, 0.05, 0.5), 0.04);
+    const shell = box(hinge, 0.159, 0.053, 0.285, 0.2, -0.025, 1.92, rubber, 0.015, true);
     shell.rotation.y = 0.35;
     box(hinge, 0.056, 0.025, 0.143, 0.205, -0.056, 1.963, material(accent), 0.004);
-    cylinder(hinge, 0.014, 0.065, 0.236, -0.084, 2.005, silver, 12, 0.007);
-    cylinder(group, 0.062, 0.20, 1.49, 0.371, 0.04, dark, 24);
+    cylinder(hinge, 0.014, 0.065, 0.236, -0.084, 2.005, keycap, 12, 0.007);
+    cylinder(group, 0.062, 0.20, 1.49, 0.371, 0.04, rubber, 24);
     const lift = { label: `Lift tonearm and seek the record · ${name}`, type: 'arm' as const, side, shape: [arm, offset, shell], available: canSeek, armAngle: () => pivot.rotation.y, reset: () => seek(0) };
     hit(base, lift);
     hit(arm, lift);
@@ -514,35 +544,28 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
       hinge.rotation.x = T.MathUtils.lerp(hinge.rotation.x, lifted ? -0.16 : (deck.playing || deck.rate !== 0 ? 0 : -0.052), 0.2);
     });
 
-    const channelLed = side ? 0x2960ed : 0xf25e24;
-    const keys = [
-      { text: 'START', width: 0.61, color: accent, led: channelLed, label: `Start/stop deck ${name}`,
-        press: () => options.play(side), active: () => deck.playing },
-      { text: 'PREV', width: 0.36, color: ivory, led: channelLed, label: `Previous track · ${name}`,
-        press: () => options.step(side, -1), active: () => options.canStep(side, -1), available: () => options.canStep(side, -1) },
-      { text: 'NEXT', width: 0.36, color: ivory, led: channelLed, label: `Next track · ${name}`,
-        press: () => options.step(side, 1), active: () => options.canStep(side, 1), available: () => options.canStep(side, 1) },
-      { text: '33 / 45', width: 0.49, color: ink, led: 0xb77815, label: `33/45 RPM · ${name}`,
-        press: () => engine.toggleRpm(side), active: () => deck.rpm === 45 },
-      { text: 'CUE', width: 0.43, color: ivory, led: 0xdd820e, label: `Cue · ${name} (Shift to set)`,
-        press: (event: PointerEvent) => event.shiftKey ? engine.setCue(side) : engine.cue(side), active: () => deck.cuePoint !== undefined },
-      { text: 'IN', width: 0.29, color: ivory, led: 0xb77815, label: `Set loop in · ${name}`,
-        press: () => engine.markLoop(side, 'in'), active: () => deck.loopIn !== undefined },
-      { text: 'OUT', width: 0.31, color: ivory, led: 0xb77815, label: `Set loop out · ${name}`,
-        press: () => engine.markLoop(side, 'out'), active: () => deck.loopOut !== undefined },
-      { text: 'LOOP', width: 0.45, color: ink, led: channelLed, label: `Loop deck ${name}`,
-        press: () => engine.toggleLoop(side), active: () => deck.loop },
-    ];
-    const keyGap = 0.068;
-    const width = keys.reduce((total, key) => total + key.width, 0) + (keys.length - 1) * keyGap;
-    const screen = { width, height: 0.45, z: 1.68 };
+    // four big knobs: tempo (the deck's colour), filter (green), fx (grey), trim (white)
+    const pct = (n: number, digits = 1) => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n).toFixed(digits)}`;
+    knob(group, -1.5, rows.knobs, 'TEMPO', accent, () => (deck.pitch + 16) / 32, v => engine.setPitch(side, range(v, -16, 16)), 0.5, 1, print,
+      () => `${pct(deck.pitch)}%${engine.tempo(side) ? ` · ${engine.tempo(side)!.toFixed(1)} bpm` : ''}`);
+    knob(group, -0.5, rows.knobs, 'FILTER', green, () => (engine.filterAmount(side) + 1) / 2, v => engine.setFilter(side, range(v, -1, 1)), 0.5, 1, print,
+      () => { const f = engine.filterAmount(side); return f < -0.02 ? `◀ dark ${Math.round(-f * 100)}%` : f > 0.02 ? `thin ${Math.round(f * 100)}% ▶` : 'off'; });
+    knob(group, 0.5, rows.knobs, `FX ${name}`, grey, () => effects.indexOf(deck.effect) / (effects.length - 1), v => engine.setEffect(side, Math.round(v * (effects.length - 1))), 0, 1, print,
+      () => effectLabels[effects.indexOf(deck.effect)].toLowerCase());
+    const trim = channelControls.gain;
+    knob(group, 1.5, rows.knobs, 'TRIM', white, () => (deck.controls.gain - trim.min) / (trim.max - trim.min), v => engine.setChannel(side, 'gain', range(v, trim.min, trim.max)), (trim.initial - trim.min) / (trim.max - trim.min), 1, print,
+      () => `${Math.round(deck.controls.gain * 100)}%`);
+
+    // the screen: waveform, bpm, time, cue and loop, hot cues
+    const screen = { width: 3.7, height: 0.45, z: rows.screen };
+    box(group, screen.width + 0.1, 0.012, screen.height + 0.1, 0, 0.282, screen.z, rubber, 0.02);
     const face = display(group, 0, screen.z, screen.width, screen.height,
       deckDisplay(side, deck, recordPosition, preview, () => engine.speed(side)), deckScreen, true);
     const waveWidth = screen.width * (1 - 2 * deckScreen.inset / deckScreen.width);
     const waveDepth = screen.height * (deckScreen.waveBottom - deckScreen.waveTop) / deckScreen.height;
     const waveZ = screen.z + screen.height * ((deckScreen.waveBottom + deckScreen.waveTop) / (2 * deckScreen.height) - 0.5);
     hit(box(group, waveWidth, 0.015, waveDepth, 0, deckDisplayY + 0.004, waveZ, invisible), {
-      label: `Click or drag the record waveform · ${name}`,
+      label: `Click or drag the waveform · ${name}`,
       available: canSeek,
       side,
       seekAt: worldX => {
@@ -555,67 +578,135 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
       },
       shape: [face],
     });
-
     const { switchLeft, switchTop, switchWidth, switchHeight } = deckScreen;
     for (const [index, scope] of (['track', 'record'] as const).entries()) {
       const width = screen.width * switchWidth / (2 * deckScreen.width);
       const depth = screen.height * switchHeight / deckScreen.height;
-      const x = screen.width * ((switchLeft + (index + 0.5) * switchWidth / 2) / deckScreen.width - 0.5);
-      const z = screen.z + screen.height * ((switchTop + switchHeight / 2) / deckScreen.height - 0.5);
-      hit(box(group, width, 0.015, depth, x, deckDisplayY + 0.004, z, invisible), {
+      const sx = screen.width * ((switchLeft + (index + 0.5) * switchWidth / 2) / deckScreen.width - 0.5);
+      const sz = screen.z + screen.height * ((switchTop + switchHeight / 2) / deckScreen.height - 0.5);
+      hit(box(group, width, 0.015, depth, sx, deckDisplayY + 0.004, sz, invisible), {
         label: `Show ${scope === 'track' ? 'current track' : 'whole record'} waveform · ${name}`,
         press: () => engine.setWaveformScope(side, scope),
         shape: [face],
       });
     }
 
-    fader(group, 1.63, 0.49, 1.0, 'PITCH', side ? 0xc9c4b6 : ink,
-      () => (deck.pitch + 16) / 32, value => engine.setPitch(side, range(value, -16, 16)), 0.5, false, labelColor);
-    let left = -width / 2;
-    for (const key of keys) {
-      button(group, left + key.width / 2, 2.135, key.width, key.text, key.color,
-        { label: key.label, press: key.press, available: key.available }, key.active, key.led);
-      left += key.width + keyGap;
+    // hot-cue pads (tap: set, then jump · shift-tap: clear) and loop keys in bars
+    mark(group, 'HOT CUE', -1.82, rows.pads - 0.29, 0.065, printSoft, 0.282, 'left', '700');
+    keys.pads.forEach((shortcut, pad) => {
+      button(group, -1.64 + pad * 0.43, rows.pads, 0.36, String(pad + 1), padcap, {
+        label: `Hot cue ${pad + 1} · ${name} (tap to set or jump, shift-tap clears)`,
+        press: event => event.shiftKey ? engine.clearHotCue(side, pad) : (loaded() ? engine.hotCue(side, pad) : options.play(side)),
+      }, () => deck.hotCues[pad] !== undefined, accent, 0.36, print, shortcut);
+    });
+    mark(group, 'LOOP · BARS', 0.13, rows.pads - 0.29, 0.065, printSoft, 0.282, 'left', '700');
+    [1, 2, 4, 8].forEach((bars, i) => {
+      button(group, 0.31 + i * 0.43, rows.pads, 0.36, String(bars), keycap, {
+        label: `Loop ${bars} bar${bars > 1 ? 's' : ''} · ${name} (again to stop)`,
+        press: () => { if (loaded()) engine.beatLoop(side, bars * 4); },
+        available: loaded,
+      }, () => deck.loop && deck.loopBeats === bars * 4, accent, 0.36);
+    });
+
+    // the transport along the front
+    const nudge = (dir: -1 | 1) => {
+      let timer = 0;
+      return (down: boolean) => {
+        clearInterval(timer);
+        if (down && deck.playing) {
+          const rate = engine.speed(side) * (1 + dir * 0.06);
+          engine.scratch(side, rate);
+          timer = window.setInterval(() => engine.scratch(side, rate), 40);
+        } else engine.releaseScratch(side);
+      };
+    };
+    const transport = [
+      { text: 'PLAY', width: 0.72, cap: material(accent, 0.04, 0.5), color: '#ffffff', led: 0xffffff, shortcut: keys.play,
+        label: `Play / pause deck ${name}`, press: () => options.play(side), on: () => deck.playing },
+      { text: 'CUE', width: 0.44, cap: keycap, led: 0xffb43d, shortcut: keys.cue,
+        label: `Cue · ${name} (shift-click sets it here)`, press: (event: PointerEvent) => event.shiftKey ? engine.setCue(side) : engine.cue(side), on: () => deck.cuePoint !== undefined },
+      { text: 'SYNC', width: 0.48, cap: keycap, led: accent, shortcut: keys.sync,
+        label: `Sync tempo to the other deck · ${name}`, press: () => { if (loaded()) engine.sync(side); },
+        on: () => { const a = engine.tempo(side), b = engine.tempo(side ? 0 : 1); return !!a && !!b && Math.abs(a - b) < 0.05; } },
+      { text: '−', width: 0.3, cap: keycap, label: `Nudge slower (hold) · ${name}`, hold: nudge(-1) },
+      { text: '+', width: 0.3, cap: keycap, label: `Nudge faster (hold) · ${name}`, hold: nudge(1) },
+      { text: '◀◀', width: 0.3, cap: keycap, label: `Previous track · ${name}`, press: () => options.step(side, -1), available: () => options.canStep(side, -1) },
+      { text: '▶▶', width: 0.3, cap: keycap, label: `Next track · ${name}`, press: () => options.step(side, 1), available: () => options.canStep(side, 1) },
+      { text: '33/45', width: 0.44, cap: keycap, led: 0xffb43d, label: `33 or 45 rpm · ${name}`, press: () => engine.toggleRpm(side), on: () => deck.rpm === 45 },
+    ];
+    const gap = 0.06;
+    let left = -(transport.reduce((total, key) => total + key.width, 0) + gap * (transport.length - 1)) / 2;
+    for (const key of transport) {
+      const k = button(group, left + key.width / 2, rows.keys, key.width, key.text, key.cap,
+        { label: key.label, press: key.press, available: key.available, hold: key.hold && (down => { k.userData.held = down; key.hold!(down); }) },
+        key.on, key.led, 0.3, key.color ?? print, key.shortcut);
+      left += key.width + gap;
     }
   }
 
+  // ---- the mixer (PS-02): a dark slab between the decks
   function mixer() {
     const group = new T.Group();
     scene.add(group);
-    casework(group, 2.45, mixerMetal);
-    mark(group, 'PS-02', 0, -1.91, 0.221, '#eae7dc', 0.282, 'center', '700', 'sans-serif');
-    mark(group, 'STEREO MIXER', 0, -1.72, 0.095, '#d8d1c5');
-    mark(group, 'A', -0.74, -1.52, 0.15, '#ffac80');
-    mark(group, 'B', 0.74, -1.52, 0.15, '#a3baff');
-    for (const x of [-0.451, 0.451])
-      box(group, 0.01, 0.004, 1.86, x, 0.281, -0.585, material(0x75766e));
+    const light = '#e7e4db', soft = '#a19e95';
+    casework(group, 2.45, mixerBody, deckDepth, deckCenter);
+    mark(group, 'PS-02', -1.02, -1.9, 0.17, light, 0.282, 'left', '700', 'sans-serif');
+    mark(group, 'TWO-CHANNEL MIXER', -1.02, -1.72, 0.07, soft, 0.282, 'left', '500');
 
+    // the screen: each deck's tempo and effect
+    box(group, 2.1, 0.012, 0.52, 0, 0.282, -1.25, rubber, 0.02);
+    display(group, 0, -1.25, 2.0, 0.42, ctx => {
+      const state = engine.decks.map((deck, side) => `${deck.effect}:${engine.tempo(side as Side)?.toFixed(1)}:${deck.playing}`).join('|');
+      if (ctx.canvas.dataset.state === state) return state;
+      ctx.canvas.dataset.state = state;
+      ctx.fillStyle = '#151615';
+      ctx.fillRect(0, 0, 650, 190);
+      ctx.font = 'bold 44px monospace';
+      for (const side of [0, 1] as const) {
+        const deck = engine.decks[side];
+        const bpm = engine.tempo(side);
+        ctx.fillStyle = side ? '#9cb9ff' : '#ffb67c';
+        ctx.fillText(`${side ? 'B' : 'A'}${deck.playing ? '▶' : ' '}`, 26, 72 + 80 * side);
+        ctx.fillStyle = '#eee9dd';
+        ctx.fillText(bpm ? `${bpm.toFixed(1)}` : '—', 120, 72 + 80 * side);
+        ctx.fillStyle = '#bdb8ae';
+        ctx.textAlign = 'right';
+        ctx.fillText(effectLabels[effects.indexOf(deck.effect)].toUpperCase().slice(0, 10), 624, 72 + 80 * side);
+        ctx.textAlign = 'left';
+      }
+      return state;
+    });
+
+    // per channel: three EQ knobs, a headphone key and the volume fader
     for (const side of [0, 1] as const) {
-      const x = side ? 0.74 : -0.74;
+      const x = side ? 0.7 : -0.7;
       const deck = engine.decks[side];
-      const channelKnob = (key: ChannelControl, z: number, caption: string, color: number, offset = 0, indicator?: number) => {
+      cylinder(group, 0.12, 0.012, x, 0.283, -0.72, material(deckColour[side]), 32);
+      mark(group, side ? 'B' : 'A', x, -0.72, 0.13, '#ffffff', 0.291, 'center', '700', 'sans-serif');
+      const eq = (key: ChannelControl, z: number, caption: string, color: number) => {
         const spec = channelControls[key];
-        knob(group, x + offset, z, caption, color, () => (deck.controls[key] - spec.min) / (spec.max - spec.min), v => engine.setChannel(side, key, range(v, spec.min, spec.max)), (spec.initial - spec.min) / (spec.max - spec.min), indicator);
+        knob(group, x, z, caption, color, () => (deck.controls[key] - spec.min) / (spec.max - spec.min), v => engine.setChannel(side, key, range(v, spec.min, spec.max)),
+          (spec.initial - spec.min) / (spec.max - spec.min), 0.78, light, () => `${deck.controls[key] > 0 ? '+' : ''}${deck.controls[key].toFixed(1)} dB`);
       };
-      channelKnob('gain', -1.24, 'TRIM', ink, 0, side ? blue : orange);
-      channelKnob('high', -0.76, 'HI', ivory);
-      channelKnob('mid', -0.28, 'MID', ivory);
-      channelKnob('low', 0.2, 'LO', ivory);
-      channelKnob('hp', 0.68, 'HP', ink, -0.218);
-      channelKnob('lp', 0.68, 'LP', ink, 0.218);
-      fader(group, x, 1.42, 0.65, side ? 'CH B' : 'CH A', side ? blue : orange, () => deck.controls.volume, v => engine.setChannel(side, 'volume', v), channelControls.volume.initial);
+      eq('high', -0.2, 'HI', white);
+      eq('mid', 0.45, 'MID', grey);
+      eq('low', 1.1, 'LO', deckColour[side]);
+      if (engine.canMonitor) button(group, x, 1.85, 0.42, 'PFL', material(0x4a4b47, 0.05, 0.6), { label: `Headphone cue · ${side ? 'B' : 'A'}`, press: () => options.monitor(side) }, () => deck.monitoring, 0xffb43d, 0.28, light);
+      fader(group, x, 2.95, 1.0, side ? 'CH B' : 'CH A', deckColour[side], () => deck.controls.volume, v => engine.setChannel(side, 'volume', v), channelControls.volume.initial, false, light,
+        () => `${Math.round(deck.controls.volume * 100)}%`);
     }
 
+    // the middle: level meters, master, record
     for (const channel of [0, 1] as const) {
       const leds: T.MeshStandardMaterial[] = [];
-      const meterX = channel ? 0.15 : -0.15;
-      mark(group, channel ? 'R' : 'L', meterX, -0.19, 0.102, '#eae7dc');
-      box(group, 0.124, 0.03, 0.79, meterX, 0.287, -0.65, rubber, 0.018);
+      const meterX = channel ? 0.11 : -0.11;
+      mark(group, channel ? 'R' : 'L', meterX, -0.72, 0.075, soft);
+      box(group, 0.11, 0.02, 0.86, meterX, 0.285, -0.15, rubber, 0.015);
       for (let i = 0; i < 10; i++) {
-        const color = i > 8 ? 0xff6032 : i > 6 ? 0xf5c464 : mint;
-        const led = new T.MeshStandardMaterial({ color: 0x4a504a, emissive: color, emissiveIntensity: 0 });
+        const color = i > 8 ? 0xff4d3d : i > 6 ? 0xffb43d : 0xf1efe8;
+        const led = new T.MeshStandardMaterial({ color: 0x3a3b38, emissive: color, emissiveIntensity: 0 });
         leds.push(led);
-        box(group, 0.071, 0.025, 0.042, meterX, 0.312, -0.326 - i * 0.069, led, 0.008);
+        box(group, 0.07, 0.02, 0.05, meterX, 0.3, 0.21 - i * 0.075, led, 0.008);
       }
       let rms = 0, peakAt = 0, lastSample = performance.now();
       animated.push(() => {
@@ -625,32 +716,13 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
         rms = Math.max(target, rms - (now - lastSample) / 280);
         lastSample = now;
         if (level.peak > 0.98) peakAt = now + 520;
-        leds.forEach((led, i) => led.emissiveIntensity = i === 9 ? Number(peakAt > now) * 2 : rms * 9 > i ? 1.6 : 0);
+        leds.forEach((led, i) => led.emissiveIntensity = i === 9 ? Number(peakAt > now) * 2 : rms * 9 > i ? 1.8 : 0);
       });
     }
-    knob(group, 0, -1.34, 'MASTER', ink, () => engine.master, v => engine.setMix('master', v), mixDefaults.master, yellow);
-    display(group, 0, 0.03, 0.64, 0.30, ctx => {
-      const state = engine.decks.map(deck => deck.effect).join(':');
-      if (ctx.canvas.dataset.state === state) return state;
-      ctx.canvas.dataset.state = state;
-      ctx.fillStyle = '#151d1a';
-      ctx.fillRect(0, 0, 650, 190);
-      ctx.font = 'bold 61px monospace';
-      for (const side of [0, 1] as const) {
-        ctx.fillStyle = side ? '#a5bdff' : '#f4c49c';
-        ctx.fillText(`${side ? 'B' : 'A'} / ${effectLabels[effects.indexOf(engine.decks[side].effect)].toUpperCase()}`, 26, 74 + 77 * side, 598);
-      }
-      return state;
-    });
-    for (const side of [0, 1] as const) {
-      const x = side ? 0.195 : -0.195;
-      const deck = engine.decks[side];
-      knob(group, x, 0.49, side ? 'FX B' : 'FX A', ink,
-        () => effects.indexOf(deck.effect) / (effects.length - 1), v => engine.setEffect(side, Math.round(v * (effects.length - 1))), 0, side ? blue : orange);
-      if (engine.canMonitor) button(group, x, 1, 0.28, 'PFL', ink, { label: `Headphone cue · ${side ? 'B' : 'A'}`, press: () => options.monitor(side) }, () => deck.monitoring);
-    }
-    if (typeof MediaRecorder !== 'undefined') button(group, 0, 1.41, 0.34, 'REC', ink, { label: 'Record mix', press: options.record }, () => engine.recording);
-    fader(group, 0, 2.155, 1.35, 'A  ◀  MIX  ▶  B', ivory, () => (engine.cross + 1) / 2, v => engine.setMix('cross', range(v, -1, 1)), (mixDefaults.cross + 1) / 2, true);
+    knob(group, 0, 1.0, 'MASTER', white, () => engine.master, v => engine.setMix('master', v), mixDefaults.master, 0.78, light, () => `${Math.round(engine.master * 100)}%`);
+    if (typeof MediaRecorder !== 'undefined') button(group, 0, 1.85, 0.42, 'REC', material(0xd1301f, 0.05, 0.55), { label: 'Record the mix (again to stop and save)', press: options.record }, () => engine.recording, 0xffffff, 0.28, '#ffffff');
+    fader(group, 0, 4.02, 1.5, 'A  ◀  MIX  ▶  B', white, () => (engine.cross + 1) / 2, v => engine.setMix('cross', range(v, -1, 1)), (mixDefaults.cross + 1) / 2, true, light,
+      () => engine.cross < -0.02 ? `◀ A ${Math.round(-engine.cross * 100)}%` : engine.cross > 0.02 ? `B ${Math.round(engine.cross * 100)}% ▶` : 'centre');
   }
 
   let drag: { id: number; action: Action; x: number; y: number; value: number; angle?: number; at: number; moved: boolean; armOffset?: number; recordFraction?: number } | undefined;
@@ -737,7 +809,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
       canvas.style.cursor = action?.seekAt ? 'ew-resize' : action ? (action.press ? 'pointer' : 'grab') : 'move';
       if (!controlsGesture) {
         highlight(event.pointerType === 'touch' ? undefined : action?.shape);
-        if (tooltip) tooltip.textContent = action?.reset ? `${action.label} · double-click to reset` : action?.label || '';
+        if (tooltip) tooltip.textContent = action ? describe(action) : '';
       }
       return;
     }
@@ -748,6 +820,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     if (action.drag && drag.moved) {
       const horizontal = action.label.startsWith('A  ◀');
       action.drag(clamp(drag.value + (horizontal ? dx : (dx * 0.25 - dy)) / 150));
+      if (tooltip) tooltip.textContent = describe(action);
     }
     if (action.seekAt && drag.moved) drag.recordFraction = waveformFraction(event, action.seekAt) ?? drag.recordFraction;
     if (action.type === 'arm' && drag.moved) {
@@ -780,6 +853,11 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
       }
     }
   }
+  // what a control is, what it's set to, and how to reset it
+  function describe(action: Action) {
+    const value = action.describe?.();
+    return `${action.label}${value ? ` · ${value}` : ''}${action.reset ? ' · double-click resets' : ''}`;
+  }
   let controlsGesture = false;
   function clearHover() {
     highlight();
@@ -804,6 +882,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     canvas.style.cursor = 'grabbing';
     if (event.pointerType !== 'touch') highlight(action.shape);
     if (action.seekAt) drag.recordFraction = waveformFraction(event, action.seekAt);
+    action.hold?.(true);
     if (action.type === 'scratch') inspect(event);
     if (action.type === 'arm') {
       const side = action.side!;
@@ -833,6 +912,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     }
     if (action.type === 'scratch') engine.releaseScratch(action.side!);
     if (action.type === 'arm') engine.lift(action.side!, false);
+    action.hold?.(false);
     if (action.type === 'record' && event.type === 'pointerup' && targetSide !== undefined) options.load(targetSide, action.album!);
     if (!moved && event.type === 'pointerup' && action.press) {
       action.press(event);
@@ -864,6 +944,7 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
       event.stopImmediatePropagation();
       const step = action.label.startsWith('FX') ? 1 / (effects.length - 1) : 0.035;
       action.drag(clamp((action.get?.() ?? 0) - Math.sign(event.deltaY) * step));
+      if (tooltip) tooltip.textContent = describe(action);
     } else transition = undefined;
   }, { passive: false, capture: true, signal });
   let transition: { camera: T.Vector3; target: T.Vector3; from: T.Vector3; fromTarget: T.Vector3; started: number } | undefined;
@@ -872,12 +953,13 @@ export function createBoothScene(host: HTMLElement, engine: Engine, releases: Bo
     const mobile = narrow();
     const sides = view === 'a' || view === 'b';
     const x = sides ? deckX[view === 'b' ? 1 : 0] : 0;
-    const focus = view === 'crate' ? -3.30 : sides || view === 'mixer' ? 0.14 : -0.58;
-    const eye = view === 'overhead' ? [0, mobile ? 22 : 12.7, focus + 0.035]
+    // the decks reach from the crate (z ≈ -2) to their front keys (z ≈ 3.8)
+    const focus = view === 'crate' ? -3.30 : sides ? 1.25 : view === 'mixer' ? 1.2 : 0.5;
+    const eye = view === 'overhead' ? [0, mobile ? 24 : 14.2, focus + 0.035]
       : view === 'crate' ? [0, mobile ? 9.9 : 5.1, 3.9]
-      : view === 'mixer' ? [0, 5.85, 2.65]
-      : sides ? [x + (view === 'a' ? -1.0 : 1.0), 5.5, 4.9]
-      : [0.04, mobile ? 14.4 : 8.4, mobile ? 15.0 : 8.7];
+      : view === 'mixer' ? [0, 7.0, 5.6]
+      : sides ? [x + (view === 'a' ? -0.8 : 0.8), 6.8, 7.2]
+      : [0.04, mobile ? 16.2 : 9.9, mobile ? 17.4 : 11.0];
     return { camera: new T.Vector3(...eye), target: new T.Vector3(x, view === 'crate' ? 0.45 : 0.13, focus) };
   }
 

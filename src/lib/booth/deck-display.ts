@@ -41,7 +41,7 @@ export function deckDisplay(side: Side, deck: Deck, position: () => RecordPositi
       : deck.track ? (deck.rate > 0.025 ? 'STOPPING' : 'READY') : track ? 'SELECTED' : 'EMPTY';
     const detune = `${deck.pitch > 0 ? '+' : ''}${deck.pitch.toFixed(1)}%`;
     const state = [track?.id, status, recordView, recordDuration, clock(elapsed), clock(recordTime), cursor,
-      deck.rpm, detune, deck.cuePoint, deck.loopIn, deck.loopOut, deck.loop, deck.waveform?.length].join('|');
+      deck.rpm, detune, deck.cuePoint, deck.loopIn, deck.loopOut, deck.loop, deck.waveform?.length, deck.hotCues.join(',')].join('|');
     if (state === previous) return state;
     previous = state;
 
@@ -106,6 +106,21 @@ export function deckDisplay(side: Side, deck: Deck, position: () => RecordPositi
       ctx.lineTo(x + 5, waveTop);
       ctx.lineTo(x, waveTop + 8);
       ctx.fill();
+    }
+    // hot cues: a numbered flag on the wave for each pad that's set
+    if (showMarkers) {
+      ctx.font = 'bold 15px monospace';
+      ctx.textAlign = 'center';
+      deck.hotCues.forEach((time, pad) => {
+        if (time === undefined) return;
+        const x = trackTimeX(time);
+        ctx.fillStyle = foreground;
+        ctx.fillRect(x, waveTop, 1.5, waveBottom - waveTop);
+        ctx.fillRect(x, waveTop, 15, 15);
+        ctx.fillStyle = '#191a19';
+        ctx.fillText(String(pad + 1), x + 7.5, waveTop + 12);
+      });
+      ctx.textAlign = 'left';
     }
     if (segment && (!deck.error || previewFraction !== undefined)) {
       ctx.fillStyle = accent;

@@ -103,7 +103,15 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
   <body class:list={{ "immersive-layout": immersive }}>
     <a class="skip" href="#main">skip to content</a>
     <header class:list={['masthead', { 'masthead--home': home }]}>
-      {home ? <h1 class="wordmark">{site.name}</h1> : <a class="wordmark" href="/">{site.name}</a>}
+      {
+        // a link to home on every page, the home page included (where it's also the h1)
+        home ? (
+          <h1 class="wordmark"><a href="/">{site.name}</a></h1>
+        ) : (
+          <a class="wordmark" href="/">{site.name}</a>
+        )
+      }
+      <Player />
       <nav class="corner" aria-label="menu">
         <a class="corner-btn" href="/" aria-current={home ? 'page' : undefined}>
           <Icon name="home" /> home
@@ -129,6 +137,26 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
         <ThemeSwitch />
       </nav>
     </header>
+    <script is:inline>
+      // the sticky header's height, for anchors and anything else that must clear it
+      (function () {
+        var set = function () {
+          var h = document.querySelector('.masthead');
+          if (h) document.documentElement.style.setProperty('--head-h', h.offsetHeight + 'px');
+        };
+        if (!window.__headObs) {
+          window.__headObs = new ResizeObserver(set);
+          document.addEventListener('astro:page-load', function () {
+            var h = document.querySelector('.masthead');
+            if (h) window.__headObs.observe(h);
+            set();
+          });
+        }
+        var h = document.querySelector('.masthead');
+        if (h) window.__headObs.observe(h);
+        set();
+      })();
+    </script>
     <main id="main">
       <slot />
     </main>
@@ -153,7 +181,6 @@ const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
         <span><kbd class="palette-kbd">⌘K</kbd> or <kbd>/</kbd> search</span>
       </p>
     </footer>
-    <Player />
     <Visualiser />
   </body>
 </html>

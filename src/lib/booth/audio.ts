@@ -105,6 +105,10 @@ class Deck {
   loopIn?: number;
   loopOut?: number;
   loop = false;
+  /** length of the current loop in beats, when it was made with beatLoop() */
+  loopBeats?: number;
+  /** four hot cues (seconds), set and recalled from the pads */
+  hotCues: (number | undefined)[] = [undefined, undefined, undefined, undefined];
   monitoring = false;
   version = 0;
   request?: AbortController;
@@ -287,7 +291,8 @@ class BoothAudio extends EventTarget {
     deck.nodes?.source.port.postMessage({ type: 'eject', epoch: version });
     Object.assign(deck, {
       track, waveform: undefined, time: typeof start === 'number' ? start : start(track.duration), duration: track.duration, playing: false, ended: false, loading: true, error: '',
-      cuePoint: undefined, loopIn: undefined, loopOut: undefined, loop: false, rate: 0, angle: 0,
+      cuePoint: undefined, loopIn: undefined, loopOut: undefined, loop: false, loopBeats: undefined, rate: 0, angle: 0,
+      hotCues: [undefined, undefined, undefined, undefined],
     });
     this.changed();
     try {
@@ -523,6 +528,7 @@ class BoothAudio extends EventTarget {
       deck.loopOut = deck.time;
     }
     deck.loop = deck.loopIn !== undefined && deck.loopOut !== undefined && deck.loopOut - deck.loopIn > 0.05;
+    deck.loopBeats = undefined;
     this.applyLoop(deck);
   }
 
@@ -536,6 +542,77 @@ class BoothAudio extends EventTarget {
     deck.loop = !deck.loop;
     if (deck.loop && (deck.time < deck.loopIn || deck.time >= deck.loopOut)) this.seek(side, deck.loopIn);
     this.applyLoop(deck);
+  }
+
+  /** the tempo a deck plays at right now (its track's BPM times its speed) */
+  tempo(side: Side) {
+    const bpm = this.decks[side].track?.bpm;
+    return bpm ? bpm * this.speed(side) : undefined;
+  }
+
+  /** match this deck's tempo to the other deck's (within the ±16% pitch range) */
+  sync(side: Side) {
+    const deck = this.decks[side];
+    const target = this.tempo(side === 0 ? 1 : 0);
+    if (!deck.track?.bpm || !target) return false;
+    const rpm = deck.rpm === 45 ? 1.35 : 1;
+    this.setPitch(side, (target / (deck.track.bpm * rpm) - 1) * 100);
+    return Math.abs((this.tempo(side) ?? 0) - target) < 0.05;
+  }
+
+  /** a loop of n beats from here (4 beats = 1 bar); the same length again turns it off */
+  beatLoop(side: Side, beats: number) {
+    const deck = this.decks[side];
+    if (!deck.track || deck.loading || deck.duration < 0.1) return;
+    if (deck.loop && deck.loopBeats === beats) {
+      deck.loop = false;
+      deck.loopBeats = undefined;
+      this.applyLoop(deck);
+      return;
+    }
+    const length = beats * 60 / (deck.track.bpm || 120);
+    const start = deck.loop && deck.loopIn !== undefined ? deck.loopIn : deck.time;
+    deck.loopIn = Math.min(start, deck.duration - 0.1);
+    deck.loopOut = Math.min(deck.duration, deck.loopIn + length);
+    deck.loop = true;
+    deck.loopBeats = beats;
+    if (deck.time >= deck.loopOut) this.seek(side, deck.loopIn);
+    this.applyLoop(deck);
+  }
+
+  /** hot cue pad: set it if empty, jump to it if set */
+  hotCue(side: Side, pad: number) {
+    const deck = this.decks[side];
+    if (!deck.track || deck.loading) return;
+    if (deck.hotCues[pad] === undefined) deck.hotCues[pad] = deck.time;
+    else {
+      if (deck.loop) {
+        deck.loop = false;
+        deck.loopBeats = undefined;
+        this.applyLoop(deck);
+      }
+      this.seek(side, deck.hotCues[pad]!);
+      if (!deck.playing) this.setPlaying(side, true);
+    }
+    this.changed();
+  }
+
+  clearHotCue(side: Side, pad: number) {
+    this.decks[side].hotCues[pad] = undefined;
+    this.changed();
+  }
+
+  /** one filter knob, -1…1: left closes the low-pass (darker), right opens the high-pass (thinner) */
+  filterAmount(side: Side) {
+    const { hp, lp } = this.decks[side].controls;
+    return hp > 0.001 ? hp : lp < 0.999 ? lp - 1 : 0;
+  }
+
+  setFilter(side: Side, amount: number) {
+    const value = clamp(amount, -1, 1);
+    const near = Math.abs(value) < 0.02;
+    this.setChannel(side, 'lp', near || value > 0 ? 1 : 1 + value);
+    this.setChannel(side, 'hp', near || value < 0 ? 0 : value);
   }
 
   private applyLoop(deck: Deck) {

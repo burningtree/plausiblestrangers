@@ -42,20 +42,20 @@ const sides = ['A', 'B'];
   <ps-booth class="booth">
     <section class="booth-room" aria-label="Interactive 3D turntables and mixer">
       <div class="booth-stage" data-stage>
-        <h1>DJ booth<span>.</span></h1>
+        <h1 class="booth-title">booth <span>two decks, a mixer and every record</span></h1>
         <div class="booth-cameras" aria-label="Camera views">
-          <button type="button" data-view="studio" aria-pressed="true">Studio</button>
-          <button type="button" data-view="overhead" aria-pressed="false">Overhead</button>
-          <button type="button" data-view="a" aria-pressed="false">Deck A</button>
-          <button type="button" data-view="b" aria-pressed="false">Deck B</button>
-          <button type="button" data-view="mixer" aria-pressed="false">Mixer</button>
-          <button type="button" data-view="crate" aria-pressed="false">Crate</button>
+          <button type="button" data-view="studio" aria-pressed="true">studio</button>
+          <button type="button" data-view="overhead" aria-pressed="false">overhead</button>
+          <button type="button" data-view="a" aria-pressed="false">deck a</button>
+          <button type="button" data-view="b" aria-pressed="false">deck b</button>
+          <button type="button" data-view="mixer" aria-pressed="false">mixer</button>
+          <button type="button" data-view="crate" aria-pressed="false">crate</button>
         </div>
         <p class="booth-tooltip" data-scene-hint aria-hidden="true"></p>
         <p class="booth-fallback" data-fallback role="status">Loading the 3D booth…</p>
         <div class="booth-stage-foot">
           <span class="booth-gestures"><span>Drag to orbit · scroll to zoom · drag a record to load</span><span>Drag to orbit · pinch to zoom</span></span>
-          <button type="button" data-open-controls aria-haspopup="dialog" aria-controls="booth-controls">Controls</button>
+          <button type="button" data-open-controls aria-haspopup="dialog" aria-controls="booth-controls">controls</button>
         </div>
       </div>
     </section>
@@ -103,7 +103,15 @@ const sides = ['A', 'B'];
               <button type="button" data-action="reverse" aria-label={`Scratch deck ${side} backward`}>− scratch</button>
               <button type="button" data-action="forward" aria-label={`Scratch deck ${side} forward`}>+ scratch</button>
               <button type="button" data-action="monitor" aria-pressed="false" hidden>Headphone cue</button>
+              <button type="button" data-action="sync" aria-label={`Sync deck ${side} to the other deck's tempo`}>Sync</button>
             </div>
+            <div class="booth-transport" role="group" aria-label={`Deck ${side} hot cues (shift-click clears)`}>
+              {[0, 1, 2, 3].map(pad => <button type="button" data-hot={pad} aria-pressed="false" aria-label={`Hot cue ${pad + 1} on deck ${side}`}>Cue {pad + 1}</button>)}
+            </div>
+            <div class="booth-transport" role="group" aria-label={`Deck ${side} loops in bars`}>
+              {[1, 2, 4, 8].map(bars => <button type="button" data-beats={bars * 4} aria-pressed="false" aria-label={`Loop ${bars} bar${bars > 1 ? 's' : ''} on deck ${side}`}>Loop {bars}</button>)}
+            </div>
+            <label class="booth-range"><span>Filter <output data-filter-read>off</output></span><input type="range" min="-1" max="1" step="0.01" value="0" data-filter /></label>
             <label class="booth-range"><span>Pitch <output data-pitch-read>0%</output></span><input type="range" min="-16" max="16" step="0.1" value="0" data-pitch /></label>
             <details>
               <summary>Channel {side} controls</summary>
@@ -251,5 +259,41 @@ const sides = ['A', 'B'];
     .booth-controls { width: calc(100% - 1rem); max-height: 92dvh; }
     .booth-decks { grid-template-columns: 1fr; }
     .booth-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* ---- the booth, dressed like the rest of the site ---- */
+  body.immersive-layout { background: var(--paper); }
+  .booth-room { color: var(--ink); color-scheme: inherit; }
+  .booth-stage { background: radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--ink) 7%, var(--paper)) 0%, var(--paper) 70%); }
+  .booth-stage::before { opacity: .08; background-image: radial-gradient(var(--mute) 0.5px, transparent 0.5px); }
+  .booth-stage h1.booth-title { top: 1.1rem; left: var(--gutter); font: 400 .82rem/1.3 var(--mono); letter-spacing: 0; color: var(--ink); }
+  .booth-stage h1.booth-title span { margin-left: .9em; color: var(--mute); }
+  .booth-cameras { top: 1.1rem; right: var(--gutter); gap: 0 1.1rem; }
+  .booth-cameras button, .booth-stage-foot button { background: none; border: 0; border-radius: 0; padding: .2rem 0; color: var(--mute); font: .78rem/1.3 var(--mono); }
+  .booth-cameras button:hover, .booth-stage-foot button:hover { background: none; color: var(--ink); }
+  .booth-cameras button[aria-pressed="true"] { background: none; color: var(--ink); text-decoration: underline; text-decoration-color: var(--hot); text-underline-offset: .4em; }
+  .booth-stage-foot { inset: auto var(--gutter) 1.1rem; color: var(--mute); font: .74rem/1.4 var(--mono); }
+  .booth-stage-foot button { color: var(--ink); text-decoration: underline; text-underline-offset: .3em; }
+  .booth-stage-foot button:hover { color: var(--hot); }
+  .booth-tooltip { left: var(--gutter); color: var(--ink); background: var(--paper); border-color: var(--faint); }
+  .booth-fallback { color: var(--mute); font: .8rem/1.5 var(--mono); }
+  .booth-controls { border-color: var(--faint); border-radius: 0; }
+  .booth-dialog-head h2, .booth-crate h2 { font: 400 .82rem/1.3 var(--mono); letter-spacing: 0; padding-bottom: .6rem; border-bottom: 1px solid var(--faint); flex: 1; }
+  .booth-close { border: 0; padding: .2rem 0; font: .78rem/1.3 var(--mono); text-decoration: underline; text-underline-offset: .3em; }
+  .booth-deck { background: none; color: var(--ink); color-scheme: inherit; border: 0; border-top: 2px solid var(--deck-color); border-radius: 0; padding: .9rem 0 0; }
+  .booth-deck-head span { color: var(--mute); }
+  .booth-deck select, .booth-master select { background: var(--paper); color: var(--ink); border: 0; border-bottom: 1px solid var(--faint); border-radius: 0; padding-left: 0; }
+  .booth-readout { color: var(--mute); }
+  .booth-transport button, .booth-master button, .booth-card button { border: 0; border-radius: 0; padding: .25rem 0; margin-right: .6rem; text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: .3em; }
+  .booth-transport button:hover, .booth-transport button[aria-pressed="true"] { color: var(--deck-color); text-decoration-color: currentColor; }
+  .booth-transport .booth-start { background: none; border: 0; color: var(--deck-color); text-decoration-color: currentColor; min-width: 0; }
+  .booth-transport .booth-start:hover, .booth-transport .booth-start[aria-pressed="true"] { color: var(--ink); }
+  .booth-decks { gap: 2.5rem; }
+  .booth-card img { border-radius: 0; }
+  @media (max-width: 575px) {
+    .booth-stage h1.booth-title span { display: none; }
+    .booth-cameras { inset: 2.6rem var(--gutter) auto; justify-content: start; gap: 0 .9rem; }
+    .booth-cameras button:not([hidden]) { font-size: .72rem; min-height: 2rem; padding: .2rem 0; }
+    .booth-stage-foot { inset: auto var(--gutter) .9rem; }
   }
 </style>

@@ -38,6 +38,10 @@ export class BoothElement extends HTMLElement {
       effect: panel.querySelector<HTMLSelectElement>('[data-effect]')!,
       buttons: Object.fromEntries(Array.from(panel.querySelectorAll<HTMLButtonElement>('[data-action]'), button => [button.dataset.action, button])),
       channel: panel.querySelectorAll<HTMLInputElement>('[data-channel]'),
+      hot: Array.from(panel.querySelectorAll<HTMLButtonElement>('[data-hot]')),
+      beats: Array.from(panel.querySelectorAll<HTMLButtonElement>('[data-beats]')),
+      filter: panel.querySelector<HTMLInputElement>('[data-filter]')!,
+      filterRead: panel.querySelector<HTMLOutputElement>('[data-filter-read]')!,
     }));
     const params = new URLSearchParams(location.search);
     const linked = library.find(track => track.id === params.get('track')) ?? library.find(track => track.album === params.get('release'));
@@ -169,6 +173,14 @@ export class BoothElement extends HTMLElement {
       entry.buttons.loop.addEventListener('click', () => engine.toggleLoop(side), { signal });
       entry.buttons.reverse.addEventListener('click', () => scratch(side, -2.2), { signal });
       entry.buttons.forward.addEventListener('click', () => scratch(side, 2.2), { signal });
+      entry.buttons.sync.addEventListener('click', () => engine.sync(side), { signal });
+      entry.hot.forEach((button, pad) => button.addEventListener('click', event => {
+        const deck = engine.decks[side];
+        if (event.shiftKey) engine.clearHotCue(side, pad);
+        else if (deck.track && !deck.loading) engine.hotCue(side, pad);
+      }, { signal }));
+      entry.beats.forEach(button => button.addEventListener('click', () => engine.beatLoop(side, Number(button.dataset.beats)), { signal }));
+      entry.filter.addEventListener('input', () => engine.setFilter(side, Number(entry.filter.value)), { signal });
       entry.buttons.monitor.hidden = !engine.canMonitor;
       entry.buttons.monitor.addEventListener('click', () => monitor(side), { signal });
       panels[side].addEventListener('dragover', event => {
@@ -208,7 +220,22 @@ export class BoothElement extends HTMLElement {
         entry.buttons.cue.setAttribute('aria-pressed', String(deck.cuePoint !== undefined));
         entry.buttons.in.setAttribute('aria-pressed', String(deck.loopIn !== undefined));
         entry.buttons.out.setAttribute('aria-pressed', String(deck.loopOut !== undefined));
-        for (const action of ['cue', 'store', 'in', 'out', 'loop', 'reverse', 'forward']) entry.buttons[action].disabled = !deck.track || deck.loading || !!deck.error;
+        for (const action of ['cue', 'store', 'in', 'out', 'loop', 'reverse', 'forward', 'sync']) entry.buttons[action].disabled = !deck.track || deck.loading || !!deck.error;
+        const other = engine.tempo(side === 0 ? 1 : 0), mine = engine.tempo(side);
+        entry.buttons.sync.setAttribute('aria-pressed', String(!!other && !!mine && Math.abs(other - mine) < 0.05));
+        entry.hot.forEach((button, pad) => {
+          const time = deck.hotCues[pad];
+          button.setAttribute('aria-pressed', String(time !== undefined));
+          button.textContent = time === undefined ? `Cue ${pad + 1}` : `${pad + 1} · ${format(time)}`;
+          button.disabled = !deck.track || deck.loading || !!deck.error;
+        });
+        entry.beats.forEach(button => {
+          button.setAttribute('aria-pressed', String(deck.loop && deck.loopBeats === Number(button.dataset.beats)));
+          button.disabled = !deck.track || deck.loading || !!deck.error;
+        });
+        const filter = engine.filterAmount(side);
+        if (document.activeElement !== entry.filter) entry.filter.value = String(filter);
+        entry.filterRead.value = filter < -0.02 ? `dark ${Math.round(-filter * 100)}%` : filter > 0.02 ? `thin ${Math.round(filter * 100)}%` : 'off';
         const recordDuration = engine.recordPosition(side, selected(side))?.record.duration ?? 0;
         entry.seek.disabled = !recordDuration || deck.loading;
         entry.seek.max = String(recordDuration || 1);
@@ -241,15 +268,37 @@ export class BoothElement extends HTMLElement {
     sync();
     progress();
 
-    document.addEventListener('keydown', event => {
+    // the letters printed on the decks' keys: 1/2 play, Q W E R / U I O P hot cues
+    // (shift clears), A / J cue, S / K sync. Caught on the window first, so the
+    // site player's own keys (k, p…) don't fire too.
+    const deckKeys = [
+      { play: '1', cue: 'a', sync: 's', pads: ['q', 'w', 'e', 'r'] },
+      { play: '2', cue: 'j', sync: 'k', pads: ['u', 'i', 'o', 'p'] },
+    ];
+    window.addEventListener('keydown', event => {
       if (event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey ||
         (event.target as Element)?.closest?.('input, select, textarea, [contenteditable]') ||
         document.querySelector('dialog[open]:not(#booth-controls), .viz:not([hidden])')) return;
-      if (event.key === '1' || event.key === '2') {
+      const key = event.key.toLowerCase();
+      for (const side of sides) {
+        const keys = deckKeys[side];
+        const deck = engine.decks[side];
+        const ready = !!deck.track && !deck.loading && !deck.error;
+        let act: (() => void) | undefined;
+        if (key === keys.play) act = () => toggle(side);
+        else if (key === keys.cue) act = () => ready && (event.shiftKey ? engine.setCue(side) : engine.cue(side));
+        else if (key === keys.sync) act = () => ready && engine.sync(side);
+        else if (keys.pads.includes(key)) {
+          const pad = keys.pads.indexOf(key);
+          act = () => event.shiftKey ? engine.clearHotCue(side, pad) : ready ? engine.hotCue(side, pad) : toggle(side);
+        }
+        if (!act) continue;
         event.preventDefault();
-        toggle(event.key === '1' ? 0 : 1);
+        event.stopImmediatePropagation();
+        act();
+        return;
       }
-    }, { signal });
+    }, { signal, capture: true });
 
     if (linked && engine.decks[0].track?.id !== linked.id) {
       // Keep the album selected until the first gesture can unlock Web Audio.
