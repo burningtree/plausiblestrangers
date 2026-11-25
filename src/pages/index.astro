@@ -5,7 +5,7 @@ import PlayButton from '../components/PlayButton.astro';
 import VinylCover from '../components/VinylCover.astro';
 import Stamp from '../components/Stamp.astro';
 import Icon from '../components/Icon.astro';
-import { getCatalog, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
+import { getCatalog, isCopy, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
 import { getNews, newsUrl, fmtDate as fmtNewsDate } from '../lib/catalog';
 import { site } from '../site';
 import { influences } from '../data/influences';
@@ -20,12 +20,13 @@ const records = releases.map((r) => {
   const ready = tracks.filter(hasAudio);
   return { r, tracks, ready, total: tracks.reduce((s, t) => s + t.data.duration, 0) };
 });
-const trackCount = records.reduce((s, x) => s + x.tracks.length, 0);
+// each song once, even when it's on two records
+const trackCount = records.reduce((s, x) => s + x.tracks.filter((t) => !isCopy(t)).length, 0);
 const groups = [
   { label: 'albums', items: records.filter((x) => isAlbum(x.r)), album: true },
   { label: 'eps & singles', items: records.filter((x) => !isAlbum(x.r)), album: false },
 ].filter((g) => g.items.length);
-const latestNews = (await getNews()).slice(0, 3);
+const latestNews = (await getNews()).slice(0, 2);
 ---
 
 <Base
@@ -38,129 +39,134 @@ const latestNews = (await getNews()).slice(0, 3);
   )}
 >
   <div class="home">
-  <section class="home-what" aria-labelledby="what">
-    <h2 id="what" class="label">what we are</h2>
-    <p class="lede">Electronic music to dance to, drift off to, and play a little too loud.</p>
-    <p>
-      Hypnotic grooves somewhere between house, techno and electroclash, with strange voices,
-      misplaced instruments and occasionally just noise. Made by people who always wanted to make
-      the music they love; a machine plays the instruments we never learned, and we keep only the
-      songs we'd put on ourselves.
-    </p>
-    <p class="home-influences">
-      Inspired by {topInfluences.join(', ')}{' '}
-      <a href="/about/#influences">and many more</a>.
-    </p>
-    <p class="more-link"><a href="/about/">more about us →</a></p>
-  </section>
+  <div class="home-top">
+    <section class="home-news" aria-labelledby="news">
+      <h2 id="news" class="label">
+        news <a class="label-link" href="/news/">all news →</a>
+      </h2>
+      <ol class="home-news-list">
+        {
+          latestNews.map((p) => (
+            <li>
+              <time class="news-date" datetime={p.data.date.toISOString().slice(0, 10)}>
+                {fmtNewsDate(p.data.date)}
+              </time>
+              <a class="home-news-title" href={newsUrl(p)}>
+                {p.data.title}
+              </a>
+              {p.data.summary && <span class="home-news-summary">{p.data.summary}</span>}
+            </li>
+          ))
+        }
+      </ol>
+    </section>
 
-  <section class="home-news" aria-labelledby="news">
-    <h2 id="news" class="label">
-      news <a class="label-link" href="/news/">all of it →</a>
-    </h2>
-    <ol class="home-news-list">
-      {
-        latestNews.map((p) => (
-          <li>
-            <time class="news-date" datetime={p.data.date.toISOString().slice(0, 10)}>
-              {fmtNewsDate(p.data.date)}
-            </time>
-            <a class="home-news-title" href={newsUrl(p)}>
-              {p.data.title}
-            </a>
-            {p.data.summary && <span class="home-news-summary">{p.data.summary}</span>}
-          </li>
-        ))
-      }
-    </ol>
-  </section>
+    <section class="home-live" aria-labelledby="live">
+      <h2 id="live" class="label">live</h2>
+    <p class="home-live-title">Nothing booked yet.</p>
+    <p class="home-news-summary">
+      We're working on an audiovisual set. If you have a room, a projector and a tolerant
+      audience, we should talk.
+    </p>
+    </section>
+  </div>
 
   <section class="home-records" aria-labelledby="records">
     <h2 id="records" class="label">
       records <span class="count">{records.length} records, {trackCount} tracks</span>
-      <a class="label-link" href="/library/">the whole library, unreleased too →</a>
+      <button type="button" class="random-link" data-random title="play a random track">
+        <Icon name="dice-five" class="random-dice" /> <span class="random-long">play something </span>random
+      </button>
+      <a class="label-link" href="/library/">whole library →</a>
     </h2>
     {
       groups.map((g) => (
         <div class="record-group">
           <h3 class="sublabel">{g.label}</h3>
-    <ol class:list={['records', { 'records--albums': g.album }]}>
-      {
-        g.items.map(({ r, tracks, ready, total }) => (
-          <li class:list={['record', { 'record--unfinished': isUnfinished(r) }]} data-record-row={r.id}>
-            <div class="record-art">
-              {r.data.cover && (
-                <div class="record-cover">
-                  <VinylCover cover={r.data.cover} backCover={r.data.backCover} vinylLabel={r.data.vinylLabel} title={r.data.title} catalog={r.data.catalog} release={r.id} href={releaseUrl(r.id)} compact={!g.album} lazy />
-                </div>
-              )}
-              {ready.length > 0 && (
-                <PlayButton
-                  queue={r.id}
-                  index={0}
-                  id={playable(ready[0], r).id}
-                  label={`play ${r.data.title}`}
-                  record={r.id}
-                  iconOnly
-                  class="cover-play"
-                />
-              )}
-            </div>
-            <div class="record-text">
-              <p class="record-cat">{r.data.catalog}{isUnfinished(r) && <Stamp />}</p>
-              <h4 class="record-title">
-                <a href={releaseUrl(r.id)}>{r.data.title}</a>
-              </h4>
-              <p class="record-meta">
-                {r.data.kind} · {tracks.length} {tracks.length === 1 ? 'track' : 'tracks'} · {fmtTotal(total)} ·{' '}
-                {isUnfinished(r) ? 'in progress' : fmtDate(r.data.date)}
-              </p>
-              {ready.length > 0 && (
-                <p class="record-actions">
-                  <PlayButton queue={r.id} index={0} id={playable(ready[0], r).id} record={r.id} label={isUnfinished(r) ? 'play what exists' : 'play'} />
-                </p>
-              )}
-            </div>
-            <Queue release={r} tracks={tracks} />
-          </li>
-        ))
-      }
-    </ol>
+          <ol class:list={['records', { 'records--albums': g.album }]}>
+            {
+              g.items.map(({ r, tracks, ready, total }) => (
+                <li class:list={['record', { 'record--unfinished': isUnfinished(r) }]} data-record-row={r.id}>
+                  <div class="record-art">
+                    {r.data.cover && (
+                      <div class="record-cover">
+                        <VinylCover cover={r.data.cover} backCover={r.data.backCover} vinylLabel={r.data.vinylLabel} title={r.data.title} catalog={r.data.catalog} release={r.id} href={releaseUrl(r.id)} compact={!g.album} lazy />
+                      </div>
+                    )}
+                    {ready.length > 0 && (
+                      <PlayButton
+                        queue={r.id}
+                        index={0}
+                        id={playable(ready[0], r).id}
+                        label={`play ${r.data.title}`}
+                        record={r.id}
+                        iconOnly
+                        class="cover-play"
+                      />
+                    )}
+                  </div>
+                  <div class="record-text">
+                    <p class="record-cat">{r.data.catalog}{isUnfinished(r) && <Stamp />}</p>
+                    <h4 class="record-title">
+                      <a href={releaseUrl(r.id)}>{r.data.title}</a>
+                    </h4>
+                    <p class="record-meta">
+                      {r.data.kind} · {tracks.length} {tracks.length === 1 ? 'track' : 'tracks'} · {fmtTotal(total)} ·{' '}
+                      {isUnfinished(r) ? 'in progress' : fmtDate(r.data.date)}
+                    </p>
+                  </div>
+                  <Queue release={r} tracks={tracks} />
+                </li>
+              ))
+            }
+          </ol>
         </div>
       ))
     }
   </section>
 
-  <section class="home-live" aria-labelledby="live">
-    <h2 id="live" class="label">live / dates</h2>
-    <p>Nothing booked. Nothing cancelled either.</p>
-    <p>
-      We're working on an audiovisual set: the recordings taken apart, remixed in the room, with visuals
-      that react to whatever is left. If you have a room, a projector and a tolerant audience, we
-      should talk.
-    </p>
+  <section class="home-what" aria-labelledby="what">
+    <h2 id="what" class="label">what we are</h2>
+    <div class="home-what-body">
+      <p class="lede">Electronic music to dance to, drift off to, and play a little too loud.</p>
+      <div>
+        <p>
+          Hypnotic grooves somewhere between house, techno and electroclash, with strange voices,
+          misplaced instruments and occasionally just noise. Made by people who always wanted to make
+          the music they love; a machine plays the instruments we never learned, and we keep only the
+          songs we'd put on ourselves.
+        </p>
+        <p class="home-influences">
+          Inspired by {topInfluences.join(', ')}{' '}
+          <a href="/about/#influences">and many more</a>.
+        </p>
+        <p class="more-link"><a href="/about/">more about us →</a></p>
+      </div>
+    </div>
   </section>
 
-  <section class="home-elsewhere" aria-labelledby="elsewhere">
-    <h2 id="elsewhere" class="label">elsewhere / contact</h2>
-    <ul class="plain">
-      {
-        site.links.map((l) => (
-          <li>
-            <a href={l.href} rel="me">
-              {l.label} <Icon name="arrow-up-right" />
-            </a>
-          </li>
-        ))
-      }
-      {
-        site.email && (
-          <li>
-            <a href={`mailto:${site.email}`}>{site.email}</a>
-          </li>
-        )
-      }
-    </ul>
-  </section>
+  <div class="home-small">
+    <section class="home-elsewhere" aria-labelledby="elsewhere">
+      <h2 id="elsewhere" class="label">elsewhere / contact</h2>
+      <ul class="plain">
+        {
+          site.links.map((l) => (
+            <li>
+              <a href={l.href} rel="me">
+                {l.label} <Icon name="arrow-up-right" />
+              </a>
+            </li>
+          ))
+        }
+        {
+          site.email && (
+            <li>
+              <a href={`mailto:${site.email}`}>{site.email}</a>
+            </li>
+          )
+        }
+      </ul>
+    </section>
+  </div>
   </div>
 </Base>

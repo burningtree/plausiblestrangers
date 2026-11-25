@@ -17,8 +17,8 @@ import {
   fmtTotal,
   fmtDate,
   playable,
-  hasAudio,
   downloadName,
+  hasAudio,
   isUnfinished,
   type Release,
 } from '../../../lib/catalog';
@@ -89,8 +89,6 @@ const d = release.data;
   <Queue release={release} tracks={tracks} />
 
   <article class="release">
-    <p class="crumbs"><a href="/#records">records</a> / {d.catalog}{unfinished && <Stamp />}</p>
-
     {
       d.cover && (
         <figure class="release-cover">
@@ -118,21 +116,19 @@ const d = release.data;
               />
             )}
           </VinylCover>
-          <figcaption class="release-cover-hint">
-            {d.backCover && printedTracks.length ? 'drag to rotate · select a title on the back to play' : 'drag to rotate'}
-          </figcaption>
         </figure>
       )
     }
 
     <div class="release-body">
     <header class="release-head">
+      <p class="kicker"><a href="/#records">records</a> / {d.catalog}{unfinished && <Stamp />}</p>
       <h1 class="title">{d.title}</h1>
       <p class="meta">
         {d.kind} · {tracks.length} tracks · {fmtTotal(total)} · {unfinished ? (ready.length < tracks.length ? `in progress, ${ready.length} of ${tracks.length} audible so far` : 'in progress') : fmtDate(d.date)}
       </p>
       {ready.length > 0 && (
-        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} class="play--big" /></p>
+        <p><PlayButton queue={release.id} index={0} id={playable(ready[0], release).id} record={release.id} label={unfinished ? 'play what exists' : 'play the record'} /></p>
       )}
     </header>
 
@@ -152,14 +148,6 @@ const d = release.data;
               <a class="tl-title" href={trackUrl(t)}>
                 {t.data.title}
               </a>
-              <span class="tl-info">
-                {t.data.instrumental && (
-                  <span class="tl-instr" role="img" aria-label="instrumental" title="instrumental, no vocals">
-                    <Icon name="microphone-mute" />
-                  </span>
-                )}
-                {t.data.bpm && <span>{t.data.bpm} bpm</span>}
-              </span>
               <span class="tl-dur">{fmtTime(t.data.duration)}</span>
               {qi >= 0 ? (
                 <a class="tl-dl" href={t.data.audio} download={downloadName(t)} title={`download ${t.data.title}`} aria-label={`download ${t.data.title}`}>

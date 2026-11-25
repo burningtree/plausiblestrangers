@@ -1,0 +1,40 @@
+---
+// The style prompt Suno wrote for a song: the first few lines, with a button
+// to read the rest. Short prompts that fit show no button.
+interface Props {
+  text: string;
+}
+const { text } = Astro.props;
+---
+
+<section class="brief" aria-labelledby="brief-h" data-brief>
+  <h2 id="brief-h" class="label">style prompt, written by suno</h2>
+  <p class="brief-text is-clamped" id="brief-text">{text}</p>
+  <button type="button" class="brief-more" aria-controls="brief-text" aria-expanded="false" hidden>
+    <span class="when-closed">show the whole prompt ↓</span><span class="when-open">show less ↑</span>
+  </button>
+</section>
+
+<script>
+  function setup() {
+    document.querySelectorAll<HTMLElement>('[data-brief]').forEach((box) => {
+      if (box.dataset.ready) return;
+      box.dataset.ready = '1';
+      const text = box.querySelector<HTMLElement>('.brief-text')!;
+      const btn = box.querySelector<HTMLButtonElement>('.brief-more')!;
+      // only offer the button when something is actually cut off
+      const check = () => {
+        if (!text.classList.contains('is-clamped')) return;
+        btn.hidden = text.scrollHeight <= text.clientHeight + 2;
+      };
+      check();
+      new ResizeObserver(check).observe(text);
+      btn.addEventListener('click', () => {
+        const open = text.classList.toggle('is-clamped') === false;
+        btn.setAttribute('aria-expanded', String(open));
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', setup);
+  setup();
+</script>

@@ -1,7 +1,7 @@
 ---
 // A pixel spectrogram of the whole track that doubles as its progress bar:
 // the player moves a playhead across it (--p) and clicking jumps there.
-import { fmtTime, spectroLevels, type Analysis } from '../lib/catalog';
+import { fmtTime, spectroLevels, fineSpectroFor, type Analysis } from '../lib/catalog';
 
 interface Props {
   analysis: Analysis;
@@ -9,8 +9,12 @@ interface Props {
   queue: string;
   index: number;
   duration: number;
+  /** the audio file's public path: its high-resolution spectrogram is used when there is one */
+  src?: string;
 }
-const { analysis: a, id, queue, index, duration } = Astro.props;
+const { analysis: a, id, queue, index, duration, src } = Astro.props;
+const fine = fineSpectroFor(src);
+const pic = fine && fine.bands === a.bands ? fine : { cols: a.cols, bands: a.bands, spec: a.spec };
 const kHz = (f: number) => (f >= 1000 ? `${Math.round(f / 1000)}k` : `${Math.round(f)}`);
 // gridline frequencies, as fractions up the log scale
 const ticks = [100, 1000, 5000].map((f) => ({ f, y: Math.log(f / a.fLo) / Math.log(a.fHi / a.fLo) }));
@@ -30,7 +34,7 @@ const ticks = [100, 1000, 5000].map((f) => ({ f, y: Math.log(f / a.fLo) / Math.l
     aria-valuemax="100"
     aria-valuenow="0"
   >
-    <canvas class="spectro-canvas" data-spec={a.spec} data-cols={a.cols} data-bands={a.bands} data-levels={spectroLevels.join(',')} aria-hidden="true"></canvas>
+    <canvas class="spectro-canvas" data-spec={pic.spec} data-cols={pic.cols} data-bands={pic.bands} data-levels={spectroLevels.join(',')} aria-hidden="true"></canvas>
     {ticks.map((t) => <span class="spectro-tick" style={`bottom:${(t.y * 100).toFixed(1)}%`}>{kHz(t.f)}</span>)}
     <span class="spectro-busy" data-busiest={a.busiest} style={`left:${((a.busiest / duration) * 100).toFixed(2)}%`} title={`the busiest moment, ${fmtTime(a.busiest)}`}></span>
   </div>

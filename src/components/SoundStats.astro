@@ -8,8 +8,10 @@ interface Props {
   id: string; // player id of this track
   queue: string;
   index: number;
+  /** show one half on its own: where the energy sits, or the numbers (default: both) */
+  part?: 'energy' | 'numbers';
 }
-const { analysis: a, id, queue, index } = Astro.props;
+const { analysis: a, id, queue, index, part } = Astro.props;
 
 const BAND_LABELS: Record<string, string> = {
   sub: 'sub',
@@ -63,11 +65,10 @@ const stats: { k: string; v: string; note: string; href?: string }[] = [
 
 ---
 
-<section class="sound-stats" aria-labelledby="sound-h">
-  <h2 id="sound-h" class="label">the sound, measured <a class="label-link" href="/rankings/">all songs ranked →</a></h2>
-  <div class="analysis-grid">
-    <div>
-      <h3 class="sublabel">where the energy sits</h3>
+{
+  part === 'energy' ? (
+    <section class="sound-stats sound-energy" aria-labelledby="energy-h">
+      <h2 id="energy-h" class="label">where the energy sits</h2>
       <ul class="balance">
         {
           Object.entries(a.balance).map(([band, share]) => {
@@ -86,10 +87,10 @@ const stats: { k: string; v: string; note: string; href?: string }[] = [
           })
         }
       </ul>
-    </div>
-
-    <div>
-      <h3 class="sublabel">in numbers</h3>
+    </section>
+  ) : part === 'numbers' ? (
+    <section class="sound-stats" aria-labelledby="sound-h">
+      <h2 id="sound-h" class="label">the sound, in numbers <a class="label-link" href="/rankings/">all songs ranked →</a></h2>
       <dl class="details analysis-stats">
         {
           stats.map((s) => (
@@ -110,6 +111,57 @@ const stats: { k: string; v: string; note: string; href?: string }[] = [
           <span class="stat-note">where the most is going on at once</span>
         </dd>
       </dl>
+    </section>
+  ) : (
+<section class="sound-stats" aria-labelledby="sound-h">
+    <h2 id="sound-h" class="label">the sound, measured <a class="label-link" href="/rankings/">all songs ranked →</a></h2>
+    <div class="analysis-grid">
+      <div>
+        <h3 class="sublabel">where the energy sits</h3>
+        <ul class="balance">
+          {
+            Object.entries(a.balance).map(([band, share]) => {
+              const filled = Math.max(share > 0.004 ? 1 : 0, Math.round((share / maxShare) * CELLS));
+              return (
+                <li>
+                  <span class="balance-k">{BAND_LABELS[band] ?? band}</span>
+                  <span class="balance-bar" aria-hidden="true">
+                    {Array.from({ length: CELLS }, (_, i) => (
+                      <i class:list={{ on: i < filled, hot: i < filled && share === maxShare }} />
+                    ))}
+                  </span>
+                  <span class="balance-v">{Math.round(share * 100)}%</span>
+                </li>
+              );
+            })
+          }
+        </ul>
+      </div>
+  
+      <div>
+        <h3 class="sublabel">in numbers</h3>
+        <dl class="details analysis-stats">
+          {
+            stats.map((s) => (
+              <>
+                <dt>{s.k}</dt>
+                <dd>
+                  {s.v}
+                  {s.note && (s.href ? <a class="stat-note" href={s.href}>{s.note}</a> : <span class="stat-note">{s.note}</span>)}
+                </dd>
+              </>
+            ))
+          }
+          <dt>busiest moment</dt>
+          <dd>
+            <button type="button" class="stat-jump" data-seek={a.busiest} data-seek-queue={queue} data-seek-index={index} data-seek-id={id}>
+              {fmtTime(a.busiest)} →
+            </button>
+            <span class="stat-note">where the most is going on at once</span>
+          </dd>
+        </dl>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
+  )
+}

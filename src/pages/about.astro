@@ -3,7 +3,7 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import PixelArt from '../components/PixelArt.astro';
-import { getCatalog, getArchive, blurStyle } from '../lib/catalog';
+import { getCatalog, getArchive, blurStyle, isCopy } from '../lib/catalog';
 import { site } from '../site';
 import { influences, slug, type Influence } from '../data/influences';
 import spotifyData from '../data/influences-spotify.json';
@@ -51,7 +51,7 @@ const PORTRAIT = '/art/about/plausible-strangers.webp';
 
 const { releases, tracksOf } = await getCatalog();
 const archive = await getArchive();
-const released = releases.reduce((n, r) => n + tracksOf(r.id).length, 0);
+const released = releases.reduce((n, r) => n + tracksOf(r.id).filter((t) => !isCopy(t)).length, 0); // each song once, even if it's on two records
 const songs = released + archive.length;
 ---
 

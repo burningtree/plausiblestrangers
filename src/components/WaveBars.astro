@@ -1,0 +1,166 @@
+---
+import { finePeaksFor } from '../lib/catalog';
+// A classic waveform: one rounded bar per slice of the track, mirrored around
+// the middle. Like every .wave[data-wave], the player moves the playhead (--p)
+// across it and clicking or dragging seeks.
+interface Props {
+  id: string;
+  /** coarse peaks, used when there is no fine data */
+  peaks: number[];
+  /** the audio file's public path, to find its fine-grained peaks */
+  src?: string;
+  duration: number;
+  queue: string;
+  index: number;
+  /** a small strip, as in the library list */
+  mini?: boolean;
+  /** how many bars to draw on the server; the browser redraws at ~96 per minute */
+  bars?: number;
+  label?: string;
+}
+const { id, peaks: coarse, src, duration, queue, index, mini = false, bars, label } = Astro.props;
+const raw = finePeaksFor(src) ?? coarse;
+// longer tracks get more bars (the browser refines this to fit the width)
+const want = bars ?? Math.round(Math.min(288, Math.max(96, (duration / 60) * 48)));
+const n = Math.min(want, raw.length);
+// each bar takes the loudest moment of its slice
+const peaks = Array.from({ length: n }, (_, i) => {
+  const a = Math.floor((i * raw.length) / n);
+  const b = Math.max(a + 1, Math.floor(((i + 1) * raw.length) / n));
+  return Math.max(...raw.slice(a, b));
+});
+
+// loud, compressed tracks look flat: stretch the quietest part down (same curve as the typed wave)
+// (from a low percentile, so a silent intro doesn't flatten everything else)
+const sorted = [...peaks].sort((x, y) => x - y);
+const lo = peaks.length ? sorted[Math.floor(sorted.length * 0.05)] * 0.85 : 0;
+const hi = peaks.length ? sorted[sorted.length - 1] : 1;
+const heights = peaks.map((v) => Math.max(6, Math.round(Math.max(0, (v - lo) / (hi - lo || 1)) ** 1.4 * 100)));
+// minis: up to 240 heights, one base-36 character each (0–z), drawn in the browser to fit
+const MINI_BARS = 240;
+const miniHeights = mini
+  ? (() => {
+      const m = Math.min(MINI_BARS, raw.length);
+      const pk = Array.from({ length: m }, (_, i) => {
+        const a = Math.floor((i * raw.length) / m);
+        const b = Math.max(a + 1, Math.floor(((i + 1) * raw.length) / m));
+        return Math.max(...raw.slice(a, b));
+      });
+      const so = [...pk].sort((x, y) => x - y);
+      const l = so[Math.floor(so.length * 0.05)] * 0.85;
+      const h = so[so.length - 1] || 1;
+      return pk.map((v) => Math.round(Math.max(0, (v - l) / (h - l || 1)) ** 1.4 * 35).toString(36)).join('');
+    })()
+  : undefined;
+---
+
+<div
+  class:list={['wave', 'wave--bars', { 'wave--bars-mini': mini }]}
+  data-wave={id}
+  data-duration={duration}
+  data-fine={mini ? undefined : JSON.stringify(raw)}
+  data-h={miniHeights}
+  data-queue={queue}
+  data-index={index}
+  role="slider"
+  tabindex={mini ? '-1' : '0'}
+  aria-label={label ?? 'waveform: click to jump to that moment'}
+  aria-valuemin="0"
+  aria-valuemax="100"
+  aria-valuenow="0"
+>
+  <span class="bars" aria-hidden="true">
+    {!mini && heights.map((h) => <i style={`height:${h}%`} />)}
+  </span>
+</div>
+
+<script>
+  // ---- bars: rebuilt for the chosen detail and the space available
+  function heightsFor(raw: number[], n: number) {
+    const peaks = Array.from({ length: n }, (_, i) => {
+      const a = Math.floor((i * raw.length) / n);
+      const b = Math.max(a + 1, Math.floor(((i + 1) * raw.length) / n));
+      let m = 0;
+      for (let j = a; j < b; j++) if (raw[j] > m) m = raw[j];
+      return m;
+    });
+    const sorted = [...peaks].sort((x, y) => x - y);
+    const lo = sorted[Math.floor(sorted.length * 0.05)] * 0.85;
+    const hi = sorted[sorted.length - 1] || 1;
+    return peaks.map((v) => Math.max(6, Math.round(Math.max(0, (v - lo) / (hi - lo || 1)) ** 1.4 * 100)));
+  }
+
+  // minis: ready heights (base 36, 0–35), as many bars as fit at ~3px each
+  function renderMini(el: HTMLElement, width: number) {
+    const hs = el.dataset.h!;
+    const n = Math.max(16, Math.min(hs.length, Math.floor(width / 3)));
+    if (el.dataset.drawn === String(n)) return;
+    el.dataset.drawn = String(n);
+    let html = '';
+    for (let i = 0; i < n; i++) {
+      const a = Math.floor((i * hs.length) / n);
+      const b = Math.max(a + 1, Math.floor(((i + 1) * hs.length) / n));
+      let m = 0;
+      for (let j = a; j < b; j++) m = Math.max(m, parseInt(hs[j], 36));
+      html += `<i style="height:${Math.max(6, Math.round((m / 35) * 100))}%"></i>`;
+    }
+    el.querySelector('.bars')!.innerHTML = html;
+    delete el.dataset.lit;
+    light(el);
+  }
+
+  function render(el: HTMLElement) {
+    const width = el.clientWidth;
+    if (!width) return; // hidden: drawn when it appears (the resize observer calls again)
+    if (el.dataset.h) return renderMini(el, width);
+    if (!el.dataset.fine) return;
+    let raw: number[];
+    try {
+      raw = JSON.parse(el.dataset.fine);
+    } catch {
+      return;
+    }
+    const minutes = Number(el.dataset.duration || 0) / 60;
+    // about 96 bars a minute, but never thinner than ~2px bar + 1px gap
+    const n = Math.max(24, Math.min(raw.length, Math.floor(width / 3), Math.round(minutes * 96)));
+    const key = `${n}`;
+    if (el.dataset.drawn === key) return;
+    el.dataset.drawn = key;
+    const box = el.querySelector('.bars')!;
+    box.innerHTML = heightsFor(raw, n)
+      .map((h) => `<i style="height:${h}%"></i>`)
+      .join('');
+    delete el.dataset.lit;
+    light(el);
+  }
+
+  // ---- a bar lights up whole as soon as playback reaches it. The player sets
+  // --p (e.g. "42.3%") on every .wave[data-wave]; this turns that into bars.
+  function light(el: HTMLElement) {
+    const p = parseFloat(el.style.getPropertyValue('--p')) || 0;
+    const bars = el.querySelectorAll('.bars i');
+    const lit = p > 0 ? Math.min(bars.length, Math.floor((p / 100) * bars.length) + 1) : 0;
+    if (el.dataset.lit === String(lit)) return;
+    const before = Number(el.dataset.lit || 0);
+    el.dataset.lit = String(lit);
+    // the playhead line sits at the end of the last lit bar
+    el.style.setProperty('--ps', bars.length ? `${(lit / bars.length) * 100}%` : '0%');
+    const [a, b] = lit > before ? [before, lit] : [lit, before];
+    for (let i = a; i < b; i++) bars[i].classList.toggle('on', i < lit);
+  }
+
+  const seen = new WeakSet<Element>();
+  const mo = new MutationObserver((records) => records.forEach((r) => light(r.target as HTMLElement)));
+  const ro = new ResizeObserver((entries) => entries.forEach((e) => render(e.target as HTMLElement)));
+  function setup() {
+    document.querySelectorAll<HTMLElement>('.wave--bars').forEach((el) => {
+      if (seen.has(el)) return;
+      seen.add(el);
+      light(el);
+      mo.observe(el, { attributes: true, attributeFilter: ['style'] });
+      if (el.dataset.fine || el.dataset.h) ro.observe(el);
+    });
+  }
+  document.addEventListener('astro:page-load', setup);
+  setup();
+</script>

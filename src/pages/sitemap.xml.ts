@@ -1,6 +1,6 @@
 // Every page, for search engines. Referenced from public/robots.txt.
 import type { APIRoute } from 'astro';
-import { getCatalog, getArchive, getNews, releaseUrl, trackUrl, archiveUrl, newsUrl } from '../lib/catalog';
+import { getCatalog, isCopy, getArchive, getNews, releaseUrl, trackUrl, archiveUrl, newsUrl } from '../lib/catalog';
 import { abs } from '../lib/seo';
 
 type Entry = { path: string; lastmod?: Date; priority: number };
@@ -22,7 +22,7 @@ export const GET: APIRoute = async () => {
       const tracks = tracksOf(r.id);
       return [
         { path: releaseUrl(r.id), priority: 0.9, lastmod: r.data.date ?? latest(tracks.map((t) => t.data.created)) },
-        ...tracks.map((t) => ({ path: trackUrl(t), priority: 0.7, lastmod: t.data.created })),
+        ...tracks.filter((t) => !isCopy(t)).map((t) => ({ path: trackUrl(t), priority: 0.7, lastmod: t.data.created })),
       ];
     }),
     ...archive.map((a) => ({ path: archiveUrl(a), priority: 0.4, lastmod: a.data.created })),

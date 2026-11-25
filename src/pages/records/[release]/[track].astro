@@ -6,9 +6,10 @@ import Queue from '../../../components/Queue.astro';
 import PlayButton from '../../../components/PlayButton.astro';
 import VinylCover from '../../../components/VinylCover.astro';
 import Wave from '../../../components/Wave.astro';
+import SoundView from '../../../components/SoundView.astro';
 import Stamp from '../../../components/Stamp.astro';
 import Icon from '../../../components/Icon.astro';
-import Spectrogram from '../../../components/Spectrogram.astro';
+import StylePrompt from '../../../components/StylePrompt.astro';
 import SoundStats from '../../../components/SoundStats.astro';
 import {
   parseLyrics,
@@ -27,6 +28,8 @@ import {
   playable,
   hasAudio,
   isUnfinished,
+  isCopy,
+  appearances,
   type Release,
   type Track,
 } from '../../../lib/catalog';
@@ -45,6 +48,10 @@ export const getStaticPaths = (async () => {
 
 const { release, tracks, index } = Astro.props as { release: Release; tracks: Track[]; index: number };
 const track = tracks[index];
+// the same recording on another record has its page there: send people on
+if (isCopy(track)) return Astro.redirect(trackUrl(track), 301);
+// every record this song is on, when it's more than one
+const elsewhere = appearances(track).filter((p) => p.track.id !== track.id);
 const t = track.data;
 const r = release.data;
 const audible = hasAudio(track);
@@ -68,6 +75,10 @@ const archiveVersions = (await getArchive()).filter((a) => songBase(a.data.title
 const details: [string, string | undefined][] = [
   ['record', `${r.title} (${r.catalog})`],
   ['track', `${t.number} of ${tracks.length}`],
+  [
+    'also on',
+    elsewhere.map((p) => `${p.release.data.title} (${p.release.data.catalog}), track ${p.track.data.number}`).join('; ') || undefined,
+  ],
   ['length', fmtTime(t.duration)],
   ['tempo', t.bpm ? `${t.bpm} bpm` : undefined],
   ['key', t.key ? `${keyName(t.key)} (${t.key}, as detected)` : undefined],
@@ -117,12 +128,8 @@ const details: [string, string | undefined][] = [
 >
   <Queue release={release} tracks={tracks} />
 
-  <article class="track">
-    <p class="crumbs">
-      <a href="/#records">records</a> / <a href={releaseUrl(release.id)}>{r.title}</a> / {String(t.number).padStart(2, '0')}
-    {unfinished && <Stamp />}</p>
-
-    <div class="track-main">
+  <article class="track track--clean">
+    <div class="track-top">
     <header class="track-head">
       {
         r.cover && (
@@ -132,6 +139,7 @@ const details: [string, string | undefined][] = [
         )
       }
       <div>
+        <p class="kicker"><a href={releaseUrl(release.id)}>{r.title}</a> / {String(t.number).padStart(2, '0')}{unfinished && <Stamp />}</p>
         <h1 class="title">{t.title}</h1>
         <p class="meta">
           {fmtTime(t.duration)}{t.bpm && ` · ${t.bpm} bpm`}{t.key && ` · ${keyName(t.key)}`}{t.instrumental && ' · instrumental'}
@@ -139,7 +147,7 @@ const details: [string, string | undefined][] = [
         <p class="track-actions">
           {audible ? (
             <>
-              <PlayButton queue={release.id} index={qi} id={p.id} class="play--big" />
+              <PlayButton queue={release.id} index={qi} id={p.id} />
               <a class="download-btn" href={t.audio} download={downloadName(track)} title="download (m4a)">
                 <Icon name="download" /> download
               </a>
@@ -153,56 +161,20 @@ const details: [string, string | undefined][] = [
 
     {
       audible &&
-        (analysis ? (
-          <Spectrogram analysis={analysis} id={p.id} queue={release.id} index={qi} duration={t.duration} />
+        (analysis || p.peaks.length ? (
+          <SoundView analysis={analysis} id={p.id} peaks={p.peaks} src={t.audio} duration={t.duration} queue={release.id} index={qi} />
         ) : (
           <Wave id={p.id} peaks={p.peaks} duration={t.duration} queue={release.id} index={qi} class="wave--big" />
         ))
     }
     {audible && <noscript><audio controls preload="none" src={t.audio}></audio></noscript>}
-
-    {
-      archiveVersions.length > 0 && (
-        <section class="versions" aria-labelledby="versions-h">
-          <h2 id="versions-h" class="label">other versions, in the archive</h2>
-          <ul class="plain versions-list">
-            {archiveVersions.map((v) => (
-              <li>
-                <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">unreleased</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )
-    }
-
-    <Lyrics body={track.body} audio={t.audio} instrumental={t.instrumental} trackId={p.id} timed={audible ? p.lyrics : undefined} />
-
     </div>
 
-    <div class="track-side">
-    {
-      t.style && (
-        <section class="brief" aria-labelledby="brief-h">
-          <h2 id="brief-h" class="label">what we asked the machine for</h2>
-          <blockquote>
-            <p>{t.style}</p>
-          </blockquote>
-        </section>
-      )
-    }
+    <div class="track-main">
+    <Lyrics body={track.body} audio={t.audio} instrumental={t.instrumental} trackId={p.id} timed={audible ? p.lyrics : undefined} />
+    </div>
 
-    {analysis && <SoundStats analysis={analysis} id={p.id} queue={release.id} index={qi} />}
-
-    {
-      t.notes && (
-        <section aria-labelledby="notes-h">
-          <h2 id="notes-h" class="label">notes</h2>
-          <p>{t.notes}</p>
-        </section>
-      )
-    }
-
+    <aside class="track-side">
     <section aria-labelledby="details-h">
       <h2 id="details-h" class="label">details</h2>
       <dl class="details">
@@ -229,7 +201,36 @@ const details: [string, string | undefined][] = [
       </dl>
     </section>
 
-    </div>
+    {analysis && <SoundStats analysis={analysis} id={p.id} queue={release.id} index={qi} part="energy" />}
+
+    {
+      t.notes && (
+        <section aria-labelledby="notes-h">
+          <h2 id="notes-h" class="label">notes</h2>
+          <p>{t.notes}</p>
+        </section>
+      )
+    }
+
+    {
+      archiveVersions.length > 0 && (
+        <section class="versions" aria-labelledby="versions-h">
+          <h2 id="versions-h" class="label">other versions, in the archive</h2>
+          <ul class="plain versions-list">
+            {archiveVersions.map((v) => (
+              <li>
+                <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">unreleased</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {analysis && <SoundStats analysis={analysis} id={p.id} queue={release.id} index={qi} part="numbers" />}
+
+    {t.style && <StylePrompt text={t.style} />}
+    </aside>
 
     <nav class="pager" aria-label="other tracks">
       {prev ? <a href={trackUrl(prev)} rel="prev">← {prev.data.title}</a> : <a href={releaseUrl(release.id)}>← {r.title}</a>}

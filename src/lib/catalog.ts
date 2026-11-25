@@ -1,5 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import peaksData from '../data/peaks.json';
+import finePeaksData from '../data/peaks-hd.json';
+import fineSpectroData from '../data/spectro-hd.json';
 import syncData from '../data/lyric-sync.json';
 import performanceData from '../data/lyric-performances.json';
 import blurData from '../data/blurhash.json';
@@ -56,31 +58,6 @@ export const spectroLevels = (() => {
   return [0.4, 0.62, 0.82, 0.95].map(q);
 })();
 
-// a small version of a spectrogram (averaged down) for lists like the library
-export const MINI = { cols: 128, bands: 14 };
-const miniCache = new Map<string, Uint8Array>();
-function miniBytes(a: Analysis) {
-  let m = miniCache.get(a.spec);
-  if (m) return m;
-  const src = Uint8Array.from(atob(a.spec), (c) => c.charCodeAt(0));
-  m = new Uint8Array(MINI.cols * MINI.bands);
-  for (let c = 0; c < MINI.cols; c++)
-    for (let b = 0; b < MINI.bands; b++) {
-      const c0 = Math.floor((c * a.cols) / MINI.cols), c1 = Math.floor(((c + 1) * a.cols) / MINI.cols);
-      const b0 = Math.floor((b * a.bands) / MINI.bands), b1 = Math.floor(((b + 1) * a.bands) / MINI.bands);
-      let sum = 0, n = 0;
-      for (let x = c0; x < c1; x++) for (let y = b0; y < b1; y++) (sum += src[x * a.bands + y]), n++;
-      m[c * MINI.bands + b] = Math.round(sum / Math.max(1, n));
-    }
-  miniCache.set(a.spec, m);
-  return m;
-}
-export const miniSpec = (a: Analysis) => btoa(String.fromCharCode(...miniBytes(a)));
-export const miniLevels = (() => {
-  const all = uniqueAnalyses.flatMap((a) => [...miniBytes(a)]).sort((x, y) => x - y);
-  const q = (p: number) => all[Math.floor(p * (all.length - 1))] ?? 0;
-  return [0.4, 0.62, 0.82, 0.95].map(q);
-})();
 
 export const archiveUrl = (a: ArchiveSong) => `/library/${a.id}/`;
 export async function getArchive() {
@@ -105,6 +82,57 @@ export const splitTags = (tags?: string) =>
     .filter(Boolean);
 
 const peaks = peaksData as Record<string, number[]>;
+// 4 loudness values per second, keyed by the audio file's public path (scripts/peaks-hd.mjs)
+const finePeaks = finePeaksData as Record<string, number[]>;
+export const finePeaksFor = (src?: string) => (src ? finePeaks[src] : undefined);
+// 2 spectrogram slices per second, same bands and scale as analysis.json (scripts/spectro-hd.mjs)
+const fineSpectro = fineSpectroData as Record<string, { cols: number; bands: number; spec: string }>;
+export const fineSpectroFor = (src?: string) => (src ? fineSpectro[src] : undefined);
+
+// ---- small spectrograms for lists like the library
+// Averaged down from the fine spectrogram (or the analysis one when there is none),
+// then stored as colour steps (0 dark … 4 accent), two cells per character, so a
+// long list stays light.
+export const MINI = { cols: 320, bands: 14 };
+type Pic = { cols: number; bands: number; spec: string };
+const miniCache = new Map<string, Uint8Array>();
+function miniBytes(p: Pic) {
+  let m = miniCache.get(p.spec);
+  if (m) return m;
+  const src = Uint8Array.from(atob(p.spec), (c) => c.charCodeAt(0));
+  const cols = Math.min(MINI.cols, p.cols);
+  m = new Uint8Array(cols * MINI.bands);
+  for (let c = 0; c < cols; c++)
+    for (let b = 0; b < MINI.bands; b++) {
+      const c0 = Math.floor((c * p.cols) / cols), c1 = Math.max(c0 + 1, Math.floor(((c + 1) * p.cols) / cols));
+      const b0 = Math.floor((b * p.bands) / MINI.bands), b1 = Math.floor(((b + 1) * p.bands) / MINI.bands);
+      let sum = 0, n = 0;
+      for (let x = c0; x < c1; x++) for (let y = b0; y < b1; y++) (sum += src[x * p.bands + y]), n++;
+      m[c * MINI.bands + b] = Math.round(sum / Math.max(1, n));
+    }
+  miniCache.set(p.spec, m);
+  return m;
+}
+const picFor = (a: Analysis, src?: string): Pic => fineSpectroFor(src) ?? { cols: a.cols, bands: a.bands, spec: a.spec };
+// colour steps from all songs together, so the strips compare
+const miniLevels = (() => {
+  const fine = Object.values(fineSpectro);
+  const pics: Pic[] = fine.length ? fine : uniqueAnalyses.map((a) => ({ cols: a.cols, bands: a.bands, spec: a.spec }));
+  const all = pics.flatMap((p) => [...miniBytes(p)]);
+  all.sort((x, y) => x - y);
+  const q = (p: number) => all[Math.floor(p * (all.length - 1))] ?? 0;
+  return [0.4, 0.62, 0.82, 0.95].map(q);
+})();
+const STEP_CHARS = 'abcdefghijklmnopqrstuvwxy'; // 5 × 5 step pairs
+/** a song's mini spectrogram: { cols, bands, steps } with steps packed two per character */
+export function miniSteps(a: Analysis, src?: string) {
+  const bytes = miniBytes(picFor(a, src));
+  const [l1, l2, l3, l4] = miniLevels;
+  const step = (v: number) => (v >= l4 ? 4 : v >= l3 ? 3 : v >= l2 ? 2 : v >= l1 ? 1 : 0);
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 2) out += STEP_CHARS[step(bytes[i]) * 5 + step(bytes[i + 1] ?? 0)];
+  return { cols: bytes.length / MINI.bands, bands: MINI.bands, steps: out };
+}
 // [start, end, confidence] per sung line, made by scripts/sync_lyrics.py
 const lyricSync = syncData as unknown as Partial<Record<string, StoredLine[]>>;
 
@@ -123,7 +151,9 @@ export async function getNews() {
     (a, b) => b.data.date.getTime() - a.data.date.getTime(),
   );
 }
-export const trackUrl = (t: Track) => `/records/${t.data.release}/${trackSlug(t)}/`;
+const ownUrl = (t: Track) => `/records/${t.data.release}/${trackSlug(t)}/`;
+/** A song's page. A recording on several records has one page, on its main record (see getCatalog). */
+export const trackUrl = (t: Track) => ownUrl(mainOf.get(t.id) ?? t);
 export const trackPeaks = (t: Track) => peaks[`${t.data.release}/${trackSlug(t)}`] ?? [];
 /** A friendly file name for downloads: "Plausible Strangers - R.U.R..m4a" */
 export const downloadName = (t: Track) =>
@@ -171,8 +201,43 @@ export async function getCatalog() {
   const allTracks = await getCollection('tracks');
   const tracksOf = (slug: string) =>
     allTracks.filter((t) => t.data.release === slug).sort((a, b) => a.data.number - b.data.number);
+  linkCopies(allTracks, releases);
   return { releases, tracksOf };
 }
+
+// ---- one song on several records
+// The same recording (same audio file) can be on more than one record, e.g. a
+// single that is also on the album. Each record keeps it in its tracklist, but
+// it is one song: one page, one row in the library, counted once. Its page
+// lives on its main record: a released one before an unfinished one, then the
+// earliest, then the lowest catalog number.
+const mainOf = new Map<string, Track>(); // track id → the main entry of its recording
+const placesOf = new Map<string, { track: Track; release: Release }[]>(); // track id → every record it is on, main first
+function linkCopies(all: Track[], releases: Release[]) {
+  if (mainOf.size) return;
+  const rel = new Map(releases.map((r) => [r.id, r]));
+  const byAudio = new Map<string, Track[]>();
+  for (const t of all) if (t.data.audio && rel.has(t.data.release)) byAudio.set(t.data.audio, [...(byAudio.get(t.data.audio) ?? []), t]);
+  for (const group of byAudio.values()) {
+    if (group.length < 2) continue;
+    const places = group
+      .map((track) => ({ track, release: rel.get(track.data.release)! }))
+      .sort(
+        (a, b) =>
+          Number(isUnfinished(a.release)) - Number(isUnfinished(b.release)) ||
+          (a.release.data.date?.getTime() ?? Infinity) - (b.release.data.date?.getTime() ?? Infinity) ||
+          a.release.data.catalog.localeCompare(b.release.data.catalog),
+      );
+    for (const { track } of places) {
+      mainOf.set(track.id, places[0].track);
+      placesOf.set(track.id, places);
+    }
+  }
+}
+/** true for a second (third…) appearance of a recording that has its page on another record */
+export const isCopy = (t: Track) => (mainOf.get(t.id) ?? t).id !== t.id;
+/** the records a song is on when there are several, its main one first (empty for most songs) */
+export const appearances = (t: Track) => placesOf.get(t.id) ?? [];
 
 export const fmtTime = (s: number) => {
   const m = Math.floor(s / 60);

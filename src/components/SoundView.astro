@@ -1,0 +1,38 @@
+---
+// The track's picture: the pixel spectrogram or a classic waveform, with a
+// switch between them. The choice is remembered in this browser.
+import Spectrogram from './Spectrogram.astro';
+import WaveBars from './WaveBars.astro';
+import type { Analysis } from '../lib/catalog';
+
+interface Props {
+  analysis?: Analysis;
+  id: string;
+  peaks: number[];
+  /** the audio file's public path, for the fine waveform */
+  src?: string;
+  duration: number;
+  queue: string;
+  index: number;
+}
+const { analysis, id, peaks, src, duration, queue, index } = Astro.props;
+const both = Boolean(analysis && peaks.length);
+---
+
+<div class="sound-view" data-sound-view data-view={peaks.length ? 'bars' : 'spectro'}>
+  {
+    both && (
+      <p class="view-switch" role="group" aria-label="show the sound as">
+        <button type="button" data-view-btn="spectro" aria-pressed="false">spectrogram</button>
+        <button type="button" data-view-btn="bars" aria-pressed="true">waveform</button>
+      </p>
+    )
+  }
+  {analysis && <div class="sound-view-spectro"><Spectrogram analysis={analysis} id={id} queue={queue} index={index} duration={duration} src={src} /></div>}
+  {peaks.length > 0 && <div class="sound-view-bars"><WaveBars id={id} peaks={peaks} src={src} duration={duration} queue={queue} index={index} /></div>}
+</div>
+
+<script>
+  import { initSoundView } from '../lib/sound-view';
+  initSoundView();
+</script>

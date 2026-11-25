@@ -15,7 +15,9 @@
     "blurhash": "node scripts/blurhash.mjs",
     "analyse": "node scripts/analyse.mjs",
     "influences:spotify": "node --env-file-if-exists=.env scripts/influences-spotify.mjs",
-    "import:audio": "node scripts/import-audio.mjs"
+    "import:audio": "node scripts/import-audio.mjs",
+    "peaks": "node scripts/peaks-hd.mjs",
+    "spectro": "node scripts/spectro-hd.mjs"
   },
   "dependencies": {
     "astro": "^7.4.13",

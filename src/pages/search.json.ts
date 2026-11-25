@@ -2,6 +2,7 @@
 import type { APIRoute } from 'astro';
 import {
   getCatalog,
+  isCopy,
   releaseUrl,
   trackUrl,
   hasAudio,
@@ -37,6 +38,7 @@ export const GET: APIRoute = async () => {
       playable: ready.length > 0,
     });
     for (const t of all) {
+      if (isCopy(t)) continue; // listed once, under its main record
       // only sung/spoken lines are searchable, not the [directions]
       const index = ready.indexOf(t);
       const lines = hasReviewedPerformance(t.data.audio)

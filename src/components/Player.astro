@@ -200,14 +200,15 @@ import Icon from './Icon.astro';
     const dur = audio.duration || t.duration;
     const p = dur ? Math.min(1, audio.currentTime / dur) : 0;
     // called every frame while playing: only touch the page when something
-    // visible changes (a tenth of a percent is about a pixel on a wide wave)
+    // visible changes
     updateWaves(waves, t.id, p);
     const cur = fmt(audio.currentTime);
     if (curEl.textContent !== cur) curEl.textContent = cur;
   }
 
   function updateWaves(list: HTMLElement[], id: string, p: number) {
-    const pos = `${Math.round(p * 1000) / 10}%`;
+    // fine enough for the playhead lines to glide (about a tenth of a pixel on a wide wave)
+    const pos = `${Math.round(p * 100000) / 1000}%`;
     const pct = String(Math.round(p * 100));
     for (const el of list) {
       const mine = el.dataset.wave === id;

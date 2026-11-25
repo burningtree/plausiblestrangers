@@ -7,7 +7,8 @@ import Icon from '../../components/Icon.astro';
 import PlayButton from '../../components/PlayButton.astro';
 import Queue from '../../components/Queue.astro';
 import PixelArt from '../../components/PixelArt.astro';
-import Spectrogram from '../../components/Spectrogram.astro';
+import SoundView from '../../components/SoundView.astro';
+import StylePrompt from '../../components/StylePrompt.astro';
 import SoundStats from '../../components/SoundStats.astro';
 import Wave from '../../components/Wave.astro';
 import {
@@ -79,15 +80,12 @@ const details: [string, string | undefined][] = [
   )}
 >
   <Queue archiveSong={song} />
-  <article class="track archive-song">
-    <p class="crumbs">
-      <a href="/library/">library</a> / archive <span class="stamp stamp--quiet">unreleased</span>
-    </p>
-
-    <div class="track-main">
+  <article class="track track--clean archive-song">
+    <div class="track-top">
       <header class="track-head">
         <div class="track-cover archive-art"><PixelArt seed={d.title} label={`pixel art for ${d.title}`} /></div>
         <div>
+          <p class="kicker"><a href="/library/">library</a> / archive <span class="stamp stamp--quiet">unreleased</span></p>
           <h1 class="title">{d.title}</h1>
           <p class="meta">
             {d.duration && fmtTime(d.duration)}{d.bpm && ` · ${d.bpm} bpm`}{d.instrumental && ' · instrumental'}{d.created && ` · ${fmtDate(d.created)}`}
@@ -96,11 +94,11 @@ const details: [string, string | undefined][] = [
             {
               recording ? (
                 <>
-                  <PlayButton queue={recording.id} index={0} id={recording.id} label="play" class="play--big" />
+                  <PlayButton queue={recording.id} index={0} id={recording.id} label="play" />
                   <a class="download-btn" href={recording.src} download={`Plausible Strangers - ${d.title}.m4a`} aria-label={`download ${d.title}`}>
                     <Icon name="download" /> download
                   </a>
-                  {d.suno && <a class="suno-btn" href={d.suno}>on suno <Icon name="arrow-up-right" /></a>}
+                  {d.suno && <a class="download-btn" href={d.suno}>on suno <Icon name="arrow-up-right" /></a>}
                 </>
               ) : d.suno ? (
                 <a class="suno-btn" href={d.suno}>
@@ -116,56 +114,19 @@ const details: [string, string | undefined][] = [
 
       {
         recording &&
-          (analysis ? (
-            <Spectrogram analysis={analysis} id={recording.id} queue={recording.id} index={0} duration={recording.duration} />
+          (analysis || recording.peaks.length ? (
+            <SoundView analysis={analysis} id={recording.id} peaks={recording.peaks} src={recording.src} duration={recording.duration} queue={recording.id} index={0} />
           ) : (
             <Wave id={recording.id} peaks={recording.peaks} duration={recording.duration} queue={recording.id} index={0} class="wave--big" />
           ))
       }
+    </div>
 
-      {
-        (releasedVersions.length > 0 || archiveVersions.length > 0) && (
-          <section class="versions" aria-labelledby="versions-h">
-            <h2 id="versions-h" class="label">other versions</h2>
-            <ul class="plain versions-list">
-              {releasedVersions.map((v) => (
-                <li>
-                  <a href={v.url}>{v.title}</a> <span class="meta">on <a href={v.whereUrl}>{v.where}</a></span>
-                </li>
-              ))}
-              {archiveVersions.map((v) => (
-                <li>
-                  <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">archive</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      }
-
+    <div class="track-main">
       <Lyrics body={song.body} audio={d.audio} instrumental={d.instrumental} hiddenLyrics={d.lyricsHidden} trackId={recording?.id} timed={recording?.lyrics} />
     </div>
 
-    <div class="track-side">
-      {
-        d.style && (
-          <section class="brief" aria-labelledby="brief-h">
-            <h2 id="brief-h" class="label">what we asked the machine for</h2>
-            <blockquote>
-              <p>{d.style}</p>
-            </blockquote>
-          </section>
-        )
-      }
-      {analysis && recording && <SoundStats analysis={analysis} id={recording.id} queue={recording.id} index={0} />}
-      {
-        d.notes && (
-          <section aria-labelledby="notes-h">
-            <h2 id="notes-h" class="label">notes</h2>
-            <p>{d.notes}</p>
-          </section>
-        )
-      }
+    <aside class="track-side">
       <section aria-labelledby="details-h">
         <h2 id="details-h" class="label">details</h2>
         <dl class="details">
@@ -191,7 +152,42 @@ const details: [string, string | undefined][] = [
           )}
         </dl>
       </section>
-    </div>
+
+      {analysis && recording && <SoundStats analysis={analysis} id={recording.id} queue={recording.id} index={0} part="energy" />}
+
+      {
+        d.notes && (
+          <section aria-labelledby="notes-h">
+            <h2 id="notes-h" class="label">notes</h2>
+            <p>{d.notes}</p>
+          </section>
+        )
+      }
+
+      {
+        (releasedVersions.length > 0 || archiveVersions.length > 0) && (
+          <section class="versions" aria-labelledby="versions-h">
+            <h2 id="versions-h" class="label">other versions</h2>
+            <ul class="plain versions-list">
+              {releasedVersions.map((v) => (
+                <li>
+                  <a href={v.url}>{v.title}</a> <span class="meta">on <a href={v.whereUrl}>{v.where}</a></span>
+                </li>
+              ))}
+              {archiveVersions.map((v) => (
+                <li>
+                  <a href={archiveUrl(v)}>{v.data.title}</a> <span class="meta">archive</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {analysis && recording && <SoundStats analysis={analysis} id={recording.id} queue={recording.id} index={0} part="numbers" />}
+
+      {d.style && <StylePrompt text={d.style} />}
+    </aside>
 
     <nav class="pager" aria-label="other archive songs">
       {newer ? <a href={archiveUrl(newer)} rel="prev">← {newer.data.title}</a> : <a href="/library/">← library</a>}

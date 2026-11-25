@@ -6,6 +6,7 @@ import Queue from '../../components/Queue.astro';
 import PlayButton from '../../components/PlayButton.astro';
 import PixelArt from '../../components/PixelArt.astro';
 import Icon from '../../components/Icon.astro';
+import WaveBars from '../../components/WaveBars.astro';
 import {
   getCatalog,
   getArchive,
@@ -22,9 +23,9 @@ import {
   blurStyle,
   trackAnalysis,
   archiveAnalysis,
-  miniSpec,
-  miniLevels,
-  MINI,
+  miniSteps,
+  isCopy,
+  appearances,
 } from '../../lib/catalog';
 import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../../lib/seo';
 
@@ -41,7 +42,9 @@ type Row = {
   tags: string[];
   cover?: string;
   play?: { queue: string; index: number; id: string; record?: string };
-  spec?: string; // mini spectrogram, for songs with audio
+  spec?: { cols: number; bands: number; steps: string }; // mini spectrogram, for songs with audio
+  peaks?: number[]; // for the mini waveform
+  src?: string; // audio file, for the fine waveform
 };
 
 const { releases, tracksOf } = await getCatalog();
@@ -68,12 +71,18 @@ for (const r of releases) {
     play: ready[0] ? { queue: r.id, index: 0, id: playable(ready[0], r).id, record: r.id } : undefined,
   });
   for (const t of tracks) {
+    // a song on several records is listed once, under its main record
+    if (isCopy(t)) continue;
     const qi = ready.indexOf(t);
+    const alsoOn = appearances(t)
+      .slice(1)
+      .map((p) => p.release.data.title);
     rows.push({
       type: 'song',
-      status: qi >= 0 && !isUnfinished(r) ? 'released' : qi >= 0 ? 'released' : 'unfinished',
+      // follows its record: on an unfinished record it is unfinished too, audible or not
+      status: isUnfinished(r) || qi < 0 ? 'unfinished' : 'released',
       title: t.data.title,
-      sub: `${r.data.title} · ${String(t.data.number).padStart(2, '0')}`,
+      sub: `${r.data.title} · ${String(t.data.number).padStart(2, '0')}${alsoOn.length ? ` · also on ${alsoOn.join(', ')}` : ''}`,
       url: trackUrl(t),
       date: t.data.created,
       dur: t.data.duration,
@@ -82,7 +91,9 @@ for (const r of releases) {
       tags: splitTags(t.data.tags),
       cover,
       play: qi >= 0 ? { queue: r.id, index: qi, id: playable(t, r).id } : undefined,
-      spec: qi >= 0 && trackAnalysis(t) ? miniSpec(trackAnalysis(t)!) : undefined,
+      spec: qi >= 0 && trackAnalysis(t) ? miniSteps(trackAnalysis(t)!, t.data.audio) : undefined,
+      peaks: qi >= 0 ? playable(t, r).peaks : undefined,
+      src: qi >= 0 ? t.data.audio : undefined,
     });
   }
 }
@@ -100,7 +111,9 @@ for (const a of archive) {
     vocal: a.data.instrumental ? 'instrumental' : 'lyrics',
     tags: splitTags(a.data.tags),
     play: recording ? { queue: recording.id, index: 0, id: recording.id } : undefined,
-    spec: recording && archiveAnalysis(a) ? miniSpec(archiveAnalysis(a)!) : undefined,
+    spec: recording && archiveAnalysis(a) ? miniSteps(archiveAnalysis(a)!, recording.src) : undefined,
+    peaks: recording?.peaks,
+    src: recording?.src,
   });
 }
 
@@ -144,8 +157,7 @@ const short = (d?: Date) =>
   {releases.map((r) => <Queue release={r} tracks={tracksOf(r.id)} />)}
   {archive.filter((song) => song.data.audio).map((song) => <Queue archiveSong={song} />)}
 
-  <section class="library" aria-labelledby="library-h">
-    <p class="crumbs"><a href="/">home</a> / library</p>
+  <section class="library" aria-labelledby="library-h" data-sound-view data-view="bars">
     <h1 id="library-h" class="title">library</h1>
     <p class="lede library-lede">
       {`Everything we kept: ${counts.songs} songs, about ${counts.minutes} minutes. ${counts.released} made it onto a record, ${counts.unfinished} are waiting on an unfinished one, ${counts.archive} never will. The archive includes words, instructions, and links to recordings where available.`}
@@ -192,6 +204,12 @@ const short = (d?: Date) =>
             <option value="slow">slowest</option>
           </select>
         </label>
+
+        <fieldset class="seg" aria-label="show the sound as">
+          <legend>sound</legend>
+          <button type="button" data-view-btn="spectro" aria-pressed="false">spectrogram</button>
+          <button type="button" data-view-btn="bars" aria-pressed="true">waveform</button>
+        </fieldset>
       </div>
 
       <fieldset class="lib-tags" data-filter="tags">
@@ -219,6 +237,15 @@ const short = (d?: Date) =>
             data-row={r.play && r.type === 'song' ? r.play.id : undefined}
             hidden={r.type === 'record'}
           >
+            <span class="lib-act">
+              {r.play ? (
+                <PlayButton queue={r.play.queue} index={r.play.index} id={r.play.id} record={r.play.record} label={`play ${r.title}`} iconOnly class="play--icon" />
+              ) : (
+                <a class="lib-ext" href={r.url} title="read about it" aria-label={`read about ${r.title}`}>
+                  <Icon name="page" />
+                </a>
+              )}
+            </span>
             <a class="lib-art" href={r.url} tabindex="-1" aria-hidden="true">
               {r.cover ? <img src={r.cover} class="blur" style={blurStyle(r.cover)} alt="" width="48" height="48" loading="lazy" decoding="async" /> : <PixelArt seed={r.title} />}
             </a>
@@ -229,6 +256,12 @@ const short = (d?: Date) =>
               <span class="lib-sub">{r.sub}</span>
             </span>
             <span class="lib-spec">
+              {r.play && r.peaks && r.peaks.length > 0 && (
+                <span class="lib-bars">
+                  <WaveBars id={r.play.id} peaks={r.peaks} src={r.src} duration={r.dur ?? 0} queue={r.play.queue} index={r.play.index} mini label={`${r.title}: click to play from that moment`} />
+                </span>
+              )}
+              <span class="lib-spectro">
               {r.spec && r.play ? (
                 <span
                   class="wave spectro spectro--mini"
@@ -245,30 +278,21 @@ const short = (d?: Date) =>
                 >
                   <canvas
                     class="spectro-canvas"
-                    data-spec={r.spec}
-                    data-cols={MINI.cols}
-                    data-bands={MINI.bands}
-                    data-levels={miniLevels.join(',')}
+                    data-steps={r.spec.steps}
+                    data-cols={r.spec.cols}
+                    data-bands={r.spec.bands}
                     aria-hidden="true"
                   />
                 </span>
               ) : (
                 r.type === 'song' && <span class="lib-nospec" title="no recording here" />
               )}
+              </span>
             </span>
             <span class="lib-status">{r.status}</span>
             <span class="lib-date">{short(r.date)}</span>
             <span class="lib-dur">{r.dur ? (r.type === 'record' ? fmtTotal(r.dur) : fmtTime(r.dur)) : '—'}</span>
             <span class="lib-bpm">{r.bpm ? `${r.bpm}` : ''}</span>
-            <span class="lib-act">
-              {r.play ? (
-                <PlayButton queue={r.play.queue} index={r.play.index} id={r.play.id} record={r.play.record} label={`play ${r.title}`} iconOnly class="play--icon" />
-              ) : (
-                <a class="lib-ext" href={r.url} title="read about it" aria-label={`read about ${r.title}`}>
-                  <Icon name="page" />
-                </a>
-              )}
-            </span>
           </li>
         ))
       }
@@ -402,4 +426,9 @@ const short = (d?: Date) =>
 
   document.addEventListener('astro:page-load', setup);
   setup();
+</script>
+
+<script>
+  import { initSoundView } from '../../lib/sound-view';
+  initSoundView();
 </script>
