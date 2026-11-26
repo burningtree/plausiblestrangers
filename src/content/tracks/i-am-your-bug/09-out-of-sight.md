@@ -13,6 +13,10 @@ tags: "avant-garde, electroclash"
 suno: "https://suno.com/song/902abbb5-735e-4cf3-85ac-0808b9d0fb02"
 style: |-
   Raw avant-garde electroclash, high, light upper-register female half-spoken talk-sing shifts through cold robotic whispers, telephone-filtered verses, detached synthetic choruses and robotic, fragmented refrains; underground DIY production, immersive 3D stereo soundstage, razor-sharp layer separation, left-to-right shifting stereo patterns, distant metallic echoes and abrasive rhythmic glitches; 130 BPM, hypnotic melancholic, cold, aggressive, mechanical yet emotional four-on-the-floor groove; sharp analog synths repeat a four-note melody over filthy distorted bass, dry punchy 808 drums and cold metallic percussion, with jagged acid sequences, hidden counter-melodies, a kickless break, extended instrumental, outro with an abrupt mechanical stop.
+isrc: "QTAFC2693056"
+spotify: "https://open.spotify.com/track/33ubVJBH8aLUAZ5bKuMH9a"
+appleMusic: "https://music.apple.com/us/album/out-of-sight/6839698395?i=6839698409"
+deezer: "https://www.deezer.com/track/4441885251"
 ---
 [Intro — Instrumental]
 [Dry kick, razor-sharp synth pulse moving slowly across stereo space]

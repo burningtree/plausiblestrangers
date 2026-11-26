@@ -13,6 +13,10 @@ tags: "Electroclash, synth-punk, Italo disco"
 suno: "https://suno.com/song/ba29f2c0-b9f2-43aa-850b-2b17b566e6c7"
 style: |-
   Electroclash, primitive analog synth-punk and dirty Italo disco; raw underground nightclub sound with clipped distortion and abrupt drops; low, dark lower-register deadpan male spoken word meets seductive, hysterical French female vocals, whispered threats, manic laughter and theatrical screams rising into a powerful full-voice belt; featured rubber-band bass, broken toy synthesizers, metallic percussion, cheap organ riffs, nervous acid squelches and distorted drum machines; 147 BPM asymmetrical, irresistibly danceable grooves, minimal hypnotic verses, unpredictable silences, bizarre melodic interruptions and explosive repetitive hooks; humorous, sweaty, confrontational, kinky, anarchic electro-trash energy.
+isrc: "QTAFC2693045"
+spotify: "https://open.spotify.com/track/17gjhfjYe00tkuUKun2sj2"
+appleMusic: "https://music.apple.com/us/album/i-am-your-bug/6839698395?i=6839698396"
+deezer: "https://www.deezer.com/track/4441885061"
 ---
 [Intro — dry drum machine, one ridiculous synth note repeating]
 

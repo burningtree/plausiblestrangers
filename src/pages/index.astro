@@ -6,7 +6,7 @@ import VinylCover from '../components/VinylCover.astro';
 import Stamp from '../components/Stamp.astro';
 import Icon from '../components/Icon.astro';
 import { getCatalog, isCopy, isAlbum, isUnfinished, hasAudio, releaseUrl, fmtTotal, fmtDate, playable } from '../lib/catalog';
-import { getNews, newsUrl, fmtDate as fmtNewsDate } from '../lib/catalog';
+import { getNews, newsUrl, fmtDate as fmtNewsDate, getArchive, archiveUrl, playableArchive } from '../lib/catalog';
 import { site } from '../site';
 import { influences } from '../data/influences';
 import { graph, band, bandRef, website, breadcrumbs, abs, isoDuration } from '../lib/seo';
@@ -27,6 +27,9 @@ const groups = [
   { label: 'eps & singles', items: records.filter((x) => !isAlbum(x.r)), album: false },
 ].filter((g) => g.items.length);
 const latestNews = (await getNews()).slice(0, 2);
+// next to the news: the newest songs that aren't on a record yet, ready to play
+const latest = (await getArchive()).filter((a) => a.data.audio).slice(0, 2);
+const shortDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).toLowerCase();
 ---
 
 <Base
@@ -38,6 +41,7 @@ const latestNews = (await getNews()).slice(0, 2);
     }),
   )}
 >
+  {latest.map((song) => <Queue archiveSong={song} />)}
   <div class="home">
   <div class="home-top">
     <section class="home-news" aria-labelledby="news">
@@ -61,13 +65,24 @@ const latestNews = (await getNews()).slice(0, 2);
       </ol>
     </section>
 
-    <section class="home-live" aria-labelledby="live">
-      <h2 id="live" class="label">live</h2>
-    <p class="home-live-title">Nothing booked yet.</p>
-    <p class="home-news-summary">
-      We're working on an audiovisual set. If you have a room, a projector and a tolerant
-      audience, we should talk.
-    </p>
+    <section class="home-latest" aria-labelledby="latest">
+      <h2 id="latest" class="label">
+        latest unreleased <a class="label-link" href="/library/?status=unreleased">all →</a>
+      </h2>
+      <ol class="home-latest-list">
+        {
+          latest.map((a) => {
+            const rec = playableArchive(a)!;
+            return (
+              <li class="home-latest-row" data-row={rec.id}>
+                <PlayButton queue={rec.id} index={0} id={rec.id} label={`play ${a.data.title}`} iconOnly class="play--icon" />
+                <a class="home-latest-title" href={archiveUrl(a)}>{a.data.title}</a>
+                {a.data.created && <time class="home-latest-date" datetime={a.data.created.toISOString().slice(0, 10)}>{shortDate(a.data.created)}</time>}
+              </li>
+            );
+          })
+        }
+      </ol>
     </section>
   </div>
 

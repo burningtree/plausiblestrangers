@@ -13,6 +13,10 @@ tags: "Electroclash, French techno"
 suno: "https://suno.com/song/30824574-1ada-4642-860d-24b84c18d620"
 style: |-
   Electroclash, French techno; raw club production, tight punchy drums and gradual filter builds, opening instantly on kick and bass; low male talk-singing, detached and provocative, with robotic double-tracking, whispered rhythmic repetitions and occasional shouted words; filthy pulsing analog bass, rigid 909 kick, sharp claps, metallic hi-hats, icy minor-key synth riffs, hypnotic sequencers and distorted arpeggios; 136 BPM, driving, seductive mechanical groove, dark, stylish, slightly decadent, Energetic; dramatic synth hooks, tense atmospheric breakdowns with a pulsing bass pulse, extended instrumental sections, a rising staccato build and an abrupt instrumental stop.
+isrc: "QTAFC2693051"
+spotify: "https://open.spotify.com/track/1CZhxGfrxfezZcTY4DtKQA"
+appleMusic: "https://music.apple.com/us/album/automatic-desire/6839698395?i=6839698403"
+deezer: "https://www.deezer.com/track/4441885131"
 ---
 [Immediate start – full kick, dirty bass, sharp synth riff, no spoken introduction]
 

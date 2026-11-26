@@ -13,4 +13,8 @@ tags: "electroclash, disco"
 suno: "https://suno.com/song/09495487-9624-47ca-8dd3-b4014cba3994"
 style: |-
   Mutant electroclash with crooked syncopated disco: rubbery FM bass, dry analog drum machine, aquatic clicks, hollow woodblock, detuned electric organ and sparse two-note synth motif
+isrc: "QTAFC2693054"
+spotify: "https://open.spotify.com/track/2LBgxIBISVUEcK5JGVopi6"
+appleMusic: "https://music.apple.com/us/album/aquatic-clicks/6839698395?i=6839698407"
+deezer: "https://www.deezer.com/track/4441885201"
 ---

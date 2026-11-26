@@ -217,6 +217,11 @@ const zipPlan = JSON.stringify({ name: zipName, readme: zipReadme, formats: Obje
               <span class="tl-n">{String(t.data.number).padStart(2, '0')}</span>
               <a class="tl-title" href={trackUrl(t)}>
                 {t.data.title}
+                {t.data.instrumental && (
+                  <span class="tl-instr" role="img" aria-label="instrumental" title="instrumental, no vocals">
+                    <Icon name="microphone-mute" />
+                  </span>
+                )}
               </a>
               <span class="tl-dur">{fmtTime(t.data.duration)}</span>
               {qi >= 0 ? (

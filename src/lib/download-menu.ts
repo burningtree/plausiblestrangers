@@ -36,6 +36,15 @@ const closeAll = (except?: Element | null) =>
 export function initDownloadMenus() {
   if (started) return;
   started = true;
+  // a menu that would run off the right edge of the window opens to the left
+  document.addEventListener('toggle', (event) => {
+    const menu = event.target as HTMLDetailsElement;
+    if (!menu.matches?.('details[data-dl-menu]')) return;
+    const list = menu.querySelector<HTMLElement>('.dl-menu-list');
+    if (!menu.open || !list) return;
+    list.classList.remove('dl-menu-list--left');
+    if (list.getBoundingClientRect().right > document.documentElement.clientWidth - 8) list.classList.add('dl-menu-list--left');
+  }, true);
   document.addEventListener('click', async (event) => {
     const target = event.target as Element | null;
     const menu = target?.closest?.('details[data-dl-menu]') ?? null;

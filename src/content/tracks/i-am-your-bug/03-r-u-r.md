@@ -12,6 +12,10 @@ tags: "electroclash, mechanical disco, industrial"
 suno: "https://suno.com/song/50c45db4-e55e-402d-adcf-fc928c5f82d0"
 style: |-
   Minimalist electroclash, 134 BPM mechanical disco pulse, raw 2003 underground club mix with abrupt silences and industrial echoes; filthy elastic analog bass, dry punchy 808s, detuned Casio motifs, acid squelches, drum machine, electricity hum and heartbeat kick; warm mid-range female and male voices in deadpan talk-singing, factory announcements, whispered fragments, seductive call-and-response, stacked hook harmonies, chants and escalating gang vocals.
+isrc: "QTAFC2693049"
+spotify: "https://open.spotify.com/track/1Lm9lFZAp0tQ0MEqa36oyZ"
+appleMusic: "https://music.apple.com/us/album/r-u-r/6839698395?i=6839698399"
+deezer: "https://www.deezer.com/track/4441885101"
 ---
 [Intro — male voice, vintage factory intercom]
 

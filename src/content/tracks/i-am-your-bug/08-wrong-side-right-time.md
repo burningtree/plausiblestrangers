@@ -13,6 +13,10 @@ tags: "electroclash, broken disco"
 suno: "https://suno.com/song/737f9397-b67b-4e31-aa79-499790eadc99"
 style: |-
   Experimental electroclash; raw dirty underground club production with rapid robotic stutters, micro-glitches and sudden one-beat silences; high, light upper-register synthetic female spoken vocals in English, fast and clipped with French-accented deadpan delivery, whispered in the breakdown, traded with a deep robotic male voice and clipped backing responses; minimal instruments: elastic syncopated analog bass, punchy dry kick, sharp claps, restless offbeat percussion and a rubbery plucked-cello-organ hybrid melody carrying an absurd four-note hook; 152 BPM, fiercely danceable broken disco with asymmetric seven-beat rhythmic loops, wild counterpoint, a bass-only break and a relentless interlocking final section.
+isrc: "QTAFC2693055"
+spotify: "https://open.spotify.com/track/6jTFWHHFt1QATOwtOcTtMZ"
+appleMusic: "https://music.apple.com/us/album/wrong-side-right-time/6839698395?i=6839698408"
+deezer: "https://www.deezer.com/track/4441885221"
 ---
 [Intro — immediate dry kick, no buildup]
 [Elastic bass enters on the wrong beat]

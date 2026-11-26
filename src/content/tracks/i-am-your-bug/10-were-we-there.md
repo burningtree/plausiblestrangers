@@ -13,6 +13,10 @@ tags: "electro-house, experimental, French house"
 suno: "https://suno.com/song/df3f4187-6cb5-4ae1-9d8c-7557f2085ea1"
 style: |-
   Experimental raw French electro-house, 130 BPM. Savage distorted analog bass, dirty compressed house drums, Moroder-inspired 5-note sequencers cycling against 4/4, polyrhythmic found-object percussion, contact-mic metal sounds, ring-modulated male speech, granular vocal fragmentation, unstable detuned oscillators, microtonal melodic shifts, abrupt missing beats, reversed transients, tape-speed manipulation, unexpected harmonic beauty, melancholic cinematic synth motifs, hypnotic underground energy. Spacious separation between harsh machinery and fragile melodies. No disco, no EDM drops, no pop hooks.
+isrc: "QTAFC2693057"
+spotify: "https://open.spotify.com/track/4yn5VVvqkGdPVsFFVrZvXp"
+appleMusic: "https://music.apple.com/us/album/were-we-there/6839698395?i=6839698410"
+deezer: "https://www.deezer.com/track/4441885271"
 ---
 [Cold Open — no drums, no pads, no conventional intro]
 [Male voice recorded through a damaged telephone]

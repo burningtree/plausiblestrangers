@@ -13,6 +13,10 @@ tags: "electroclash, punk disco"
 suno: "https://suno.com/song/2fdd1b76-5fa9-43ef-9c1c-05161549a4ba"
 style: |-
   2000s electroclash, filthy distorted analog bassline and malfunctioning photocopier samples in imperfect underground club production, with abrupt silences; female vocals stay deadpan, dry, intimate, slightly nasal through clipped spoken-word verses, then climb into top notes, with stacked hook harmonies turning sugary melodic chants into distorted, doubled shouts, French-English code-switching, playful robotic attitude; cheap Casio synth hooks, metallic drum-machine claps, sharp cowbells, monosynth riff; 132 BPM minimal four-on-the-floor, hypnotic repetition, French sleaze, punk disco energy.
+isrc: "QTAFC2693052"
+spotify: "https://open.spotify.com/track/6tZ8wiQVYxoIrxgJsXF8y7"
+appleMusic: "https://music.apple.com/us/album/cinq-cents-claudias/6839698395?i=6839698404"
+deezer: "https://www.deezer.com/track/4441885151"
 ---
 [Intro — spoken, almost bored; photocopier humming]
 

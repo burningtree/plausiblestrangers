@@ -13,6 +13,10 @@ tags: "experimental hardcore, electroclash, IDM"
 suno: "https://suno.com/song/42851794-d19b-4b27-a760-50c38f0f1a4c"
 style: |-
   Experimental hardcore electroclash meets glitchy IDM, 152 BPM, brutal dry 4/4 kicks, hyper-detailed drill'n'bass breaks, chaotic micro-edits, elastic acid bass, detuned toy synths, mangled marimba, granular stutters, bitcrushed robotic voices, bizarre melodic counterpoint, sudden silences, unpredictable rhythmic mutations, wide stereo glitches, raw analog distortion, absurdist humor, hypnotic dancefloor pulse, no EDM drops, no pop polish.
+isrc: "QTAFC2693058"
+spotify: "https://open.spotify.com/track/7z76a4i5GF0VGyxvBS8JsG"
+appleMusic: "https://music.apple.com/us/album/small-blue-ladder-glitchcore-mix/6839698395?i=6839698411"
+deezer: "https://www.deezer.com/track/4441885291"
 ---
 [Verse]
 I keep a small blue ladder

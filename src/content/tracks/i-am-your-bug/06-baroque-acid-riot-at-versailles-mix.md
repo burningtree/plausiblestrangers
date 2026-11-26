@@ -13,6 +13,10 @@ tags: "electroclash, industrial EBM"
 suno: "https://suno.com/song/c836710a-56fd-4d4f-96b2-a11c6f396b66"
 style: |-
   Hardcore electroclash, 148 BPM, savage 303 acid bass, distorted analog kicks, frantic baroque violin ostinatos, harpsichord stabs, icy French female chants, industrial EBM, raw underground rave energy, relentless hypnotic drive, abrasive synths, dramatic classical tension, no EDM drops, no pop polish.
+isrc: "QTAFC2693053"
+spotify: "https://open.spotify.com/track/0mMSe3wevm4RCpZpEu4ry6"
+appleMusic: "https://music.apple.com/us/album/baroque-acid-riot-at-versailles-mix/6839698395?i=6839698405"
+deezer: "https://www.deezer.com/track/4441885181"
 ---
 [Intro — solo harpsichord, distant female whisper]
 Très chic.
