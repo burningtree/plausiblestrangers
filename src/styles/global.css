@@ -4944,8 +4944,9 @@ html.is-playing .player.is-empty .player-toggle > .when-playing {
 .dl-format { font-weight: 600; }
 .dl-note { color: var(--mute); white-space: nowrap; }
 .dl-size { color: var(--mute); text-align: right; font-variant-numeric: tabular-nums; }
-.tl-row .dl-menu--icon { display: grid; align-self: stretch; }
-.tl-row .dl-menu--icon > summary { height: 100%; }
+/* the icon fills the row's height (a percentage height inside <details> doesn't), so it sits on the row's middle line */
+.tl-row .dl-menu--icon { display: flex; align-self: stretch; }
+.tl-row .dl-menu--icon > summary { flex: 1; }
 
 /* record page: out in the streaming stores */
 .stores {
