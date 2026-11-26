@@ -5,6 +5,7 @@ export const site = {
     'Electronic music to dance to, drift off to, and play a little too loud. Hypnotic house, techno and electroclash, with strange voices, misplaced instruments and occasional noise. Human-directed, machine-made.',
   // Shown under "elsewhere / contact". Add more as they exist.
   links: [
+    { label: 'spotify', href: 'https://open.spotify.com/artist/1NBYYiDWfjFVdCgWYQQ6Rj' },
     { label: 'suno', href: 'https://suno.com/@plausiblestrangers' },
     { label: 'x / twitter', href: 'https://x.com/plstrangers' },
     { label: 'github', href: 'https://github.com/burningtree/plausiblestrangers' },

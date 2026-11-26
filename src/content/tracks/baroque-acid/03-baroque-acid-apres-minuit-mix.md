@@ -11,6 +11,10 @@ created: "2026-11-19"
 machine: "suno v6-mini"
 tags: "electroclash, acid, warehouse"
 suno: "https://suno.com/song/39d40188-fa95-4675-9153-c489d060a82f"
+isrc: "QTAFC2669528"
+spotify: "https://open.spotify.com/track/2Xq6RlvLgbLHPU5rH7xVUk"
+appleMusic: "https://music.apple.com/us/album/baroque-acid-apr%C3%A8s-minuit-mix/6839476707?i=6839476711"
+deezer: "https://www.deezer.com/track/4440687501"
 style: |-
   Hypnotic electroclash remix, 143 BPM driving pulse; French spoken whispers shift from detached phrases into a wide-range, powerful full-voice belt climbing into top notes, then return to robotic, distorted chants; dub delays and minimal evolving loops build raw warehouse energy; chopped baroque violin ostinatos, dirty 303 acid bass, dry electro drums, harpsichord stabs and syncopated arpeggios.
 ---

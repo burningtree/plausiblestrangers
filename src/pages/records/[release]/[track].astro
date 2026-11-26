@@ -9,6 +9,8 @@ import Wave from '../../../components/Wave.astro';
 import SoundView from '../../../components/SoundView.astro';
 import Stamp from '../../../components/Stamp.astro';
 import DownloadMenu from '../../../components/DownloadMenu.astro';
+import ListenMenu from '../../../components/ListenMenu.astro';
+import { listenLinks, inStores } from '../../../lib/listen';
 import { downloadsFor } from '../../../lib/files';
 import Icon from '../../../components/Icon.astro';
 import StylePrompt from '../../../components/StylePrompt.astro';
@@ -77,6 +79,9 @@ const lyricText = t.instrumental
 // unreleased versions of this song in the archive (same base title)
 const archiveVersions = (await getArchive()).filter((a) => songBase(a.data.title) === songBase(t.title));
 
+// the song in the stores; the record's DistroKid page lists them all
+const listen = listenLinks(t, { hyperfollow: r.hyperfollow });
+
 const details: [string, string | undefined][] = [
   ['record', `${r.title} (${r.catalog})`],
   ['track', `${t.number} of ${tracks.length}`],
@@ -85,6 +90,7 @@ const details: [string, string | undefined][] = [
     elsewhere.map((p) => `${p.release.data.title} (${p.release.data.catalog}), track ${p.track.data.number}`).join('; ') || undefined,
   ],
   ['length', fmtTime(t.duration)],
+  ['isrc', t.isrc],
   ['tempo', t.bpm ? `${t.bpm} bpm` : undefined],
   ['key', t.key ? `${keyName(t.key)} (${t.key}, as detected)` : undefined],
   ['tags', t.tags],
@@ -109,6 +115,7 @@ const details: [string, string | undefined][] = [
       url: abs(trackUrl(track)),
       byArtist: bandRef,
       duration: isoDuration(t.duration),
+      isrcCode: t.isrc,
       datePublished: t.created?.toISOString().slice(0, 10),
       genre: t.tags,
       image: r.cover ? abs(r.cover.replace(/\.webp$/, '.jpg')) : undefined,
@@ -123,7 +130,7 @@ const details: [string, string | undefined][] = [
             lyrics: { '@type': 'CreativeWork', text: lyricText, inLanguage: 'en' },
           }
         : undefined,
-      sameAs: t.suno ? [t.suno] : undefined,
+      sameAs: listen.length ? listen.map((l) => l.href) : undefined,
     },
     breadcrumbs([
       ['plausible strangers.', '/'],
@@ -155,6 +162,7 @@ const details: [string, string | undefined][] = [
             <>
               <PlayButton queue={release.id} index={qi} id={p.id} />
               <DownloadMenu audio={t.audio!} title={t.title} />
+              {inStores(t) && <ListenMenu links={listen} title={t.title} />}
             </>
           ) : (
             <span class="meta">not audible yet. it exists, mostly.</span>
@@ -192,13 +200,14 @@ const details: [string, string | undefined][] = [
               </>
             ))
         }
-        {(t.audio || t.suno) && (
+        {(t.audio || listen.length > 0) && (
           <>
             <dt>{t.audio ? 'file' : 'elsewhere'}</dt>
             <dd>
               {t.audio && downloadsFor(t.audio, t.title).map((o, i) => <>{i > 0 && ' · '}<a class="dl-opt" href={o.href} download={o.name} data-dl-name={o.name}>{o.format}</a></>)}
-              {t.audio && t.suno && ' · '}
-              {t.suno && <a href={t.suno}>suno <Icon name="arrow-up-right" /></a>}
+              {listen.map((l, i) => (
+                <>{(t.audio || i > 0) && ' · '}<a href={l.href}>{l.name} <Icon name="arrow-up-right" /></a></>
+              ))}
             </dd>
           </>
         )}

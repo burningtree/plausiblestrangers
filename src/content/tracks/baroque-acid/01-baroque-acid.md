@@ -11,6 +11,10 @@ created: "2026-11-19"
 machine: "suno v6-mini"
 tags: "electroclash, acid, mechanical"
 suno: "https://suno.com/song/6d9a5de9-68ae-4c63-a2b9-a37fb27f66f3"
+isrc: "QTAFC2669518"
+spotify: "https://open.spotify.com/track/5dClJTTn952fi45zrgoPYL"
+appleMusic: "https://music.apple.com/us/album/baroque-acid/6839476707?i=6839476708"
+deezer: "https://www.deezer.com/track/4440687481"
 style: |-
   Electroclash with sequenced violin ostinatos, harpsichord flourishes, squelchy acid bass and rigid drum machines; female whispers and detached half-spoken chant climb through a wide register into high notes; driving 140 BPM pulse, cascading arpeggios; tightly quantized repetitions, hypnotic intensity, dry vocal mix.
 ---

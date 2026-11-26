@@ -1,0 +1,36 @@
+---
+// "listen": a menu of the places a record or a song is streamed, like the
+// download menu next to it (and closed by the same script).
+import Icon from './Icon.astro';
+import type { Listen } from '../lib/listen';
+
+interface Props {
+  links: Listen[];
+  title: string;
+}
+const { links, title } = Astro.props;
+---
+
+{
+  links.length > 0 && (
+    <details class="dl-menu dl-menu--button listen-menu" data-dl-menu>
+      <summary class="download-btn" title={`listen to ${title} elsewhere`}>
+        <Icon name="headset" /> listen
+      </summary>
+      <div class="dl-menu-list">
+        {links.map((l) => (
+          <a class="dl-opt" href={l.href} target="_blank" rel="noopener">
+            <span class="dl-format">{l.name}</span>
+            <span class="dl-note">{l.note}</span>
+            <span class="dl-size"><Icon name="arrow-up-right" /></span>
+          </a>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+<script>
+  import { initDownloadMenus } from '../lib/download-menu';
+  initDownloadMenus();
+</script>

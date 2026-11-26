@@ -6,6 +6,8 @@ import Queue from '../../../components/Queue.astro';
 import Stamp from '../../../components/Stamp.astro';
 import Gallery from '../../../components/Gallery.astro';
 import DownloadMenu from '../../../components/DownloadMenu.astro';
+import ListenMenu from '../../../components/ListenMenu.astro';
+import { listenLinks, inStores as isInStores } from '../../../lib/listen';
 import { fileSize, fileUrl, safeName, mb, FORMAT_NOTES } from '../../../lib/files';
 import Icon from '../../../components/Icon.astro';
 import PlayButton from '../../../components/PlayButton.astro';
@@ -70,12 +72,17 @@ const zipFormats = (['mp3', 'flac', 'm4a'] as const)
     return { format, files: [...files, ...cover], size: [...files, ...cover].reduce((n, f) => n + f.size, 0), complete: files.every((f) => f.size) };
   })
   .filter((f) => ready.length && f.complete);
+// out in the streaming stores too: where, when and under which codes
+const listen = listenLinks(d);
+const inStores = !!(d.storeDate || d.upc || isInStores(d));
 const zipName = `Plausible Strangers - ${safeName(d.title)}`;
 const zipReadme = [
   `${d.title} — Plausible Strangers`,
-  `${d.kind}${d.catalog ? ` · ${d.catalog}` : ''}${!unfinished && d.date ? ` · ${fmtDate(d.date)}` : ''}`,
+  `${d.kind}${d.catalog ? ` · ${d.catalog}` : ''}${!unfinished && (d.storeDate ?? d.date) ? ` · ${fmtDate(d.storeDate ?? d.date)}` : ''}`,
+  ...(d.label || d.upc ? [[d.label, d.upc && `UPC ${d.upc}`].filter(Boolean).join(' · ')] : []),
   '',
-  ...ready.map((t) => `  ${String(t.data.number).padStart(2, ' ')}. ${t.data.title}  (${fmtTime(t.data.duration)})`),
+  ...ready.map((t) => `  ${String(t.data.number).padStart(2, ' ')}. ${t.data.title}  (${fmtTime(t.data.duration)})${t.data.isrc ? `  ${t.data.isrc}` : ''}`),
+  ...(d.spotify ? ['', `Spotify: ${d.spotify}`] : []),
   '',
   `${abs(releaseUrl(release.id))}`,
   '',
@@ -101,7 +108,11 @@ const zipPlan = JSON.stringify({ name: zipName, readme: zipReadme, formats: Obje
       url: abs(releaseUrl(release.id)),
       byArtist: bandRef,
       image: d.cover ? abs(d.cover.replace(/\.webp$/, '.jpg')) : undefined,
-      datePublished: d.date?.toISOString().slice(0, 10),
+      datePublished: (d.storeDate ?? d.date)?.toISOString().slice(0, 10),
+      recordLabel: d.label ? { '@type': 'Organization', name: d.label } : undefined,
+      gtin12: d.upc?.length === 12 ? d.upc : undefined,
+      gtin13: d.upc?.length === 13 ? d.upc : undefined,
+      sameAs: listen.length ? listen.map((l) => l.href) : undefined,
       albumProductionType: 'https://schema.org/StudioAlbum',
       albumReleaseType: d.kind.toLowerCase() === 'ep' ? 'https://schema.org/EPRelease' : 'https://schema.org/AlbumRelease',
       creativeWorkStatus: unfinished ? 'Unfinished' : 'Published',
@@ -118,6 +129,7 @@ const zipPlan = JSON.stringify({ name: zipName, readme: zipReadme, formats: Obje
             name: t.data.title,
             url: abs(trackUrl(t)),
             duration: isoDuration(t.data.duration),
+            isrcCode: t.data.isrc,
           },
         })),
       },
@@ -185,7 +197,7 @@ const zipPlan = JSON.stringify({ name: zipName, readme: zipReadme, formats: Obje
               </div>
             </details>
           )}
-          <a class="download-btn" href={`/booth/?release=${encodeURIComponent(release.id)}`}><Icon name="sine-wave" /> open in DJ booth</a>
+          {isInStores(d) && <ListenMenu links={listen} title={d.title} />}
         </div>
       )}
     </header>
@@ -227,7 +239,26 @@ const zipPlan = JSON.stringify({ name: zipName, readme: zipReadme, formats: Obje
       )
     }
 
-    {d.suno && <p class="elsewhere"><a href={d.suno}>also on suno <Icon name="arrow-up-right" /></a></p>}
+    {
+      inStores ? (
+        <section class="stores" aria-labelledby="stores-h">
+          <h2 id="stores-h" class="label">in stores</h2>
+          <dl class="details">
+            {d.storeDate && (<><dt>out</dt><dd>{fmtDate(d.storeDate)}</dd></>)}
+            {d.label && (<><dt>label</dt><dd>{d.label}</dd></>)}
+            {d.upc && (<><dt>upc</dt><dd>{d.upc}</dd></>)}
+            {listen.length > 0 && (
+              <>
+                <dt>listen</dt>
+                <dd>{listen.map((l, i) => <>{i > 0 && ' · '}<a href={l.href}>{l.name} <Icon name="arrow-up-right" /></a></>)}</dd>
+              </>
+            )}
+          </dl>
+        </section>
+      ) : (
+        d.suno && <p class="elsewhere"><a href={d.suno}>also on suno <Icon name="arrow-up-right" /></a></p>
+      )
+    }
 
     </div>
 

@@ -17,7 +17,7 @@ from pathlib import Path
 from mutagen.flac import FLAC
 from mutagen.mp4 import MP4, MP4FreeForm
 from mutagen.id3 import (
-    COMM, ID3, ID3NoHeaderError, TALB, TBPM, TCON, TCOP, TDRC, TIT2, TKEY, TPE1, TPE2, TPUB, TRCK, TXXX, USLT, WCOP, WOAF, WOAR,
+    COMM, ID3, ID3NoHeaderError, TALB, TBPM, TCON, TCOP, TDRC, TIT2, TKEY, TPE1, TPE2, TPUB, TRCK, TSRC, TXXX, USLT, WCOP, WOAF, WOAR,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -110,7 +110,11 @@ for kind in ("tracks", "archive"):
             "album": rel and rel.get("title"),
             "catalog": rel and rel.get("catalog"),
             "track": f.get("number") and rel and f"{f['number']}/{len(tracks_on.get(f['release'], []))}",
-            "date": (rel and rel.get("date")) or f.get("created"),
+            # the day it came out in the stores, else on the site, else when it was made
+            "date": (rel and (rel.get("storeDate") or rel.get("date"))) or f.get("created"),
+            "label": (rel and rel.get("label")) or ARTIST,
+            "upc": rel and rel.get("upc"),
+            "isrc": f.get("isrc"),
             "genre": "; ".join(g[:1].upper() + g[1:] for g in genres) or None,
             "bpm": f.get("bpm"),
             "key": key_long,
@@ -131,7 +135,7 @@ def tag_mp3(path: Path, s: dict, part=None):
         t = ID3(path)
     except ID3NoHeaderError:
         t = ID3()
-    for frame in ("TIT2", "TPE1", "TPE2", "TALB", "TRCK", "TDRC", "TYER", "TCON", "TBPM", "TKEY", "COMM", "USLT", "TCOP", "TPUB", "WOAF", "WOAR", "WCOP", "TXXX"):
+    for frame in ("TIT2", "TPE1", "TPE2", "TALB", "TRCK", "TDRC", "TYER", "TCON", "TBPM", "TKEY", "COMM", "USLT", "TCOP", "TPUB", "WOAF", "WOAR", "WCOP", "TSRC", "TXXX"):
         t.delall(frame)
     title = f"{s['title']} ({part.title()})" if part else s["title"]
     t.add(TIT2(encoding=3, text=title))
@@ -151,7 +155,11 @@ def tag_mp3(path: Path, s: dict, part=None):
         t.add(TKEY(encoding=3, text=s["key_id3"]))
     t.add(COMM(encoding=3, lang="eng", desc="", text=comment(s)))
     t.add(TCOP(encoding=3, text=f"{LICENCE} ({LICENCE_URL})"))
-    t.add(TPUB(encoding=3, text=ARTIST))
+    t.add(TPUB(encoding=3, text=s["label"]))
+    if s["isrc"] and not part:  # the code is the song's, not a stem's
+        t.add(TSRC(encoding=3, text=s["isrc"]))
+    if s["upc"]:
+        t.add(TXXX(encoding=3, desc="BARCODE", text=s["upc"]))
     t.add(WOAF(url=s["url"]))
     t.add(WOAR(url=SITE + "/"))
     t.add(WCOP(url=LICENCE_URL))
@@ -185,7 +193,10 @@ def tag_flac(path: Path, s: dict):
         "WEBSITE": s["url"],
         "COPYRIGHT": LICENCE,
         "LICENSE": LICENCE_URL,
-        "ORGANIZATION": ARTIST,
+        "ORGANIZATION": s["label"],
+        "LABEL": s["label"] if s["label"] != ARTIST else None,
+        "ISRC": s["isrc"],
+        "BARCODE": s["upc"],
         "CATALOGNUMBER": s["catalog"],
         "MODEL": s["machine"],
         "LYRICS": s["lyrics"],
@@ -219,7 +230,8 @@ def tag_m4a(path: Path, s: dict):
     t["cprt"] = f"{LICENCE} ({LICENCE_URL})"
     if s["lyrics"]:
         t["\xa9lyr"] = s["lyrics"]
-    free = {"WEBSITE": s["url"], "LICENSE": LICENCE_URL, "CATALOGNUMBER": s["catalog"], "MODEL": s["machine"], "initialkey": s["key_id3"]}
+    free = {"WEBSITE": s["url"], "LICENSE": LICENCE_URL, "CATALOGNUMBER": s["catalog"], "MODEL": s["machine"], "initialkey": s["key_id3"],
+            "ISRC": s["isrc"], "BARCODE": s["upc"], "LABEL": s["label"] if s["label"] != ARTIST else None}
     for k, v in free.items():
         if v:
             t[f"----:com.apple.iTunes:{k}"] = [MP4FreeForm(v.encode())]

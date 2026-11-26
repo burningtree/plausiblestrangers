@@ -4935,3 +4935,12 @@ html.is-playing .player.is-empty .player-toggle > .when-playing {
 .dl-size { color: var(--mute); text-align: right; font-variant-numeric: tabular-nums; }
 .tl-row .dl-menu--icon { display: grid; align-self: stretch; }
 .tl-row .dl-menu--icon > summary { height: 100%; }
+
+/* record page: out in the streaming stores */
+.stores {
+  margin-top: 2rem;
+}
+.stores .details dd {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}

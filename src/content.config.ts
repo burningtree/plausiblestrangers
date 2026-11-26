@@ -19,6 +19,15 @@ const releases = defineCollection({
     }).optional(),
     suno: z.string().url().optional(),
     ace: z.string().url().optional(),
+    // out in the streaming stores (DistroKid): the label it went out under, its
+    // barcode, the day it came out there, and where to hear it
+    label: z.string().optional(),
+    upc: z.string().regex(/^\d{12,13}$/).optional(),
+    storeDate: z.coerce.date().optional(),
+    spotify: z.string().url().optional(),
+    appleMusic: z.string().url().optional(),
+    deezer: z.string().url().optional(),
+    hyperfollow: z.string().url().optional(),
     // 'unfinished' records show up with a stamp, after the released ones
     status: z.enum(['released', 'unfinished']).default('released'),
     hidden: z.boolean().default(false),
@@ -50,6 +59,12 @@ const tracks = defineCollection({
     suno: z.string().url().optional(),
     ace: z.string().url().optional(),
     notes: z.string().optional(),
+    // the recording's code in the stores
+    isrc: z.string().regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/).optional(),
+    // the song in the streaming stores
+    spotify: z.string().url().optional(),
+    appleMusic: z.string().url().optional(),
+    deezer: z.string().url().optional(),
   }),
 });
 

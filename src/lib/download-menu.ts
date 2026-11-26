@@ -43,6 +43,7 @@ export function initDownloadMenus() {
     const opt = target?.closest?.<HTMLAnchorElement>('a.dl-opt');
     if (!opt) return;
     if (menu) (menu as HTMLDetailsElement).open = false;
+    if (!opt.dataset.dlName) return; // a link, not a file (the listen menu)
     if (new URL(opt.href, location.href).origin === location.origin) return; // the browser saves it, named
     event.preventDefault();
     const size = opt.querySelector<HTMLElement>('.dl-size');
