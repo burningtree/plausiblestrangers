@@ -32,7 +32,7 @@ export const GET: APIRoute = async () => {
     records.push({
       id: r.id,
       title: r.data.title,
-      meta: `${r.data.catalog} · ${r.data.kind}${isUnfinished(r) ? ' · unfinished' : ''} · ${all.length} tracks`,
+      meta: `${r.data.catalog} · ${r.data.kind}${isUnfinished(r) ? ' · unreleased' : ''} · ${all.length} tracks`,
       url: releaseUrl(r.id),
       cover: r.data.cover?.replace(/\.webp$/, '-480.webp'),
       playable: ready.length > 0,

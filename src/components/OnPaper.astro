@@ -1,0 +1,65 @@
+---
+// "on paper": the sheet music exported from the machine (scripts/import-scores.mjs):
+// key, metre, parts, the form (each part a jump in the player) and the files.
+import Icon from './Icon.astro';
+import { fmtTime, type Score } from '../lib/catalog';
+
+interface Props {
+  score: Score;
+  title: string;
+  /** the player's id, queue and index, for the jumps */
+  id: string;
+  queue: string;
+  index: number;
+}
+const { score, title, id, queue, index } = Astro.props;
+const fileLabels = { pdf: 'pdf', musicxml: 'musicxml', mid: 'midi' } as const;
+const kb = (bytes: number) => (bytes > 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : `${Math.round(bytes / 1e3)} kB`);
+---
+
+<section class="on-paper" aria-labelledby="paper-h">
+  <h2 id="paper-h" class="label">on paper</h2>
+  <dl class="details">
+    <dt>key</dt>
+    <dd>{score.key}</dd>
+    <dt>metre</dt>
+    <dd>{score.meter.join(', ')} · ♩ = {score.tempo.join(', ')}</dd>
+    <dt>bars</dt>
+    <dd>{score.bars.length - 1}</dd>
+    {score.parts.map((p) => (
+      <>
+        <dt>{p.name}</dt>
+        <dd>{p.notes} notes{p.low && ` · ${p.low}–${p.high}`}</dd>
+      </>
+    ))}
+    {score.chords.length > 0 && (
+      <>
+        <dt>chords</dt>
+        <dd>{score.chords.slice(0, 5).join(' · ')}</dd>
+      </>
+    )}
+    {score.sections.length > 0 && (
+      <>
+        <dt>form</dt>
+        <dd class="paper-form">
+          {score.sections.map((x) => (
+            <button type="button" class="stat-jump" data-seek={x.at} data-seek-queue={queue} data-seek-index={index} data-seek-id={id}>
+              {x.name.toLowerCase()} <span class="meta">{fmtTime(x.at)}</span>
+            </button>
+          ))}
+        </dd>
+      </>
+    )}
+    <dt>files</dt>
+    <dd class="paper-files">
+      {(Object.keys(fileLabels) as (keyof typeof fileLabels)[]).map((ext) => {
+        const f = score.files[ext];
+        return f && (
+          <a href={f.src} download={`Plausible Strangers - ${title}.${ext}`}>
+            <Icon name="download" /> {fileLabels[ext]} <span class="meta">{kb(f.size)}</span>
+          </a>
+        );
+      })}
+    </dd>
+  </dl>
+</section>

@@ -2364,7 +2364,7 @@ html:not(.is-playing) .record.is-current .record-cat::after {
 .lib-item.is-unreleased .lib-status {
   color: var(--ink);
 }
-.lib-item.is-unfinished .lib-status {
+.lib-item.is-assigned .lib-status {
   color: var(--hot);
 }
 .lib-item.is-current .lib-title {

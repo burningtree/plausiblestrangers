@@ -4,6 +4,7 @@ import Lyrics from '../../components/Lyrics.astro';
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import DownloadMenu from '../../components/DownloadMenu.astro';
+import OnPaper from '../../components/OnPaper.astro';
 import Icon from '../../components/Icon.astro';
 import PlayButton from '../../components/PlayButton.astro';
 import Queue from '../../components/Queue.astro';
@@ -45,8 +46,6 @@ const d = song.data;
 const recording = playableArchive(song);
 const analysis = recording ? archiveAnalysis(song) : undefined;
 const score = recording ? scoreFor(d.audio) : undefined;
-const kb = (bytes: number) => (bytes > 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : `${Math.round(bytes / 1e3)} kB`);
-const fileLabels = { pdf: 'pdf', musicxml: 'musicxml', mid: 'midi' } as const;
 
 // other versions: released tracks and archive songs sharing the same base title
 const base = songBase(d.title);
@@ -188,56 +187,7 @@ const details: [string, string | undefined][] = [
 
       {analysis && recording && <SoundStats analysis={analysis} id={recording.id} queue={recording.id} index={0} part="energy" />}
 
-      {
-        score && recording && (
-          <section class="on-paper" aria-labelledby="paper-h">
-            <h2 id="paper-h" class="label">on paper</h2>
-            <dl class="details">
-              <dt>key</dt>
-              <dd>{score.key}</dd>
-              <dt>metre</dt>
-              <dd>{score.meter.join(', ')} · ♩ = {score.tempo.join(', ')}</dd>
-              <dt>bars</dt>
-              <dd>{score.bars.length - 1}</dd>
-              {score.parts.map((p) => (
-                <>
-                  <dt>{p.name}</dt>
-                  <dd>{p.notes} notes{p.low && ` · ${p.low}–${p.high}`}</dd>
-                </>
-              ))}
-              {score.chords.length > 0 && (
-                <>
-                  <dt>chords</dt>
-                  <dd>{score.chords.slice(0, 5).join(' · ')}</dd>
-                </>
-              )}
-              {score.sections.length > 0 && (
-                <>
-                  <dt>form</dt>
-                  <dd class="paper-form">
-                    {score.sections.map((x) => (
-                      <button type="button" class="stat-jump" data-seek={x.at} data-seek-queue={recording.id} data-seek-index={0} data-seek-id={recording.id}>
-                        {x.name.toLowerCase()} <span class="meta">{fmtTime(x.at)}</span>
-                      </button>
-                    ))}
-                  </dd>
-                </>
-              )}
-              <dt>files</dt>
-              <dd class="paper-files">
-                {(Object.keys(fileLabels) as (keyof typeof fileLabels)[]).map((ext) => {
-                  const f = score.files[ext];
-                  return f && (
-                    <a href={f.src} download={`Plausible Strangers - ${d.title}.${ext}`}>
-                      <Icon name="download" /> {fileLabels[ext]} <span class="meta">{kb(f.size)}</span>
-                    </a>
-                  );
-                })}
-              </dd>
-            </dl>
-          </section>
-        )
-      }
+      {score && recording && <OnPaper score={score} title={d.title} id={recording.id} queue={recording.id} index={0} />}
 
       {
         d.notes && (

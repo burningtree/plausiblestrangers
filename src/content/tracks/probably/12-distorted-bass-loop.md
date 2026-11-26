@@ -1,8 +1,10 @@
 ---
 title: "Distorted Bass Loop"
+release: "probably"
+number: 12
 created: "2026-11-25"
 duration: 144.5
-audio: "/audio/archive/distorted-bass-loop.m4a"
+audio: "/audio/probably/12-distorted-bass-loop.m4a"
 bpm: 108
 instrumental: true
 machine: "suno v6"

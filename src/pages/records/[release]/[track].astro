@@ -8,6 +8,7 @@ import VinylCover from '../../../components/VinylCover.astro';
 import Wave from '../../../components/Wave.astro';
 import SoundView from '../../../components/SoundView.astro';
 import Stamp from '../../../components/Stamp.astro';
+import OnPaper from '../../../components/OnPaper.astro';
 import DownloadMenu from '../../../components/DownloadMenu.astro';
 import ListenMenu from '../../../components/ListenMenu.astro';
 import { listenLinks, inStores } from '../../../lib/listen';
@@ -19,6 +20,7 @@ import {
   parseLyrics,
   songSections,
   stemsFor,
+  scoreFor,
   stemsZipUrl,
   getCatalog,
   releaseUrl,
@@ -68,6 +70,7 @@ const unfinished = isUnfinished(release);
 const prev = tracks[index - 1];
 const next = tracks[index + 1];
 const analysis = audible ? trackAnalysis(track) : undefined;
+const score = audible ? scoreFor(t.audio) : undefined;
 // sung lines only (no [directions]), for search engines
 const lyricText = t.instrumental
   ? undefined
@@ -183,7 +186,14 @@ const details: [string, string | undefined][] = [
     </div>
 
     <div class="track-main">
-    <Lyrics body={track.body} audio={t.audio} instrumental={t.instrumental} trackId={p.id} timed={audible ? p.lyrics : undefined} />
+    <Lyrics
+      body={track.body}
+      audio={t.audio}
+      instrumental={t.instrumental}
+      trackId={p.id}
+      timed={audible ? p.lyrics : undefined}
+      score={score?.files.musicxml ? { src: score.files.musicxml.src, bars: score.bars, id: p.id, queue: release.id, index: qi } : undefined}
+    />
     </div>
 
     <aside class="track-side">
@@ -219,6 +229,8 @@ const details: [string, string | undefined][] = [
     </section>
 
     {analysis && <SoundStats analysis={analysis} id={p.id} queue={release.id} index={qi} part="energy" />}
+
+    {score && <OnPaper score={score} title={t.title} id={p.id} queue={release.id} index={qi} />}
 
     {
       t.notes && (

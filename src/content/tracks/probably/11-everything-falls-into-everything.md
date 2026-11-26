@@ -1,5 +1,7 @@
 ---
 title: "Everything Falls Into Everything"
+release: "probably"
+number: 11
 created: "2026-11-24"
 duration: 222
 bpm: 132
@@ -9,7 +11,7 @@ ace: "https://acemusic.ai/song/27hrbqgehzbj?sh=EvRE8ktOXNh"
 suno: "https://suno.com/song/9a57d61a-996a-4481-b02e-0e10c67280f3"
 style: |-
   Melodic experimental techno, 132 BPM, hypnotic gradual progression, catchy bittersweet five-note melody, deep pulsating analog bass, unfamiliar liquid-metal instruments, bowed glass resonances, elastic metallic percussion, microtonal background sequences, three contrasting vocalists singing interlocking melodies, deep pitch-shifted masculine voice, fragile ethereal female soprano, dry robotic androgynous voice, overlapping contrapuntal choruses, unusual vocal harmonies, fragmented syllables bouncing across stereo channels, progressively distorted electroclash textures, emotional euphoria, immersive spatial production, relentless danceable groove, extended instrumental climax, no commercial pop production, no EDM drops.
-audio: "/audio/archive/everything-falls-into-everything.m4a"
+audio: "/audio/probably/11-everything-falls-into-everything.m4a"
 ---
 [Intro — isolated five-note melody played by a strange resonating glass instrument, distant reversed vocal textures]
 
