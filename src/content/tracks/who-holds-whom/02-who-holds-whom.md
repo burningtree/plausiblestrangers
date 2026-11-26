@@ -10,6 +10,10 @@ instrumental: false
 created: "2026-11-18"
 machine: "suno v6-mini"
 suno: "https://suno.com/song/02156f56-0259-4d87-b22e-3e01694337cf"
+isrc: "QTAFC2684904"
+spotify: "https://open.spotify.com/track/2SgiaP390cf6ktZkrumzvp"
+appleMusic: "https://music.apple.com/us/album/who-holds-whom/6839634129?i=6839634131"
+deezer: "https://www.deezer.com/track/4441568861"
 style: |-
   Psychedelic electronic dance, broken-house; massive warm analog sub-bass, hypnotic tribal percussion, distorted wooden marimbas, detuned synthesizers and strange acoustic instruments play African polyrhythms. Raw analog saturation, granular textures, dense rhythmic layers and unpredictable transitions build a gradual ecstatic climax. An elderly male voice narrates in English: low, dark, intimate, weathered, slightly distorted through a faint radio tone; ethereal female backing voices answer with haunting melodic fragments, whispered questions and hypnotic repetitive chants. At 128 BPM, syncopated broken-house grooves sustain dancefloor momentum, deep emotional tension, ritualistic energy, and a feeling both unsettling, melancholic and euphoric.
 ---

@@ -11,6 +11,9 @@ created: "2026-11-18"
 machine: "suno v6-mini"
 tags: "electronica, organic house, alien folk"
 suno: "https://suno.com/song/e4e99dd8-d9eb-44aa-916a-3977d331d21f"
+isrc: "QTAFC2684903"
+spotify: "https://open.spotify.com/track/20bNvbYdmZ3qYR6M3U6yLp"
+deezer: "https://www.deezer.com/track/4441568851"
 style: |-
   Experimental ritualistic electronica, fractured organic house with alien folk; 132 BPM hypnotic dance pulse, bamboo polyrhythms lead into detuned marimbas and subterranean sub-bass, microtonal melodies; granular synthesis, distant archival textures, subtle tape distortion, ghostly vocal echoes; soft, intimate female narration, breathy whispers opening into wide-range, high-climbing legato crooning.
 ---

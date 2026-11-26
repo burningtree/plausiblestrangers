@@ -11,6 +11,10 @@ created: "2026-11-19"
 machine: "suno v6-mini"
 tags: "psychedelic electroclash, broken-house"
 suno: "https://suno.com/song/216cf3f0-ff1a-4f63-bebc-15cc73819c2c"
+isrc: "QTAFC2684905"
+spotify: "https://open.spotify.com/track/6ePr0OmIvTkdihEoMYCO91"
+appleMusic: "https://music.apple.com/us/album/who-holds-whom-loop-mix/6839634129?i=6839634133"
+deezer: "https://www.deezer.com/track/4441568871"
 style: |-
   Minimal psychedelic electroclash, hypnotic broken-house; hushed, close-mic elderly male spoken voice, low and weathered, chopped into rhythmic fragments, with whispered ad-libs between lines; detached breathy female voice repeats short phrases, whispered stereo echoes drifting between them, then a layered chant. Massive elastic analog sub-bass drives a looping bassline with microscopic rhythmic mutations; dry punchy kick, syncopated woodblock clicks, detuned kalimba playing a repetitive four-note melody, subtle acid pulses. Dusty tape saturation, deep dub delays, half-beat silences, underground warehouse atmosphere; 128 BPM, playful offbeat accents, gradually intensifying groove, raw, strange, sensual, melancholic yet euphoric.
 ---

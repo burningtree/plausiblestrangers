@@ -11,6 +11,10 @@ created: "2026-11-19"
 machine: "suno v6-mini"
 tags: "electroclash, microhouse"
 suno: "https://suno.com/song/4b9ad06f-f83a-4fb9-852a-0b88c3912c6c"
+isrc: "QTAFC2684906"
+spotify: "https://open.spotify.com/track/3lhlTMFwZRVoHuVdlfJJdn"
+appleMusic: "https://music.apple.com/us/album/who-holds-whom-instrumental/6839634129?i=6839634135"
+deezer: "https://www.deezer.com/track/4441568891"
 style: |-
   Electroclash microhouse, minimal and sparse with enormous negative space; tiny timing imperfections, shifting accents, polymetric loops, tape warble, and granular echoes. Deep rubbery analog sub-bass against a dry mechanical kick, syncopated ghost percussion, prepared piano’s obsessive asymmetric five-note melody, metallic mbira, detuned music-box tones, and muted pizzicato cello. Instrumental. Hypnotic, danceable 130 BPM groove with strange mechanical swing, gradual melodic mutations, and subtle tension.
 ---
