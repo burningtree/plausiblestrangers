@@ -1,8 +1,8 @@
 ---
-title: "Amineur"
+title: "I Just Dance Like One - Amineur Mix"
 created: "2026-11-26"
 duration: 153.9
-audio: "/audio/archive/amineur.m4a"
+audio: "/audio/archive/i-just-dance-like-one-amineur-mix.m4a"
 bpm: 134
 instrumental: true
 tags: "electroclash, industrial disco"
