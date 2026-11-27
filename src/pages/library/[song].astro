@@ -57,6 +57,8 @@ const releasedVersions = releases.flatMap((r) =>
 );
 const archiveVersions = (await getArchive()).filter((a) => a.id !== song.id && songBase(a.data.title) === base);
 
+// ours to give away under CC0: not a remix of someone else's song, not made on a personal-use-only plan
+const free = !d.remix && !d.personalUse;
 const details: [string, string | undefined][] = [
   ['status', 'unreleased'],
   ['length', d.duration ? fmtTime(d.duration) : undefined],
@@ -69,14 +71,14 @@ const details: [string, string | undefined][] = [
 ---
 
 <Base
-  licensed={!d.remix}
+  licensed={free}
   title={`${d.title} — unreleased`}
   description={`${d.title}: an unreleased Plausible Strangers song${d.bpm ? `, ${d.bpm} bpm` : ''}. Lyrics, the prompt, and a link to listen.`}
   type="music.song"
   jsonLd={graph(
     {
       '@type': 'MusicRecording',
-      license: d.remix ? undefined : site.license.url,
+      license: free ? site.license.url : undefined,
       name: d.title,
       url: abs(archiveUrl(song)),
       byArtist: bandRef,
@@ -108,6 +110,7 @@ const details: [string, string | undefined][] = [
                   <DownloadMenu audio={recording.src} title={d.title} />
                   {d.suno && <a class="download-btn" href={d.suno}>on suno <Icon name="arrow-up-right" /></a>}
                   {d.ace && <a class="download-btn" href={d.ace}>on ace music <Icon name="arrow-up-right" /></a>}
+                  {d.heartmula && <a class="download-btn" href={d.heartmula}>on heartmula <Icon name="arrow-up-right" /></a>}
                 </>
               ) : d.suno ? (
                 <a class="suno-btn" href={d.suno}>
@@ -124,7 +127,7 @@ const details: [string, string | undefined][] = [
       {
         recording &&
           (analysis || recording.peaks.length ? (
-            <SoundView analysis={analysis} id={recording.id} peaks={recording.peaks} src={recording.src} duration={recording.duration} queue={recording.id} index={0} sections={songSections({ audio: d.audio, body: song.body, timed: recording.lyrics, duration: recording.duration })} stems={stemsFor(d.audio)} stemsZip={d.audio && stemsFor(d.audio)?.length && !d.remix ? stemsZipUrl(d.audio) : undefined} />
+            <SoundView analysis={analysis} id={recording.id} peaks={recording.peaks} src={recording.src} duration={recording.duration} queue={recording.id} index={0} sections={songSections({ audio: d.audio, body: song.body, timed: recording.lyrics, duration: recording.duration })} stems={stemsFor(d.audio)} stemsZip={d.audio && stemsFor(d.audio)?.length && free ? stemsZipUrl(d.audio) : undefined} />
           ) : (
             <Wave id={recording.id} peaks={recording.peaks} duration={recording.duration} queue={recording.id} index={0} class="wave--big" />
           ))
@@ -157,7 +160,7 @@ const details: [string, string | undefined][] = [
                 </>
               ))
           }
-          {(d.suno || d.ace) && (
+          {(d.suno || d.ace || d.heartmula) && (
             <>
               <dt>elsewhere</dt>
               <dd>
@@ -171,12 +174,19 @@ const details: [string, string | undefined][] = [
                     ace music <Icon name="arrow-up-right" />
                   </a>
                 )}
+                {d.heartmula && (
+                  <a href={d.heartmula}>
+                    heartmula <Icon name="arrow-up-right" />
+                  </a>
+                )}
               </dd>
             </>
           )}
           <dt>license</dt>
           {d.remix ? (
             <dd>not ours to give away: a remix of someone else's song, so the original's rights apply</dd>
+          ) : d.personalUse ? (
+            <dd>personal use only, not CC0: made on a free plan{d.machine && ` of ${d.machine}`}, so it isn't ours to give away</dd>
           ) : (
             <dd>
               <a href={site.license.url} rel="license" title={site.license.title}>CC0 1.0</a> · free, no rights reserved

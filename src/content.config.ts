@@ -86,6 +86,9 @@ const archive = defineCollection({
     machine: z.string().optional(),
     suno: z.string().url().optional(),
     ace: z.string().url().optional(),
+    heartmula: z.string().url().optional(),
+    // made on a free plan that only allows personal use: not ours to give away, so not CC0
+    personalUse: z.boolean().default(false),
     notes: z.string().optional(),
     hidden: z.boolean().default(false),
   }),

@@ -26,6 +26,7 @@ SITE = "https://plausiblestrangers.com"
 ARTIST = "Plausible Strangers"
 LICENCE = "CC0 1.0 Universal — no rights reserved"
 LICENCE_URL = "https://creativecommons.org/publicdomain/zero/1.0/"
+PERSONAL = "Personal use only: made on a free plan, not released under CC0"
 
 MINOR = ["A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G", "D"]
 MAJOR = ["C", "G", "D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F"]
@@ -122,6 +123,7 @@ for kind in ("tracks", "archive"):
             "machine": f.get("machine"),
             "url": url,
             "remix": f.get("remix") == "true",
+            "personal": f.get("personalUse") == "true",
             "lyrics": None if f.get("instrumental") == "true" else lyrics(body, audio),
         }
 
@@ -154,7 +156,7 @@ def tag_mp3(path: Path, s: dict, part=None):
     if s["key_id3"]:
         t.add(TKEY(encoding=3, text=s["key_id3"]))
     t.add(COMM(encoding=3, lang="eng", desc="", text=comment(s)))
-    t.add(TCOP(encoding=3, text=f"{LICENCE} ({LICENCE_URL})"))
+    t.add(TCOP(encoding=3, text=PERSONAL if s["personal"] else f"{LICENCE} ({LICENCE_URL})"))
     t.add(TPUB(encoding=3, text=s["label"]))
     if s["isrc"] and not part:  # the code is the song's, not a stem's
         t.add(TSRC(encoding=3, text=s["isrc"]))
@@ -162,7 +164,8 @@ def tag_mp3(path: Path, s: dict, part=None):
         t.add(TXXX(encoding=3, desc="BARCODE", text=s["upc"]))
     t.add(WOAF(url=s["url"]))
     t.add(WOAR(url=SITE + "/"))
-    t.add(WCOP(url=LICENCE_URL))
+    if not s["personal"]:
+        t.add(WCOP(url=LICENCE_URL))
     if s["catalog"]:
         t.add(TXXX(encoding=3, desc="CATALOGNUMBER", text=s["catalog"]))
     if s["machine"]:
@@ -191,8 +194,8 @@ def tag_flac(path: Path, s: dict):
         "KEY": s["key"],
         "COMMENT": comment(s),
         "WEBSITE": s["url"],
-        "COPYRIGHT": LICENCE,
-        "LICENSE": LICENCE_URL,
+        "COPYRIGHT": PERSONAL if s["personal"] else LICENCE,
+        "LICENSE": None if s["personal"] else LICENCE_URL,
         "ORGANIZATION": s["label"],
         "LABEL": s["label"] if s["label"] != ARTIST else None,
         "ISRC": s["isrc"],
@@ -227,10 +230,11 @@ def tag_m4a(path: Path, s: dict):
     if s["bpm"]:
         t["tmpo"] = [round(float(s["bpm"]))]
     t["\xa9cmt"] = comment(s)
-    t["cprt"] = f"{LICENCE} ({LICENCE_URL})"
+    # a song made on a personal-use-only plan isn't ours to give away
+    t["cprt"] = PERSONAL if s["personal"] else f"{LICENCE} ({LICENCE_URL})"
     if s["lyrics"]:
         t["\xa9lyr"] = s["lyrics"]
-    free = {"WEBSITE": s["url"], "LICENSE": LICENCE_URL, "CATALOGNUMBER": s["catalog"], "MODEL": s["machine"], "initialkey": s["key_id3"],
+    free = {"WEBSITE": s["url"], "LICENSE": None if s["personal"] else LICENCE_URL, "CATALOGNUMBER": s["catalog"], "MODEL": s["machine"], "initialkey": s["key_id3"],
             "ISRC": s["isrc"], "BARCODE": s["upc"], "LABEL": s["label"] if s["label"] != ARTIST else None}
     for k, v in free.items():
         if v:
