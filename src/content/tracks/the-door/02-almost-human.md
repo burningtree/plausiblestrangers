@@ -13,6 +13,10 @@ tags: "Electronica, French house"
 suno: "https://suno.com/song/21cf53cf-e4d6-44b1-95f5-489743c118c1"
 style: |-
   Electronica, French house: deeply detuned analogue synths carry a four-note motif that gradually mutates through warm chord loops, acid squelches, granular shimmer, unstable tape loops, broken jungle percussion, skittering microbeats and rounded sub-bass; 132 BPM, hypnotic warehouse pulse with irregular polyrhythms; distorted vocal ghosts and tape-worn textures; low androgynous vocals, hushed and close-mic, dry and up-front, with intimate whispers, pitch and formant shifts.
+isrc: "QTAFD2672603"
+spotify: "https://open.spotify.com/track/1Cks9SghjVokyZNSSVcBSq"
+appleMusic: "https://music.apple.com/us/album/the-door-single/6840311310?i=6840311312"
+deezer: "https://www.deezer.com/track/4444801941"
 ---
 [Intro — distant muffled voice, barely audible]
 I remember...

@@ -13,4 +13,7 @@ tags: "global bass, hip-hop, dancehall"
 suno: "https://suno.com/song/0d198af7-2db4-42aa-b4e5-6e9ea2a3c737"
 style: |-
   Experimental global bass and hip-hop, South Asian rhythms, Middle Eastern melodies, dancehall swing, heavy sub-bass, metallic percussion, glitchy breaks, hypnotic synth hooks, fierce female rap
+isrc: "QTAFD2675554"
+spotify: "https://open.spotify.com/track/3O8EoLsbVGUgcCvnd88gBd"
+deezer: "https://www.deezer.com/track/4444905761"
 ---

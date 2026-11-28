@@ -13,6 +13,9 @@ tags: "bass, experimental hip-hop, dancehall"
 suno: "https://suno.com/song/573cbca9-7234-411c-a913-130a6f9e4b3e"
 style: |-
   Global bass and experimental hip-hop with South Asian rhythmic accents and Middle Eastern modal melody. Driving syncopated hip-hop drums meet dancehall swing, heavy sub-bass, sharp metallic percussion, and a high-register, ornamented synth hook that repeats insistently. Minimal arrangement with deliberate space; add glitchy breaks and clipped vocal chops between sections. Swaggering female rap, fast and rhythmically precise, with a rebellious, self-possessed delivery. Tight, punchy low end and dry, forward vocals against a focused electronic mix.
+isrc: "QTAFD2675551"
+spotify: "https://open.spotify.com/track/1ThxIqrDn2jx7qI6QLpPre"
+deezer: "https://www.deezer.com/track/4444905751"
 ---
 [Intro]
 Turn the key, let the old rules rust

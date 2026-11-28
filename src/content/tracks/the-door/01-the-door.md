@@ -13,6 +13,10 @@ tags: "House, IDM"
 suno: "https://suno.com/song/28d4c480-27f1-47f9-831a-dc9a3d8c56a9"
 style: |-
   House / IDM; raw underground textures, tape hiss, subtle dissonance, spacious 3D stereo, unexpected silence, and gradually mutating patterns across a 7–8 minute journey at 126 BPM. Deep rubbery bass, fragile four-note analog melody, intricate broken beats, microscopic glitches, strange percussive counter-rhythms, detuned arpeggios, and elastic acid bass. Extremely low and high synthetic androgynous voices, pitch- and formant-shifted, hushed and close-mic, half-spoken and murmured, fragmented and robotic yet intimate; alternating stereo, with doubled hooks.
+isrc: "QTAFD2672601"
+spotify: "https://open.spotify.com/track/4la9sK32j5jwqCDBedZrhh"
+appleMusic: "https://music.apple.com/us/album/the-door-single/6840311310?i=6840311311"
+deezer: "https://www.deezer.com/track/4444801931"
 ---
 [Extended instrumental opening — 48 bars]
 [Fragile four-note analog melody, tape hiss]
