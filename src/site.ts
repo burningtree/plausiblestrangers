@@ -6,6 +6,10 @@ export const site = {
   // Shown under "elsewhere / contact". Add more as they exist.
   links: [
     { label: 'spotify', href: 'https://open.spotify.com/artist/1NBYYiDWfjFVdCgWYQQ6Rj' },
+    { label: 'apple music', href: 'https://music.apple.com/us/artist/plausible-strangers/6839443574' },
+    { label: 'youtube music', href: 'https://music.youtube.com/channel/UCp5DODBgmcMb97UNoZrh_aA' },
+    { label: 'amazon music', href: 'https://music.amazon.com/artists/B0HSWLH26P/plausible-strangers' },
+    { label: 'shazam', href: 'https://www.shazam.com/artist/plausible-strangers/6839443574' },
     { label: 'suno', href: 'https://suno.com/@plausiblestrangers' },
     { label: 'x / twitter', href: 'https://x.com/plstrangers' },
     { label: 'github', href: 'https://github.com/burningtree/plausiblestrangers' },
